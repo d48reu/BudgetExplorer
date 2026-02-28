@@ -49,12 +49,12 @@ Plans:
   3. Miami-Dade brand colors, Inter font, and a clean modern design system are applied consistently
   4. All page elements use semantic HTML and budget jargon includes tooltip explanations
   5. Every page communicates a clear "What am I looking at?" moment -- a visitor understands the page purpose within 3 seconds
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 02-01: Next.js project setup with Prisma data layer and BigInt serialization
-- [ ] 02-02: Design system (Tailwind theme, components, responsive layout)
-- [ ] 02-03: Homepage shell with hero, layout, and footer
+- [ ] 02-01-PLAN.md -- Next.js project scaffold, Prisma introspection, data access layer, BigInt serialization, formatting utilities
+- [ ] 02-02-PLAN.md -- Design system (Tailwind v4 @theme tokens, UI components, layout shell, responsive navigation, footer)
+- [ ] 02-03-PLAN.md -- Homepage shell (hero count-up, quick stats, CTAs) and glossary page
 
 ### Phase 3: Budget Visualizations + Explorer
 **Goal**: Residents can visually explore the full budget hierarchy from $13.2B total down to individual departments, plus see revenue sources and the penny breakdown
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Pipeline | 4/4 | Complete | 2026-02-28 |
-| 2. App Foundation + Design System | 0/3 | Not started | - |
+| 2. App Foundation + Design System | 0/3 | Planned | - |
 | 3. Budget Visualizations + Explorer | 0/3 | Not started | - |
 | 4. Department Pages + AI + Year-over-Year | 0/3 | Not started | - |
 | 5. Tax Calculator | 0/2 | Not started | - |
