@@ -157,10 +157,45 @@ def load(data, fiscal_year):
     default=CURRENT_FISCAL_YEAR,
     help="Fiscal year label to verify (e.g., 'FY 2025-26').",
 )
-def verify(fiscal_year):
-    """Verify database totals against published figures."""
+@click.option(
+    "--published-totals",
+    default=None,
+    help="Path to published_totals.json. Defaults to pipeline/data/published_totals.json.",
+)
+def verify(fiscal_year, published_totals):
+    """Verify database totals against published figures.
+
+    Runs two-level verification: grand total and each strategic area subtotal.
+    Prints a detailed diff report showing expected vs actual at every level.
+    Exits with code 1 if any check fails.
+    """
+    from pipeline.verify.checker import run_verification
+
+    if published_totals is None:
+        published_totals = os.path.join(
+            os.path.dirname(__file__), "data", "published_totals.json"
+        )
+
+    database_url = os.getenv("DATABASE_URL", "")
+    if not database_url:
+        from pipeline.config import DATABASE_URL
+        database_url = DATABASE_URL
+
     click.echo(f"Verifying data for: {fiscal_year}")
-    click.echo("(Verification logic will be wired in Plan 03)")
+    click.echo(f"Published totals: {published_totals}")
+    click.echo("")
+
+    all_passed, report = run_verification(
+        database_url, fiscal_year, published_totals
+    )
+
+    click.echo(report)
+
+    if all_passed:
+        click.echo("\nVERIFICATION PASSED")
+    else:
+        click.echo("\nVERIFICATION FAILED", err=True)
+        sys.exit(1)
 
 
 @cli.command(name="run-all")
@@ -181,7 +216,12 @@ def verify(fiscal_year):
 )
 @click.pass_context
 def run_all(ctx, pdf, output, fiscal_year):
-    """Run the complete pipeline: extract -> load -> verify."""
+    """Run the complete pipeline: extract -> load -> verify.
+
+    Chains all three steps. Verification runs automatically as the final
+    step. On verification failure, the pipeline halts with a non-zero
+    exit code and a detailed diff report.
+    """
     click.echo(f"Running complete pipeline for {fiscal_year}")
     click.echo("=" * 50)
 
@@ -193,7 +233,7 @@ def run_all(ctx, pdf, output, fiscal_year):
     click.echo("\n--- Step 2: Load ---")
     ctx.invoke(load, data=output, fiscal_year=fiscal_year)
 
-    # Step 3: Verify (stub for now, wired in Plan 03)
+    # Step 3: Verify (halts on failure with non-zero exit code)
     click.echo("\n--- Step 3: Verify ---")
     ctx.invoke(verify, fiscal_year=fiscal_year)
 

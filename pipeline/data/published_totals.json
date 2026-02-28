@@ -4,5 +4,51 @@
   "operating_cents": 857560600000,
   "capital_cents": 465763200000,
   "total_employees": 31996,
-  "strategic_areas": []
+  "strategic_areas": [
+    {
+      "name": "Policy Formulation",
+      "slug": "policy-formulation",
+      "total_budget_cents": 90741400000
+    },
+    {
+      "name": "Constitutional Offices",
+      "slug": "constitutional-offices",
+      "total_budget_cents": 304519400000
+    },
+    {
+      "name": "Public Safety",
+      "slug": "public-safety",
+      "total_budget_cents": 273261800000
+    },
+    {
+      "name": "Transportation & Mobility",
+      "slug": "transportation-mobility",
+      "total_budget_cents": 186994500000
+    },
+    {
+      "name": "Recreation & Culture",
+      "slug": "recreation-culture",
+      "total_budget_cents": 52998800000
+    },
+    {
+      "name": "Neighborhood & Infrastructure",
+      "slug": "neighborhood-infrastructure",
+      "total_budget_cents": 233373900000
+    },
+    {
+      "name": "Health & Society",
+      "slug": "health-society",
+      "total_budget_cents": 69750300000
+    },
+    {
+      "name": "Economic Development",
+      "slug": "economic-development",
+      "total_budget_cents": 76741300000
+    },
+    {
+      "name": "General Government",
+      "slug": "general-government",
+      "total_budget_cents": 34942400000
+    }
+  ]
 }
