@@ -11,6 +11,8 @@ from pipeline.extract.revenue import extract_revenue
 from pipeline.extract.expenditures import extract_expenditures
 from pipeline.extract.millage import extract_millage
 from pipeline.extract.penny import extract_penny
+from pipeline.extract.appendix_c import extract_appendix_c
+from pipeline.extract.appendix_j import extract_appendix_j
 
 __all__ = [
     "download_pdf",
@@ -22,11 +24,14 @@ __all__ = [
     "extract_expenditures",
     "extract_millage",
     "extract_penny",
+    "extract_appendix_c",
+    "extract_appendix_j",
     "extract_all",
 ]
 
 
-def extract_all(pdf_path: str) -> dict:
+def extract_all(pdf_path: str, appendix_c_path: str = None,
+                appendix_j_path: str = None) -> dict:
     """Run all extraction modules and return a combined dict.
 
     The returned dict has keys:
@@ -70,7 +75,7 @@ def extract_all(pdf_path: str) -> dict:
     penny = extract_penny(pdf_path)
     print(f"  Found {len(penny)} penny entries")
 
-    return {
+    result = {
         "strategic_areas": strategic_areas,
         "departments": departments,
         "revenue": revenue,
@@ -78,3 +83,23 @@ def extract_all(pdf_path: str) -> dict:
         "millage": millage,
         "penny": penny,
     }
+
+    # Appendix C: operating expenditures by department (authoritative)
+    if appendix_c_path:
+        print("Extracting Appendix C (operating expenditures)...")
+        appendix_c = extract_appendix_c(appendix_c_path)
+        print(f"  Found {len(appendix_c['departments'])} department entries")
+        print(f"  Found {len(appendix_c['area_totals'])} area totals")
+        print(f"  Grand total: {appendix_c.get('grand_total')}K")
+        result["appendix_c"] = appendix_c
+
+    # Appendix J: capital budget by department (authoritative)
+    if appendix_j_path:
+        print("Extracting Appendix J (capital budget)...")
+        appendix_j = extract_appendix_j(appendix_j_path)
+        print(f"  Found {len(appendix_j['departments'])} department entries")
+        print(f"  Found {len(appendix_j['area_totals'])} area totals")
+        print(f"  Grand total: {appendix_j.get('grand_total')}K")
+        result["appendix_j"] = appendix_j
+
+    return result

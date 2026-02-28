@@ -12,6 +12,7 @@ from decimal import Decimal
 
 from pipeline.transform.clean import (
     dollars_to_cents,
+    thousands_to_cents,
     clean_percentage,
     clean_employee_count,
     clean_department_name,
@@ -214,6 +215,193 @@ def seed_strategic_area_budgets(conn, fiscal_year_id: int,
     )
 
 
+def seed_department_budgets_from_appendix(
+    conn, fiscal_year_id: int,
+    appendix_c_depts: list[dict],
+    appendix_j_depts: list[dict],
+):
+    """Seed department budgets using Appendix C (operating) and J (capital).
+
+    Appendix C provides operating budgets per department per strategic area.
+    Appendix J provides capital budgets per department per strategic area.
+    Values in both are in thousands — use thousands_to_cents().
+
+    Handles multi-area departments: same department can appear in multiple
+    strategic areas with different budget rows.
+
+    Idempotent: deletes existing records for the fiscal year before inserting.
+    """
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM department_budgets WHERE fiscal_year_id = %s",
+        (fiscal_year_id,)
+    )
+
+    dept_lookup = _build_department_lookup(cur)
+    area_lookup = _build_strategic_area_lookup(cur)
+
+    seeded = 0
+    skipped = 0
+
+    # Index appendix J by (dept_name_lower, area_name_lower) -> capital
+    j_lookup = {}
+    for jd in appendix_j_depts:
+        dept_name = clean_department_name(jd.get("department", ""))
+        area_name = clean_department_name(jd.get("strategic_area", ""))
+        capital = thousands_to_cents(jd.get("total_25_26"))
+        key = (dept_name.lower(), area_name.lower())
+        j_lookup[key] = j_lookup.get(key, 0) + capital
+
+    # Insert from Appendix C (operating) and merge capital from J
+    for dept in appendix_c_depts:
+        dept_name = clean_department_name(dept.get("department", ""))
+        area_name = clean_department_name(dept.get("strategic_area", ""))
+
+        department_id = _resolve_department_id(dept_name, dept_lookup)
+        if department_id is None:
+            logger.warning(
+                "Could not match department '%s' to database -- skipping",
+                dept_name,
+            )
+            skipped += 1
+            continue
+
+        strategic_area_id = _resolve_strategic_area_id(area_name, area_lookup)
+
+        operating = thousands_to_cents(dept.get("adopted_25_26"))
+        employee_count = clean_employee_count(dept.get("positions_25_26"))
+
+        # Look up capital from Appendix J
+        j_key = (dept_name.lower(), area_name.lower())
+        capital = j_lookup.pop(j_key, 0)
+        total = operating + capital
+
+        cur.execute("""
+            INSERT INTO department_budgets
+                (fiscal_year_id, department_id, strategic_area_id,
+                 operating_budget, capital_budget, total_budget,
+                 employee_count, is_actual)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, FALSE)
+        """, (
+            fiscal_year_id, department_id, strategic_area_id,
+            operating, capital, total, employee_count,
+        ))
+        seeded += 1
+
+    # Insert remaining J-only departments (capital with no operating match)
+    for (dept_lower, area_lower), capital in j_lookup.items():
+        if capital == 0:
+            continue
+
+        department_id = _resolve_department_id(dept_lower, dept_lookup)
+        if department_id is None:
+            logger.warning(
+                "Appendix J department '%s' not matched -- skipping",
+                dept_lower,
+            )
+            skipped += 1
+            continue
+
+        strategic_area_id = _resolve_strategic_area_id(area_lower, area_lookup)
+
+        cur.execute("""
+            INSERT INTO department_budgets
+                (fiscal_year_id, department_id, strategic_area_id,
+                 operating_budget, capital_budget, total_budget,
+                 employee_count, is_actual)
+            VALUES (%s, %s, %s, 0, %s, %s, NULL, FALSE)
+        """, (
+            fiscal_year_id, department_id, strategic_area_id,
+            capital, capital,
+        ))
+        seeded += 1
+
+    cur.close()
+    logger.info(
+        "Seeded %d department budgets from appendices (%d skipped) "
+        "for fiscal_year_id=%d",
+        seeded, skipped, fiscal_year_id
+    )
+
+
+def seed_strategic_area_budgets_from_appendix(
+    conn, fiscal_year_id: int,
+    c_area_totals: list[dict],
+    j_area_totals: list[dict],
+    penny: list[dict] = None,
+):
+    """Seed strategic area budgets using Appendix C and J area totals.
+
+    Appendix C provides operating totals per area, Appendix J provides
+    capital totals per area. Both in thousands.
+
+    Idempotent: deletes existing records for the fiscal year before inserting.
+    """
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM strategic_area_budgets WHERE fiscal_year_id = %s",
+        (fiscal_year_id,)
+    )
+
+    area_lookup = _build_strategic_area_lookup(cur)
+
+    # Build J capital lookup: normalized area name -> capital cents
+    j_cap_lookup = {}
+    for jt in j_area_totals:
+        area_name = clean_department_name(jt.get("strategic_area", ""))
+        capital = thousands_to_cents(jt.get("total_25_26"))
+        j_cap_lookup[area_name.lower()] = capital
+
+    # Build penny lookup: area name -> cents
+    penny_lookup = {}
+    if penny:
+        for p in penny:
+            area_name = clean_department_name(p.get("area", ""))
+            cents_val = p.get("cents")
+            if area_name and cents_val is not None:
+                try:
+                    penny_lookup[area_name.lower()] = int(
+                        str(cents_val).strip()
+                    )
+                except (ValueError, TypeError):
+                    pass
+
+    seeded = 0
+
+    for area in c_area_totals:
+        name = clean_department_name(area.get("strategic_area", ""))
+        area_id = _resolve_strategic_area_id(name, area_lookup)
+
+        if area_id is None:
+            logger.warning(
+                "Could not match strategic area '%s' to database -- skipping",
+                name,
+            )
+            continue
+
+        operating = thousands_to_cents(area.get("adopted_25_26"))
+        capital = j_cap_lookup.get(name.lower(), 0)
+        cents_per_dollar = penny_lookup.get(name.lower())
+
+        cur.execute("""
+            INSERT INTO strategic_area_budgets
+                (fiscal_year_id, strategic_area_id, operating_budget,
+                 capital_budget, cents_per_dollar)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            fiscal_year_id, area_id, operating, capital, cents_per_dollar,
+        ))
+        seeded += 1
+
+    cur.close()
+    logger.info(
+        "Seeded %d strategic area budgets from appendices for fiscal_year_id=%d",
+        seeded, fiscal_year_id
+    )
+
+
 def seed_revenue(conn, fiscal_year_id: int, revenue: list[dict]):
     """Seed revenue by source records for a fiscal year.
 
@@ -365,14 +553,40 @@ def seed_all(conn, data: dict, fiscal_year_label: str = "FY 2025-26",
         conn, fiscal_year_label, start_date, end_date, totals
     )
 
-    # Step 2: Seed strategic area budgets (with penny data if available)
-    strategic_areas = data.get("strategic_areas", [])
+    # Determine data source: appendix (authoritative) or BIB-only
+    appendix_c = data.get("appendix_c")
+    appendix_j = data.get("appendix_j")
     penny = data.get("penny", [])
-    seed_strategic_area_budgets(conn, fiscal_year_id, strategic_areas, penny)
 
-    # Step 3: Seed department budgets
-    departments = data.get("departments", [])
-    seed_department_budgets(conn, fiscal_year_id, departments)
+    if appendix_c:
+        # Appendix path: use C for operating, J for capital
+        c_depts = appendix_c.get("departments", [])
+        c_areas = appendix_c.get("area_totals", [])
+        j_depts = appendix_j.get("departments", []) if appendix_j else []
+        j_areas = appendix_j.get("area_totals", []) if appendix_j else []
+
+        # Step 2: Seed strategic area budgets from appendices
+        seed_strategic_area_budgets_from_appendix(
+            conn, fiscal_year_id, c_areas, j_areas, penny
+        )
+
+        # Step 3: Seed department budgets from appendices
+        seed_department_budgets_from_appendix(
+            conn, fiscal_year_id, c_depts, j_depts
+        )
+
+        dept_count = len(c_depts)
+        area_count = len(c_areas)
+    else:
+        # BIB-only path (backward compatible)
+        strategic_areas = data.get("strategic_areas", [])
+        seed_strategic_area_budgets(conn, fiscal_year_id, strategic_areas, penny)
+
+        departments = data.get("departments", [])
+        seed_department_budgets(conn, fiscal_year_id, departments)
+
+        dept_count = len(departments)
+        area_count = len(strategic_areas)
 
     # Step 4: Seed revenue
     revenue = data.get("revenue", [])
@@ -384,8 +598,8 @@ def seed_all(conn, data: dict, fiscal_year_label: str = "FY 2025-26",
 
     return {
         "fiscal_year_id": fiscal_year_id,
-        "strategic_areas": len(strategic_areas),
-        "departments": len(departments),
+        "strategic_areas": area_count,
+        "departments": dept_count,
         "revenue": len(revenue),
         "millage": len(millage),
     }

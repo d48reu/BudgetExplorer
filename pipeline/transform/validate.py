@@ -97,6 +97,69 @@ def validate_extracted_data(data: dict) -> list[str]:
                         f"{field} value '{val}' is unparseable: {e}"
                     )
 
+    # Check appendix_c (if present)
+    appendix_c = data.get("appendix_c")
+    if appendix_c is not None:
+        c_depts = appendix_c.get("departments", [])
+        if not c_depts:
+            issues.append("ERROR: appendix_c.departments is empty")
+        elif len(c_depts) < EXPECTED_DEPARTMENTS_MIN:
+            issues.append(
+                f"WARNING: Appendix C has {len(c_depts)} departments, "
+                f"expected at least {EXPECTED_DEPARTMENTS_MIN}"
+            )
+
+        c_areas = appendix_c.get("area_totals", [])
+        if not c_areas:
+            issues.append("ERROR: appendix_c.area_totals is empty")
+        elif len(c_areas) != EXPECTED_STRATEGIC_AREAS:
+            issues.append(
+                f"WARNING: Appendix C has {len(c_areas)} area totals, "
+                f"expected {EXPECTED_STRATEGIC_AREAS}"
+            )
+
+        if appendix_c.get("grand_total") is None:
+            issues.append("ERROR: appendix_c.grand_total is missing")
+
+        # Check every appendix C dept has strategic_area and adopted_25_26
+        for i, dept in enumerate(c_depts):
+            if "strategic_area" not in dept:
+                issues.append(
+                    f"ERROR: Appendix C dept at index {i} "
+                    f"({dept.get('department', 'unknown')}) missing strategic_area"
+                )
+            if "adopted_25_26" not in dept:
+                issues.append(
+                    f"ERROR: Appendix C dept at index {i} "
+                    f"({dept.get('department', 'unknown')}) missing adopted_25_26"
+                )
+
+    # Check appendix_j (if present)
+    appendix_j = data.get("appendix_j")
+    if appendix_j is not None:
+        j_depts = appendix_j.get("departments", [])
+        if not j_depts:
+            issues.append("ERROR: appendix_j.departments is empty")
+
+        j_areas = appendix_j.get("area_totals", [])
+        if not j_areas:
+            issues.append("ERROR: appendix_j.area_totals is empty")
+
+        if appendix_j.get("grand_total") is None:
+            issues.append("ERROR: appendix_j.grand_total is missing")
+
+        for i, dept in enumerate(j_depts):
+            if "strategic_area" not in dept:
+                issues.append(
+                    f"ERROR: Appendix J dept at index {i} "
+                    f"({dept.get('department', 'unknown')}) missing strategic_area"
+                )
+            if "total_25_26" not in dept:
+                issues.append(
+                    f"ERROR: Appendix J dept at index {i} "
+                    f"({dept.get('department', 'unknown')}) missing total_25_26"
+                )
+
     return issues
 
 

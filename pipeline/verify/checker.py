@@ -34,10 +34,10 @@ def verify_budget_totals(
     """Compare database totals against published figures.
 
     Performs two-level verification:
-      Level 1: Grand total -- SUM(total_budget) FROM department_budgets
-               WHERE fiscal_year_id and is_actual=FALSE
-      Level 2: Each strategic area -- SUM(total_budget) for departments
-               in each strategic area
+      Level 1: Grand totals -- operating, capital, and total budget
+               Gross operating minus interagency = net operating
+      Level 2: Each strategic area -- operating subtotals using
+               department_budgets.strategic_area_id
 
     Args:
         conn: psycopg2 connection (open, with cursor support).
@@ -53,56 +53,147 @@ def verify_budget_totals(
     results = []
     cur = conn.cursor()
 
-    # Level 1: Grand total
+    # Level 1a: Gross operating (sum of all department operating budgets)
     cur.execute(
         """
-        SELECT COALESCE(SUM(total_budget), 0)
+        SELECT COALESCE(SUM(operating_budget), 0)
         FROM department_budgets
         WHERE fiscal_year_id = %s AND is_actual = FALSE
         """,
         (fiscal_year_id,),
     )
-    actual_total = cur.fetchone()[0]
-    expected_total = published["total_budget_cents"]
-    diff = abs(actual_total - expected_total)
+    actual_gross_operating = cur.fetchone()[0]
 
+    if "gross_operating_cents" in published:
+        expected_gross = published["gross_operating_cents"]
+        diff = abs(actual_gross_operating - expected_gross)
+        results.append(
+            VerificationResult(
+                level="Gross Operating",
+                expected_cents=expected_gross,
+                actual_cents=actual_gross_operating,
+                diff_cents=diff,
+                within_tolerance=diff <= TOLERANCE_CENTS,
+            )
+        )
+
+    # Level 1b: Net operating (gross minus interagency transfers)
+    interagency = published.get("interagency_transfers_cents", 0)
+    expected_net = published["operating_cents"]
+    actual_net = actual_gross_operating - interagency
+    diff = abs(actual_net - expected_net)
     results.append(
         VerificationResult(
-            level="Grand Total",
-            expected_cents=expected_total,
-            actual_cents=actual_total,
+            level="Net Operating",
+            expected_cents=expected_net,
+            actual_cents=actual_net,
             diff_cents=diff,
             within_tolerance=diff <= TOLERANCE_CENTS,
         )
     )
 
-    # Level 2: Each strategic area subtotal
-    for area in published.get("strategic_areas", []):
-        cur.execute(
-            """
-            SELECT COALESCE(SUM(db.total_budget), 0)
-            FROM department_budgets db
-            JOIN departments d ON d.id = db.department_id
-            JOIN strategic_areas sa ON sa.id = d.strategic_area_id
-            WHERE db.fiscal_year_id = %s
-              AND sa.slug = %s
-              AND db.is_actual = FALSE
-            """,
-            (fiscal_year_id, area["slug"]),
+    # Level 1c: Total capital
+    cur.execute(
+        """
+        SELECT COALESCE(SUM(capital_budget), 0)
+        FROM department_budgets
+        WHERE fiscal_year_id = %s AND is_actual = FALSE
+        """,
+        (fiscal_year_id,),
+    )
+    actual_capital = cur.fetchone()[0]
+    expected_capital = published["capital_cents"]
+    diff = abs(actual_capital - expected_capital)
+    results.append(
+        VerificationResult(
+            level="Total Capital",
+            expected_cents=expected_capital,
+            actual_cents=actual_capital,
+            diff_cents=diff,
+            within_tolerance=diff <= TOLERANCE_CENTS,
         )
-        actual = cur.fetchone()[0]
-        expected = area["total_budget_cents"]
-        diff = abs(actual - expected)
+    )
 
-        results.append(
-            VerificationResult(
-                level=area["name"],
-                expected_cents=expected,
-                actual_cents=actual,
-                diff_cents=diff,
-                within_tolerance=diff <= TOLERANCE_CENTS,
-            )
+    # Level 1d: Grand total (net operating + capital)
+    # DB stores gross operating per dept; published total is net (after
+    # subtracting interagency transfers)
+    actual_net_total = (actual_gross_operating - interagency) + actual_capital
+    expected_total = published["total_budget_cents"]
+    diff = abs(actual_net_total - expected_total)
+    results.append(
+        VerificationResult(
+            level="Grand Total (Net)",
+            expected_cents=expected_total,
+            actual_cents=actual_net_total,
+            diff_cents=diff,
+            within_tolerance=diff <= TOLERANCE_CENTS,
         )
+    )
+
+    # Level 2: Per strategic area operating subtotals
+    # Uses db.strategic_area_id (from appendix data) with fallback to
+    # d.strategic_area_id for BIB-only data
+    for area in published.get("strategic_areas", []):
+        if "operating_cents" in area:
+            # Appendix-aware: verify operating per area
+            cur.execute(
+                """
+                SELECT COALESCE(SUM(db.operating_budget), 0)
+                FROM department_budgets db
+                JOIN strategic_areas sa
+                    ON sa.id = COALESCE(db.strategic_area_id, (
+                        SELECT d.strategic_area_id
+                        FROM departments d WHERE d.id = db.department_id
+                    ))
+                WHERE db.fiscal_year_id = %s
+                  AND sa.slug = %s
+                  AND db.is_actual = FALSE
+                """,
+                (fiscal_year_id, area["slug"]),
+            )
+            actual = cur.fetchone()[0]
+            expected = area["operating_cents"]
+            diff = abs(actual - expected)
+
+            results.append(
+                VerificationResult(
+                    level=f"{area['name']} (Operating)",
+                    expected_cents=expected,
+                    actual_cents=actual,
+                    diff_cents=diff,
+                    within_tolerance=diff <= TOLERANCE_CENTS,
+                )
+            )
+        else:
+            # BIB-only: verify total per area
+            cur.execute(
+                """
+                SELECT COALESCE(SUM(db.total_budget), 0)
+                FROM department_budgets db
+                JOIN strategic_areas sa
+                    ON sa.id = COALESCE(db.strategic_area_id, (
+                        SELECT d.strategic_area_id
+                        FROM departments d WHERE d.id = db.department_id
+                    ))
+                WHERE db.fiscal_year_id = %s
+                  AND sa.slug = %s
+                  AND db.is_actual = FALSE
+                """,
+                (fiscal_year_id, area["slug"]),
+            )
+            actual = cur.fetchone()[0]
+            expected = area["total_budget_cents"]
+            diff = abs(actual - expected)
+
+            results.append(
+                VerificationResult(
+                    level=area["name"],
+                    expected_cents=expected,
+                    actual_cents=actual,
+                    diff_cents=diff,
+                    within_tolerance=diff <= TOLERANCE_CENTS,
+                )
+            )
 
     cur.close()
     return results

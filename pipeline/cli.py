@@ -16,7 +16,10 @@ import sys
 
 import click
 
-from pipeline.config import PDF_PATH, PDF_URL, CURRENT_FISCAL_YEAR
+from pipeline.config import (
+    PDF_PATH, PDF_URL, CURRENT_FISCAL_YEAR,
+    APPENDIX_C_PATH, APPENDIX_J_PATH,
+)
 
 
 @click.group()
@@ -40,7 +43,19 @@ def cli():
     default="extracted_data.json",
     help="Output JSON file for extracted data.",
 )
-def extract(pdf, output):
+@click.option(
+    "--appendix-c",
+    "appendix_c",
+    default=None,
+    help="Path to Appendix C PDF (operating expenditures). Defaults to data/appendix-c.pdf if exists.",
+)
+@click.option(
+    "--appendix-j",
+    "appendix_j",
+    default=None,
+    help="Path to Appendix J PDF (capital budget). Defaults to data/appendix-j.pdf if exists.",
+)
+def extract(pdf, output, appendix_c, appendix_j):
     """Extract budget data from the Budget in Brief PDF."""
     from pipeline.extract import extract_all, download_pdf
     from pipeline.transform.validate import (
@@ -61,8 +76,14 @@ def extract(pdf, output):
 
     click.echo(f"Extracting budget data from: {source}")
 
+    # Resolve appendix paths
+    ac_path = appendix_c or APPENDIX_C_PATH
+    aj_path = appendix_j or APPENDIX_J_PATH
+    ac_path = ac_path if os.path.exists(ac_path) else None
+    aj_path = aj_path if os.path.exists(aj_path) else None
+
     # Run extraction
-    data = extract_all(source)
+    data = extract_all(source, appendix_c_path=ac_path, appendix_j_path=aj_path)
 
     # Validate structural integrity
     click.echo("\nValidating extracted data...")
@@ -201,23 +222,13 @@ def verify(fiscal_year, published_totals):
 
 
 @cli.command(name="run-all")
-@click.option(
-    "--pdf",
-    default=None,
-    help="Path to Budget in Brief PDF or URL.",
-)
-@click.option(
-    "--output",
-    default="extracted_data.json",
-    help="Intermediate JSON file for extracted data.",
-)
-@click.option(
-    "--fiscal-year",
-    default=CURRENT_FISCAL_YEAR,
-    help="Fiscal year label.",
-)
+@click.option("--pdf", default=None, help="Path to Budget in Brief PDF or URL.")
+@click.option("--output", default="extracted_data.json", help="Intermediate JSON file for extracted data.")
+@click.option("--fiscal-year", default=CURRENT_FISCAL_YEAR, help="Fiscal year label.")
+@click.option("--appendix-c", "appendix_c", default=None, help="Path to Appendix C PDF.")
+@click.option("--appendix-j", "appendix_j", default=None, help="Path to Appendix J PDF.")
 @click.pass_context
-def run_all(ctx, pdf, output, fiscal_year):
+def run_all(ctx, pdf, output, fiscal_year, appendix_c, appendix_j):
     """Run the complete pipeline: extract -> load -> verify.
 
     Chains all three steps. Verification runs automatically as the final
@@ -229,7 +240,7 @@ def run_all(ctx, pdf, output, fiscal_year):
 
     # Step 1: Extract
     click.echo("\n--- Step 1: Extract ---")
-    ctx.invoke(extract, pdf=pdf, output=output)
+    ctx.invoke(extract, pdf=pdf, output=output, appendix_c=appendix_c, appendix_j=appendix_j)
 
     # Step 2: Load
     click.echo("\n--- Step 2: Load ---")

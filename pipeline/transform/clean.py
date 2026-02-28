@@ -119,6 +119,48 @@ def clean_employee_count(value) -> int | None:
         return None
 
 
+def thousands_to_cents(value) -> int:
+    """Convert a thousands-format string from appendices to integer cents.
+
+    Appendix C and J report values in thousands of dollars.
+    "889,675" means $889,675,000 → 88,967,500,000 cents.
+
+    Conversion: remove commas → int × 1000 × 100 = int × 100_000.
+
+    Handles: "889,675" | "0" | "(1,234)" | "" | "-" | None
+
+    Args:
+        value: Thousands string from appendix PDF, number, or None.
+
+    Returns:
+        Integer cents. Returns 0 for empty/null/dash values.
+    """
+    if value is None:
+        return 0
+
+    s = str(value).strip()
+
+    if s in ("", "-", "N/A", "n/a", "--", "—", "0"):
+        return 0
+
+    # Detect negative: parentheses or leading minus
+    negative = s.startswith("(") or s.startswith("-")
+
+    # Remove all non-numeric characters except decimal point
+    cleaned = re.sub(r"[^0-9.]", "", s)
+
+    if not cleaned:
+        return 0
+
+    # Convert: thousands value × 1000 × 100 = × 100_000
+    if "." in cleaned:
+        cents = round(float(cleaned) * 100_000)
+    else:
+        cents = int(cleaned) * 100_000
+
+    return -cents if negative else cents
+
+
 def clean_department_name(name: str) -> str:
     """Normalize a department name from PDF extraction.
 

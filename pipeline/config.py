@@ -32,5 +32,9 @@ PUBLISHED_TOTAL_EMPLOYEES = 31_996
 # Fiscal year label for current budget
 CURRENT_FISCAL_YEAR = "FY 2025-26"
 
+# Appendix PDF paths
+APPENDIX_C_PATH = os.getenv("APPENDIX_C_PATH", "data/appendix-c.pdf")
+APPENDIX_J_PATH = os.getenv("APPENDIX_J_PATH", "data/appendix-j.pdf")
+
 # Debug mode (enables saving debug images during extraction)
 DEBUG = os.getenv("PIPELINE_DEBUG", "false").lower() in ("true", "1", "yes")

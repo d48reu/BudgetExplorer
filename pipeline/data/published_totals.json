@@ -3,52 +3,63 @@
   "total_budget_cents": 1323323800000,
   "operating_cents": 857560600000,
   "capital_cents": 465763200000,
+  "gross_operating_cents": 950130800000,
+  "interagency_transfers_cents": 92570200000,
   "total_employees": 31996,
   "strategic_areas": [
     {
       "name": "Policy Formulation",
       "slug": "policy-formulation",
-      "total_budget_cents": 90741400000
+      "total_budget_cents": 90741400000,
+      "operating_cents": 10566200000
     },
     {
       "name": "Constitutional Offices",
       "slug": "constitutional-offices",
-      "total_budget_cents": 304519400000
+      "total_budget_cents": 304519400000,
+      "operating_cents": 129886800000
     },
     {
       "name": "Public Safety",
       "slug": "public-safety",
-      "total_budget_cents": 273261800000
+      "total_budget_cents": 273261800000,
+      "operating_cents": 160890600000
     },
     {
       "name": "Transportation & Mobility",
       "slug": "transportation-mobility",
-      "total_budget_cents": 186994500000
+      "total_budget_cents": 186994500000,
+      "operating_cents": 85497700000
     },
     {
       "name": "Recreation & Culture",
       "slug": "recreation-culture",
-      "total_budget_cents": 52998800000
+      "total_budget_cents": 52998800000,
+      "operating_cents": 64185500000
     },
     {
       "name": "Neighborhood & Infrastructure",
       "slug": "neighborhood-infrastructure",
-      "total_budget_cents": 233373900000
+      "total_budget_cents": 233373900000,
+      "operating_cents": 180803800000
     },
     {
       "name": "Health & Society",
       "slug": "health-society",
-      "total_budget_cents": 69750300000
+      "total_budget_cents": 69750300000,
+      "operating_cents": 88340500000
     },
     {
       "name": "Economic Development",
       "slug": "economic-development",
-      "total_budget_cents": 76741300000
+      "total_budget_cents": 76741300000,
+      "operating_cents": 117043900000
     },
     {
       "name": "General Government",
       "slug": "general-government",
-      "total_budget_cents": 34942400000
+      "total_budget_cents": 34942400000,
+      "operating_cents": 112915800000
     }
   ]
 }
