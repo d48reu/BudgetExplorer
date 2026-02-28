@@ -1,4 +1,7 @@
 import { Inter } from 'next/font/google'
+import { Navbar } from '@/components/layout/Navbar'
+import { MobileTabBar } from '@/components/layout/MobileTabBar'
+import { Footer } from '@/components/layout/Footer'
 import './globals.css'
 
 import type { Metadata } from 'next'
@@ -32,10 +35,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="font-body antialiased">
-        <main className="min-h-screen">
+      <body className="bg-surface text-text-primary font-body antialiased">
+        <Navbar />
+        <main className="pt-16 pb-16 md:pb-0 min-h-screen">
           {children}
         </main>
+        <Footer />
+        <MobileTabBar />
       </body>
     </html>
   )
