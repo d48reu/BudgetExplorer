@@ -37,7 +37,7 @@ Plans:
 - [x] 01-01-PLAN.md -- Project scaffolding, DB schema, and PDF extraction modules
 - [x] 01-02-PLAN.md -- Transform (BigInt cents conversion) and database seeding
 - [x] 01-03-PLAN.md -- Verification system and historical data framework
-- [ ] 01-04-PLAN.md -- Gap closure: generate and seed historical data for 4 prior fiscal years
+- [x] 01-04-PLAN.md -- Gap closure: generate and seed historical data for 4 prior fiscal years
 
 ### Phase 2: App Foundation + Design System
 **Goal**: A working Next.js application with the homepage shell, Miami-Dade design system, and data layer that serves as the scaffold for all subsequent phases
@@ -127,7 +127,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Pipeline | 3/4 | Gap closure | 2026-02-28 |
+| 1. Data Pipeline | 4/4 | Complete | 2026-02-28 |
 | 2. App Foundation + Design System | 0/3 | Not started | - |
 | 3. Budget Visualizations + Explorer | 0/3 | Not started | - |
 | 4. Department Pages + AI + Year-over-Year | 0/3 | Not started | - |

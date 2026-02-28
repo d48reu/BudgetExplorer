@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Residents can instantly see how their specific tax dollars fund county services -- from the total $13.2 billion down to individual departments -- without reading a single PDF.
-**Current focus:** Phase 1: Data Pipeline -- COMPLETE. Ready for Phase 2: App Foundation + Design System
+**Current focus:** Phase 1: Data Pipeline -- COMPLETE (including gap closure). Ready for Phase 2: App Foundation + Design System
 
 ## Current Position
 
 Phase: 1 of 6 (Data Pipeline) -- COMPLETE
-Plan: 3 of 3 in current phase -- ALL COMPLETE
-Status: Phase 1 complete. Ready to begin Phase 2.
-Last activity: 2026-02-28 -- 01-03-PLAN.md completed (verification system + historical framework + human-verified pipeline)
+Plan: 4 of 4 in current phase -- ALL COMPLETE
+Status: Phase 1 complete (including 01-04 gap closure plan). Ready to begin Phase 2.
+Last activity: 2026-02-28 -- 01-04-PLAN.md completed (historical CSV generation + seeding, 5-year coverage)
 
-Progress: [██████████░░░░░░░░░░░░░░░░░░░░] 17% (3/16 plans complete, Phase 1 done)
+Progress: [████████████░░░░░░░░░░░░░░░░░░] 24% (4/17 plans complete, Phase 1 done)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 7 min
-- Total execution time: 0.35 hours
+- Total plans completed: 4
+- Average duration: 6 min
+- Total execution time: 0.42 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-data-pipeline | 3 | 21 min | 7 min |
+| 01-data-pipeline | 4 | 25 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5min), 01-02 (4min), 01-03 (12min)
-- Trend: stable (01-03 longer due to checkpoint + deviations)
+- Last 5 plans: 01-01 (5min), 01-02 (4min), 01-03 (12min), 01-04 (4min)
+- Trend: stable (01-04 fast due to pre-built infrastructure)
 
 *Updated after each plan completion*
 
@@ -56,6 +56,10 @@ Recent decisions affecting current work:
 - [01-03]: Verification runs as both standalone CLI command and final step of run-all pipeline
 - [01-03]: Historical CSV uses whole dollars (loader converts to cents) for human-friendly data entry
 - [01-03]: Penny breakdown seeding supports both key naming conventions via normalization
+- [01-04]: Historical budget values converted from Appendix C thousands format to whole dollars (e.g., 7,591 -> 7591000)
+- [01-04]: FY 2021-22 through FY 2023-24 marked is_actual=true (actual spending); FY 2024-25 marked is_actual=false (adopted budget)
+- [01-04]: Transfers line item correctly skipped during seeding (interagency transfer, not a real department)
+- [01-04]: v_department_yoy view shows budget-type rows only for adopted-vs-adopted comparison
 
 ### Pending Todos
 
@@ -70,5 +74,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 01-03-PLAN.md -- Phase 1 (Data Pipeline) fully complete
+Stopped at: Completed 01-04-PLAN.md -- Phase 1 gap closure complete, 5-year historical data seeded
 Resume file: None
