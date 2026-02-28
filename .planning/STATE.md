@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Residents can instantly see how their specific tax dollars fund county services -- from the total $13.2 billion down to individual departments -- without reading a single PDF.
-**Current focus:** v1.0 milestone complete. Planning next milestone.
+**Current focus:** v1.1 Full Feature Set — shipping all 26 remaining requirements.
 
 ## Current Position
 
-Phase: v1.0 complete (Phases 1-2). Next milestone not yet defined.
-Plan: N/A — between milestones
-Status: v1.0 MVP Foundation shipped. Data pipeline + app foundation + design system + homepage delivered.
-Last activity: 2026-02-28 -- v1.0 milestone archived
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v1.1
+Last activity: 2026-02-28 — Milestone v1.1 started
 
-Progress: [██████████████████████████████] 100% v1.0 (8/8 plans)
+Progress: [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0% v1.1
 
 ## Performance Metrics
 

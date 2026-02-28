@@ -45,6 +45,16 @@ Residents can instantly see how their specific tax dollars fund county services 
 - Multi-language support — English only for v1
 - Custom alerts/notifications — no user accounts means no notifications
 
+## Current Milestone: v1.1 Full Feature Set
+
+**Goal:** Ship all 26 remaining requirements — interactive visualizations, explorer pages, department detail, tax calculator, AI descriptions, search, and SEO — completing the full original vision.
+
+**Target features:**
+- Interactive treemap/sunburst drill-down with revenue donut and penny visualization
+- Department detail pages with AI-generated descriptions and year-over-year comparison
+- "What Does My Tax Dollar Buy?" personalized tax calculator
+- Full-text search, SEO optimization, and launch readiness
+
 ## Context
 
 Shipped v1.0 MVP Foundation (2026-02-28) with ~5,800 LOC (4,800 Python pipeline + 1,000 TypeScript/CSS app).
