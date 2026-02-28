@@ -1,11 +1,13 @@
 """Click CLI entry point for the Miami-Dade Budget Explorer data pipeline.
 
 Commands:
-    extract   - Extract budget data from the Budget in Brief PDF
-    load      - Load extracted data into PostgreSQL
-    verify    - Verify database totals against published figures
-    run-all   - Run the complete pipeline: extract -> load -> verify
-    migrate   - Run database migrations only
+    extract              - Extract budget data from the Budget in Brief PDF
+    load                 - Load extracted data into PostgreSQL
+    verify               - Verify database totals against published figures
+    run-all              - Run the complete pipeline: extract -> load -> verify
+    migrate              - Run database migrations only
+    seed-historical      - Seed all historical data from a directory
+    seed-historical-file - Seed historical data from a single file
 """
 
 import json
@@ -253,6 +255,90 @@ def migrate():
     click.echo("Running database migrations...")
     run_migrations()
     click.echo("Migrations complete.")
+
+
+@cli.command(name="seed-historical")
+@click.option(
+    "--data-dir",
+    default=None,
+    help="Directory containing historical CSV/JSON files. "
+    "Defaults to pipeline/data/historical/.",
+)
+def seed_historical(data_dir):
+    """Seed all historical data from a directory.
+
+    Scans the data directory for files matching fy_*_departments.csv or
+    fy_*_departments.json, parses each one, and seeds the data into
+    the department_budgets table.
+    """
+    from pipeline.load.db import get_db_connection, run_migrations
+    from pipeline.load.seed_historical import seed_all_historical
+
+    if data_dir is None:
+        data_dir = os.path.join(
+            os.path.dirname(__file__), "data", "historical"
+        )
+
+    click.echo(f"Seeding historical data from: {data_dir}")
+
+    # Run migrations first
+    click.echo("Running database migrations...")
+    run_migrations()
+
+    with get_db_connection() as conn:
+        seed_all_historical(conn, data_dir)
+
+    click.echo("\nHistorical seeding complete.")
+
+
+@cli.command(name="seed-historical-file")
+@click.option(
+    "--file",
+    "file_path",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to a single CSV or JSON file with historical data.",
+)
+@click.option(
+    "--fiscal-year",
+    required=True,
+    help="Fiscal year label (e.g., 'FY 2021-22').",
+)
+def seed_historical_file(file_path, fiscal_year):
+    """Seed historical data from a single CSV or JSON file.
+
+    Parses the file and seeds department budget records for the specified
+    fiscal year. Idempotent: safe to re-run.
+    """
+    from pipeline.load.db import get_db_connection, run_migrations
+    from pipeline.load.seed_historical import seed_historical_year
+    from pipeline.transform.historical import (
+        parse_historical_csv,
+        parse_historical_json,
+        detect_format,
+    )
+
+    click.echo(f"Seeding from: {file_path}")
+    click.echo(f"Fiscal year: {fiscal_year}")
+
+    # Run migrations first
+    click.echo("Running database migrations...")
+    run_migrations()
+
+    # Parse the file
+    fmt = detect_format(file_path)
+    if fmt == "csv":
+        data = parse_historical_csv(file_path)
+    else:
+        data = parse_historical_json(file_path)
+
+    click.echo(f"Parsed {len(data)} records")
+
+    # Seed
+    with get_db_connection() as conn:
+        seed_historical_year(conn, fiscal_year, data)
+
+    click.echo("\nHistorical seeding complete.")
 
 
 def _fiscal_year_dates(label: str) -> tuple[str, str]:

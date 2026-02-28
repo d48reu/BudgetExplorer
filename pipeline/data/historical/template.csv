@@ -1,0 +1,4 @@
+fiscal_year,strategic_area,department_name,department_alias,operating_budget,capital_budget,employee_count,is_actual
+"FY 2021-22","Public Safety","Miami-Dade Police Department","Sheriff",2345678000,123456000,4500,false
+"FY 2021-22","Public Safety","Fire Rescue","",1234567000,98765000,3200,false
+"FY 2021-22","Constitutional Offices","Elections Department","Supervisor of Elections",45678000,1234000,150,false
