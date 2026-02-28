@@ -49,12 +49,13 @@ Plans:
   3. Miami-Dade brand colors, Inter font, and a clean modern design system are applied consistently
   4. All page elements use semantic HTML and budget jargon includes tooltip explanations
   5. Every page communicates a clear "What am I looking at?" moment -- a visitor understands the page purpose within 3 seconds
-**Plans:** 3 plans
+**Plans:** 4 plans
 
 Plans:
 - [x] 02-01-PLAN.md -- Next.js project scaffold, Prisma introspection, data access layer, BigInt serialization, formatting utilities
 - [x] 02-02-PLAN.md -- Design system (Tailwind v4 @theme tokens, UI components, layout shell, responsive navigation, footer)
 - [x] 02-03-PLAN.md -- Homepage shell (hero count-up, quick stats, CTAs) and glossary page
+- [ ] 02-04-PLAN.md -- Gap closure: wire BudgetTerm tooltip into QuickStats for UX-04
 
 ### Phase 3: Budget Visualizations + Explorer
 **Goal**: Residents can visually explore the full budget hierarchy from $13.2B total down to individual departments, plus see revenue sources and the penny breakdown
