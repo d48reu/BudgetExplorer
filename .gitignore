@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Debug output
+pipeline/data/debug/
+
+# OS
+.DS_Store
+*:Zone.Identifier
+Thumbs.db
+
+# Data files (downloaded PDFs - root level only)
+/data/
+*.pdf
+
+# Extracted data output
+extracted_data.json
