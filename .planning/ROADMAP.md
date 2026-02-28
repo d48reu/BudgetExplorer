@@ -13,7 +13,7 @@ This roadmap transforms the Miami-Dade Budget Explorer from concept to launched 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Pipeline** - Extract, verify, and seed all budget data from PDF into PostgreSQL
-- [ ] **Phase 2: App Foundation + Design System** - Next.js scaffold, Prisma data layer, homepage shell, Miami-Dade design system
+- [x] **Phase 2: App Foundation + Design System** - Next.js scaffold, Prisma data layer, homepage shell, Miami-Dade design system
 - [ ] **Phase 3: Budget Visualizations + Explorer** - Interactive treemap/sunburst drill-down, revenue donut, penny viz, explorer pages
 - [ ] **Phase 4: Department Pages + AI + Year-over-Year** - Department detail pages with AI descriptions and historical comparison
 - [ ] **Phase 5: Tax Calculator** - "What Does My Tax Dollar Buy?" personalized calculator
@@ -53,8 +53,8 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md -- Next.js project scaffold, Prisma introspection, data access layer, BigInt serialization, formatting utilities
-- [ ] 02-02-PLAN.md -- Design system (Tailwind v4 @theme tokens, UI components, layout shell, responsive navigation, footer)
-- [ ] 02-03-PLAN.md -- Homepage shell (hero count-up, quick stats, CTAs) and glossary page
+- [x] 02-02-PLAN.md -- Design system (Tailwind v4 @theme tokens, UI components, layout shell, responsive navigation, footer)
+- [x] 02-03-PLAN.md -- Homepage shell (hero count-up, quick stats, CTAs) and glossary page
 
 ### Phase 3: Budget Visualizations + Explorer
 **Goal**: Residents can visually explore the full budget hierarchy from $13.2B total down to individual departments, plus see revenue sources and the penny breakdown
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Pipeline | 4/4 | Complete | 2026-02-28 |
-| 2. App Foundation + Design System | 1/3 | In Progress | - |
+| 2. App Foundation + Design System | 3/3 | Complete | 2026-02-28 |
 | 3. Budget Visualizations + Explorer | 0/3 | Not started | - |
 | 4. Department Pages + AI + Year-over-Year | 0/3 | Not started | - |
 | 5. Tax Calculator | 0/2 | Not started | - |

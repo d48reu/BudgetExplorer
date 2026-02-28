@@ -27,7 +27,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Pages
 
-- [ ] **PAGE-01**: Homepage with hero ($13.2B animated), penny viz, treemap, revenue donut, CTA
+- [x] **PAGE-01**: Homepage with hero ($13.2B animated), penny viz, treemap, revenue donut, CTA
 - [ ] **PAGE-02**: Explorer page with full-screen treemap/sunburst and drill-down
 - [ ] **PAGE-03**: Strategic area detail pages showing departments within each area
 - [ ] **PAGE-04**: Department detail pages with budget overview, AI description, YoY comparison
@@ -63,7 +63,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **UX-04**: No jargon without tooltip/explanation
 - [x] **UX-05**: Clean, modern UI — "Mint.com for county budgets"
 - [x] **UX-06**: Semantic HTML throughout
-- [ ] **UX-07**: Every page has a clear "What am I looking at?" moment
+- [x] **UX-07**: Every page has a clear "What am I looking at?" moment
 
 ### SEO & Sharing
 
@@ -132,7 +132,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIZ-05 | Phase 4 | Pending |
 | VIZ-06 | Phase 4 | Pending |
 | VIZ-07 | Phase 3 | Pending |
-| PAGE-01 | Phase 2 | Pending |
+| PAGE-01 | Phase 2 | Complete |
 | PAGE-02 | Phase 3 | Pending |
 | PAGE-03 | Phase 3 | Pending |
 | PAGE-04 | Phase 4 | Pending |
@@ -156,7 +156,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UX-04 | Phase 2 | Complete |
 | UX-05 | Phase 2 | Complete |
 | UX-06 | Phase 2 | Complete |
-| UX-07 | Phase 2 | Pending |
+| UX-07 | Phase 2 | Complete |
 | SEO-01 | Phase 6 | Pending |
 | SEO-02 | Phase 6 | Pending |
 | SEO-03 | Phase 2 | Complete |
