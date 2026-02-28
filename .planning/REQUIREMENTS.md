@@ -57,11 +57,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Design & UX
 
-- [ ] **UX-01**: Mobile-first responsive design (works on 375px+ viewports)
-- [ ] **UX-02**: Miami-Dade brand colors (#0057B8 blue, #F7941D orange, #00A651 green, #EF4444 red)
+- [x] **UX-01**: Mobile-first responsive design (works on 375px+ viewports)
+- [x] **UX-02**: Miami-Dade brand colors (#0057B8 blue, #F7941D orange, #00A651 green, #EF4444 red)
 - [x] **UX-03**: Inter font for headings, system stack for body
-- [ ] **UX-04**: No jargon without tooltip/explanation
-- [ ] **UX-05**: Clean, modern UI — "Mint.com for county budgets"
+- [x] **UX-04**: No jargon without tooltip/explanation
+- [x] **UX-05**: Clean, modern UI — "Mint.com for county budgets"
 - [x] **UX-06**: Semantic HTML throughout
 - [ ] **UX-07**: Every page has a clear "What am I looking at?" moment
 
@@ -69,7 +69,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **SEO-01**: Unique title/description/OG image per page type
 - [ ] **SEO-02**: Department pages statically generated for SEO
-- [ ] **SEO-03**: Footer links to source PDF on every page
+- [x] **SEO-03**: Footer links to source PDF on every page
 
 ## v2 Requirements
 
@@ -150,16 +150,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRCH-01 | Phase 6 | Pending |
 | SRCH-02 | Phase 6 | Pending |
 | SRCH-03 | Phase 6 | Pending |
-| UX-01 | Phase 2 | Pending |
-| UX-02 | Phase 2 | Pending |
+| UX-01 | Phase 2 | Complete |
+| UX-02 | Phase 2 | Complete |
 | UX-03 | Phase 2 | Complete |
-| UX-04 | Phase 2 | Pending |
-| UX-05 | Phase 2 | Pending |
+| UX-04 | Phase 2 | Complete |
+| UX-05 | Phase 2 | Complete |
 | UX-06 | Phase 2 | Complete |
 | UX-07 | Phase 2 | Pending |
 | SEO-01 | Phase 6 | Pending |
 | SEO-02 | Phase 6 | Pending |
-| SEO-03 | Phase 2 | Pending |
+| SEO-03 | Phase 2 | Complete |
 
 **Coverage:**
 - v1 requirements: 40 total

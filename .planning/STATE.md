@@ -5,34 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Residents can instantly see how their specific tax dollars fund county services -- from the total $13.2 billion down to individual departments -- without reading a single PDF.
-**Current focus:** Phase 2: App Foundation + Design System -- Plan 01 complete. Continuing with Plan 02.
+**Current focus:** Phase 2: App Foundation + Design System -- Plan 02 complete. Continuing with Plan 03.
 
 ## Current Position
 
 Phase: 2 of 6 (App Foundation + Design System)
-Plan: 1 of 3 in current phase -- COMPLETE
-Status: Plan 02-01 complete (Next.js scaffold, Prisma data layer, formatting utilities). Ready for Plan 02-02 (Design System).
-Last activity: 2026-02-28 -- 02-01-PLAN.md completed (Next.js + Prisma + data layer + formatting)
+Plan: 2 of 3 in current phase -- COMPLETE
+Status: Plan 02-02 complete (Design system, UI components, layout shell). Ready for Plan 02-03 (Homepage).
+Last activity: 2026-02-28 -- 02-02-PLAN.md completed (design tokens + UI components + layout components)
 
-Progress: [█████████████░░░░░░░░░░░░░░░░░] 29% (5/17 plans complete, Phase 2 in progress)
+Progress: [███████████████░░░░░░░░░░░░░░░] 35% (6/17 plans complete, Phase 2 in progress)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 6 min
-- Total execution time: 0.54 hours
+- Total plans completed: 6
+- Average duration: 5 min
+- Total execution time: 0.57 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-data-pipeline | 4 | 25 min | 6 min |
-| 02-app-foundation-design-system | 1 | 7 min | 7 min |
+| 02-app-foundation-design-system | 2 | 9 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (4min), 01-03 (12min), 01-04 (4min), 02-01 (7min)
-- Trend: stable
+- Last 5 plans: 01-03 (12min), 01-04 (4min), 02-01 (7min), 02-02 (2min)
+- Trend: accelerating
 
 *Updated after each plan completion*
 
@@ -65,6 +65,10 @@ Recent decisions affecting current work:
 - [02-01]: Next.js 16.1.6 installed (latest stable) -- App Router and Server Components work identically to v15
 - [02-01]: Homepage uses force-dynamic for DB queries at request time (not static generation)
 - [02-01]: BigInt serialization handled centrally in data access layer (queries.ts)
+- [02-02]: Flat card design with borders only (no shadows) per user decision for Linear/Notion aesthetic
+- [02-02]: BudgetTerm tooltip uses z-tooltip (50) via FloatingPortal to render above z-nav (40) navigation
+- [02-02]: Nav icons use Unicode symbols to avoid icon library dependency
+- [02-02]: Navbar and MobileTabBar share NAV_ITEMS from centralized nav-config.ts
 
 ### Pending Todos
 
@@ -79,5 +83,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 02-01-PLAN.md -- Next.js scaffold, Prisma data layer, formatting utilities
+Stopped at: Completed 02-02-PLAN.md -- Design system, UI components, layout shell
 Resume file: None
