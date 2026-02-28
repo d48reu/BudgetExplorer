@@ -12,19 +12,28 @@ Residents can instantly see how their specific tax dollars fund county services 
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Budget data extracted from PDF and verified against $13.2B published total — v1.0
+- ✓ All monetary values stored as BigInt cents in PostgreSQL — v1.0
+- ✓ 9 strategic areas, 35 departments, FY 2025-26 figures seeded — v1.0
+- ✓ Historical data for 5 fiscal years seeded and queryable — v1.0
+- ✓ Millage rate data seeded for tax calculations — v1.0
+- ✓ Homepage with animated $13.2B hero, quick stats, CTAs — v1.0
+- ✓ Mobile-first responsive design (375px+) — v1.0
+- ✓ Miami-Dade brand colors and Inter font design system — v1.0
+- ✓ No jargon without tooltip explanation (BudgetTerm component) — v1.0
+- ✓ Semantic HTML throughout — v1.0
+- ✓ Footer links to source PDF on every page — v1.0
 
 ### Active
 
-- [ ] Interactive treemap/sunburst drill-down from total budget → strategic areas → departments → line items
+- [ ] Interactive treemap/sunburst drill-down from total budget → strategic areas → departments
 - [ ] "What Does My Tax Dollar Buy?" calculator — enter property value, get personalized tax breakdown
 - [ ] AI-generated plain-English descriptions of what each department does and what changed
-- [ ] Year-over-year budget comparison (5 fiscal years: FY 2021-22 through FY 2025-26)
+- [ ] Year-over-year budget comparison (5 fiscal years)
 - [ ] Full-text search across departments, descriptions, and line items
-- [ ] Revenue source visualization (donut/pie chart)
+- [ ] Revenue source visualization (donut chart)
 - [ ] "Penny visualization" — dollar broken into colored segments by strategic area
 - [ ] Department detail pages with expenditure category breakdowns
-- [ ] Responsive mobile-first design
 - [ ] SEO-optimized pages with Open Graph metadata
 
 ### Out of Scope
@@ -38,6 +47,8 @@ Residents can instantly see how their specific tax dollars fund county services 
 
 ## Context
 
+Shipped v1.0 MVP Foundation (2026-02-28) with ~5,800 LOC (4,800 Python pipeline + 1,000 TypeScript/CSS app).
+
 - **Company**: Abreu Data Works LLC
 - **Domain**: budgetexplorer.miamidade.tools (placeholder)
 - **Tagline**: "See where your money goes."
@@ -49,11 +60,13 @@ Residents can instantly see how their specific tax dollars fund county services 
 - **35 departments** mapped to strategic areas
 - **Historical data**: 5 fiscal years (FY 2021-22 through FY 2025-26) for year-over-year comparison
 - **Millage rates**: Full breakdown for tax calculator (total county: 9.5778 mills)
-- **Full SQL schema**: `budget-explorer-schema.sql` with tables for fiscal years, strategic areas, departments, revenue sources, expenditure categories, department budgets, millage rates, AI descriptions, capital programs, and disbursements
+- **Tech stack (actual)**: Next.js 16.1.6, TypeScript, Tailwind CSS v4, Prisma 7 (PrismaPg adapter), PostgreSQL, pnpm; Python pipeline with pdfplumber
+- **Current state**: Homepage live with hero counter, quick stats, glossary, responsive nav; data pipeline verified; Phases 3-6 not started
+- **Known tech debt**: format.ts bypassed by inline conversion, dead /explorer and /calculator links, unused getStrategicAreas() and Skeleton exports
 
 ## Constraints
 
-- **Tech stack**: Next.js 14+ (App Router), TypeScript, Tailwind CSS, Recharts + D3.js, PostgreSQL via Prisma ORM, pnpm
+- **Tech stack**: Next.js 16 (App Router), TypeScript, Tailwind CSS v4, Nivo/D3.js for viz, PostgreSQL via Prisma 7, pnpm
 - **Data pipeline**: Python scripts using pdfplumber for PDF extraction, Anthropic Claude API for descriptions
 - **Deployment**: Vercel (frontend) + Supabase or Railway (PostgreSQL)
 - **Design**: Miami-Dade blue (#0057B8), orange (#F7941D), green (#00A651), red (#EF4444), Inter font
@@ -65,14 +78,16 @@ Residents can instantly see how their specific tax dollars fund county services 
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Next.js App Router over Pages Router | Modern patterns, server components for DB queries, better SEO | — Pending |
-| BigInt cents for all monetary values | Avoid floating point errors in budget calculations | — Pending |
-| Recharts primary, D3.js fallback | Recharts simpler for most charts; D3 only if treemap/sunburst needs it | — Pending |
-| Prisma ORM over raw SQL | Type-safe queries, easier migrations, good DX | — Pending |
-| Python for data pipeline | pdfplumber is the best PDF extraction tool, separate from web app | — Pending |
-| Mobile-first responsive | Most residents access on phones | — Pending |
-| No authentication | Public transparency tool — zero friction to access | — Pending |
-| Static seed data first, DB later | Ship homepage fast, connect database in Phase 2 | — Pending |
+| Next.js App Router over Pages Router | Modern patterns, server components for DB queries, better SEO | ✓ Good — Server Components work well for DB-backed pages |
+| BigInt cents for all monetary values | Avoid floating point errors in budget calculations | ✓ Good — requires .toString() serialization but prevents rounding errors |
+| Nivo over Recharts for treemap/sunburst | Recharts lacks sunburst support; Nivo recommended during research | — Pending (Phase 3) |
+| Prisma 7 with PrismaPg adapter | Type-safe queries, direct pg connection without Prisma engine binary | ✓ Good — introspection works, BigInt maps correctly |
+| Python for data pipeline | pdfplumber is the best PDF extraction tool, separate from web app | ✓ Good — clean separation of concerns |
+| Mobile-first responsive | Most residents access on phones | ✓ Good — Tailwind v4 responsive works well |
+| No authentication | Public transparency tool — zero friction to access | ✓ Good |
+| Flat card design (no shadows) | Linear/Notion aesthetic per user preference | ✓ Good — clean, modern look |
+| Tailwind v4 @theme tokens | Native CSS custom properties, no tailwind.config.js needed | ✓ Good — simpler config |
+| Unicode nav icons over icon library | Avoid dependency for simple navigation icons | ✓ Good — zero bundle impact |
 
 ---
-*Last updated: 2026-02-28 after initialization*
+*Last updated: 2026-02-28 after v1.0 milestone*
