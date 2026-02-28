@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Residents can instantly see how their specific tax dollars fund county services -- from the total $13.2 billion down to individual departments -- without reading a single PDF.
-**Current focus:** Phase 2 complete. Ready for Phase 3: Budget Visualizations + Explorer.
+**Current focus:** Phase 2 complete (all 4 plans including gap closure). Ready for Phase 3: Budget Visualizations + Explorer.
 
 ## Current Position
 
 Phase: 2 of 6 (App Foundation + Design System) -- COMPLETE
-Plan: 3 of 3 in current phase -- COMPLETE
-Status: Phase 2 complete. All 3 plans done (scaffold, design system, homepage+glossary). Ready for Phase 3.
-Last activity: 2026-02-28 -- 02-03-PLAN.md completed (homepage shell + glossary page)
+Plan: 4 of 4 in current phase -- COMPLETE
+Status: Phase 2 complete. All 4 plans done (scaffold, design system, homepage+glossary, BudgetTerm wiring). Ready for Phase 3.
+Last activity: 2026-02-28 -- 02-04-PLAN.md completed (BudgetTerm tooltip wired into QuickStats)
 
-Progress: [██████████████████░░░░░░░░░░░░] 41% (7/17 plans complete, Phase 2 complete)
+Progress: [███████████████████░░░░░░░░░░░] 44% (8/18 plans complete, Phase 2 complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 6 min
-- Total execution time: 0.68 hours
+- Total plans completed: 8
+- Average duration: 5 min
+- Total execution time: 0.70 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-data-pipeline | 4 | 25 min | 6 min |
-| 02-app-foundation-design-system | 3 | 17 min | 6 min |
+| 02-app-foundation-design-system | 4 | 18 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04 (4min), 02-01 (7min), 02-02 (2min), 02-03 (8min)
+- Last 5 plans: 02-01 (7min), 02-02 (2min), 02-03 (8min), 02-04 (1min)
 - Trend: steady
 
 *Updated after each plan completion*
@@ -71,6 +71,8 @@ Recent decisions affecting current work:
 - [02-02]: Navbar and MobileTabBar share NAV_ITEMS from centralized nav-config.ts
 - [02-03]: Homepage uses Server Component for data fetching with client HeroBanner for count-up animation
 - [02-03]: Glossary page is static content (no 'use client') for optimal SEO indexing
+- [02-04]: Added 'use client' to QuickStats since BudgetTerm requires client-side Floating UI hooks; safe because QuickStats only receives data via props
+- [02-04]: Used key field on stat objects instead of label for React keys since labels can now be ReactNode (JSX elements)
 
 ### Pending Todos
 
@@ -85,5 +87,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 02-03-PLAN.md -- Homepage shell + glossary page. Phase 2 complete.
+Stopped at: Completed 02-04-PLAN.md -- BudgetTerm tooltip wired into QuickStats. Phase 2 fully complete (including gap closure plan).
 Resume file: None
