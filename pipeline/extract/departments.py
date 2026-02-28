@@ -1,227 +1,230 @@
-"""Extract department budget data from the Budget in Brief PDF.
+"""Extract department data from the Budget in Brief PDF.
 
-Departments are grouped under strategic areas. Each department has
-operating, capital, total budgets and employee counts. The department
-tables may span multiple pages with different formatting per section.
+The Budget in Brief page 4 (index 4) lists departments under each
+strategic area in a two-column layout. Left column (x < 300) and
+right column (x >= 300) are processed independently.
 
-Page numbers and bounding boxes must be determined by running
-inspect_pdf() first and examining the debug images.
+Individual department budgets are NOT in this PDF — only the
+department-to-strategic-area groupings.
 """
+
+import re
 
 import pdfplumber
 
-from pipeline.config import DEBUG
 
-# TODO: Update after running inspect_pdf() on the actual PDF.
-# Map of strategic area name to page ranges and bboxes.
-DEPARTMENT_PAGES = []  # List of 0-indexed page numbers containing department tables
-DEPARTMENT_BBOX = None  # (x0, top, x1, bottom) in points, or None for full page
+# Page 4 (0-indexed) has the "Your Dollar at Work" section
+DEPARTMENTS_PAGE = 4
 
-# Default table settings for department tables.
-# Different strategic area sections may need different settings.
-DEPARTMENT_TABLE_SETTINGS = {
-    "vertical_strategy": "lines",
-    "horizontal_strategy": "lines",
-    "snap_tolerance": 3,
-    "intersection_tolerance": 3,
+# Column boundary (in PDF points)
+COLUMN_SPLIT_X = 300
+
+# Y threshold: department listings start below the penny graphic
+DEPT_LISTING_START_Y = 330
+
+# Canonical area names as they appear in ALL CAPS on page 4
+AREA_HEADERS = {
+    "PUBLIC SAFETY": "Public Safety",
+    "GENERAL GOVERNMENT": "General Government",
+    "NEIGHBORHOOD AND INFRASTRUCTURE": "Neighborhood & Infrastructure",
+    "RECREATION AND CULTURE": "Recreation & Culture",
+    "TRANSPORTATION AND MOBILITY": "Transportation & Mobility",
+    "HEALTH AND SOCIETY": "Health & Society",
+    "ECONOMIC DEVELOPMENT": "Economic Development",
+    "CONSTITUTIONAL OFFICES": "Constitutional Offices",
+    "POLICY FORMULATION": "Policy Formulation",
 }
-
-# Per-section overrides if needed (key = strategic area name)
-SECTION_TABLE_SETTINGS = {}
 
 
 def extract_departments(pdf_path: str) -> list[dict]:
-    """Extract department budget data from the Budget in Brief PDF.
+    """Extract department names grouped by strategic area.
 
-    Each returned dict contains:
-        - strategic_area: Name of the parent strategic area
-        - name: Department name
-        - operating_budget: Raw dollar string from PDF
-        - capital_budget: Raw dollar string from PDF
-        - total_budget: Raw dollar string from PDF
-        - employee_count: Raw string from PDF
-
-    Returns raw string values. The transform module handles conversion
-    to cents.
+    Separates the two-column layout on page 4, then parses each column
+    for strategic area headers followed by "Departments:" listings.
 
     Args:
         pdf_path: Path to the Budget in Brief PDF.
 
     Returns:
-        List of dicts with department budget data.
+        List of dicts with {strategic_area, name} for each department.
     """
     results = []
 
     with pdfplumber.open(pdf_path) as pdf:
-        pages_to_search = (
-            [pdf.pages[p] for p in DEPARTMENT_PAGES]
-            if DEPARTMENT_PAGES
-            else pdf.pages
-        )
+        if DEPARTMENTS_PAGE >= len(pdf.pages):
+            return results
 
-        current_strategic_area = None
+        page = pdf.pages[DEPARTMENTS_PAGE]
+        width = page.width
+        height = page.height
 
-        for page in pages_to_search:
-            target = page.crop(DEPARTMENT_BBOX) if DEPARTMENT_BBOX else page
+        # Crop into left and right columns below the penny graphic
+        left_col = page.crop((0, DEPT_LISTING_START_Y, COLUMN_SPLIT_X, height))
+        right_col = page.crop((COLUMN_SPLIT_X, DEPT_LISTING_START_Y, width, height))
 
-            # Debug: save table detection image
-            if DEBUG:
-                try:
-                    im = target.to_image(resolution=150)
-                    im.debug_tablefinder(DEPARTMENT_TABLE_SETTINGS)
-                    im.save(f"debug_departments_p{page.page_number}.png")
-                except Exception:
-                    pass
+        left_text = left_col.extract_text(layout=False) or ""
+        right_text = right_col.extract_text(layout=False) or ""
 
-            # Try text extraction to find strategic area headers
-            text = target.extract_text(layout=True)
-            if text:
-                current_strategic_area = _detect_strategic_area_header(
-                    text, current_strategic_area
-                )
-
-            # Extract tables from this page
-            tables = target.extract_tables(DEPARTMENT_TABLE_SETTINGS)
-
-            for table in tables:
-                parsed = _parse_department_table(table, current_strategic_area)
-                if parsed:
-                    results.extend(parsed)
+        results.extend(_parse_column(left_text))
+        results.extend(_parse_column(right_text))
 
     return results
 
 
-# Known strategic area names for header detection
-KNOWN_STRATEGIC_AREAS = [
-    "Policy Formulation",
-    "Constitutional Offices",
-    "Public Safety",
-    "Transportation & Mobility",
-    "Transportation and Mobility",
-    "Recreation & Culture",
-    "Recreation and Culture",
-    "Neighborhood & Infrastructure",
-    "Neighborhood and Infrastructure",
-    "Health & Society",
-    "Health and Society",
-    "Economic Development",
-    "General Government",
-]
+def _parse_column(text: str) -> list[dict]:
+    """Parse a single column of text for area headers and department lists.
 
-# Known department names for matching
-KNOWN_DEPARTMENTS = {
-    "Office of the Mayor",
-    "Board of County Commissioners",
-    "County Attorney's Office",
-    "County Attorney\u2019s Office",
-    "Sheriff",
-    "Supervisor of Elections",
-    "Tax Collector",
-    "Property Appraiser",
-    "Clerk of the Court and Comptroller",
-    "Corrections and Rehabilitation",
-    "Fire Rescue",
-    "Emergency Management",
-    "Judicial Administration",
-    "Medical Examiner",
-    "Emergency Communication",
-    "Transportation and Public Works",
-    "Cultural Affairs",
-    "Library",
-    "Parks, Recreation and Open Spaces",
-    "Animal Services",
-    "Environmental Resources Management",
-    "Solid Waste Management",
-    "Water and Sewer",
-    "Community Services Department",
-    "Homeless Trust",
-    "Housing and Community Development",
-    "Aviation",
-    "Seaport",
-    "Miami-Dade Economic Advocacy Trust",
-    "Regulatory and Economic Resources",
-    "Commission on Ethics and Public Trust",
-    "Communications",
-    "Information and Technology",
-    "Inspector General",
-    "Internal Compliance",
-    "Management and Budget",
-    "People and Internal Operations",
-    "Strategic Procurement",
-}
+    Expected pattern:
+        AREA NAME [penny value]
+        [description text]
+        Departments: Dept A, Dept B, Dept C
 
-
-def _detect_strategic_area_header(
-    text: str, current_area: str | None
-) -> str | None:
-    """Detect if the page text contains a strategic area header.
-
-    Scans the first several lines of extracted text for known
-    strategic area names.
+    For Constitutional Offices, uses "Offices:" instead.
 
     Args:
-        text: Extracted page text.
-        current_area: Currently active strategic area name.
+        text: Extracted text from one column.
 
     Returns:
-        Updated strategic area name, or current_area if no header found.
+        List of dicts with {strategic_area, name}.
     """
-    lines = text.split("\n")[:15]  # Check first 15 lines
-
-    for line in lines:
-        stripped = line.strip()
-        for area in KNOWN_STRATEGIC_AREAS:
-            if area.lower() in stripped.lower():
-                return area
-
-    return current_area
-
-
-def _parse_department_table(
-    table: list[list[str]], strategic_area: str | None
-) -> list[dict]:
-    """Parse a raw pdfplumber table into department dicts.
-
-    Args:
-        table: Raw table from pdfplumber extract_tables().
-        strategic_area: Parent strategic area name.
-
-    Returns:
-        List of parsed dicts, or empty list if table is not recognized.
-    """
-    if not table or len(table) < 2:
-        return []
-
     results = []
+    current_area = None
 
-    for row in table:
-        if not row or not row[0]:
-            continue
+    # Split into sections by area headers
+    # Find all area header positions
+    lines = text.split("\n")
+    sections = []
+    current_section_start = 0
 
-        cell_text = str(row[0]).strip()
+    for i, line in enumerate(lines):
+        stripped = line.strip().upper()
+        # Remove penny values like "19¢" from the line for matching
+        stripped_clean = re.sub(r"\d+¢", "", stripped).strip()
+        # Remove stray leading characters from column bleed (1-2 chars before area name)
+        stripped_clean = re.sub(r"^[a-z.,\s]{1,3}\s+", "", stripped_clean, flags=re.IGNORECASE).strip()
 
-        # Check if this row contains a department name
-        if cell_text in KNOWN_DEPARTMENTS:
-            dept = {
-                "strategic_area": strategic_area or "Unknown",
-                "name": cell_text,
-            }
-
-            if len(row) >= 2 and row[1]:
-                dept["operating_budget"] = str(row[1]).strip()
-            if len(row) >= 3 and row[2]:
-                dept["capital_budget"] = str(row[2]).strip()
-            if len(row) >= 4 and row[3]:
-                dept["total_budget"] = str(row[3]).strip()
-            if len(row) >= 5 and row[4]:
-                dept["employee_count"] = str(row[4]).strip()
-
-            results.append(dept)
-
-        # Also check if the row updates the strategic area context
-        for area in KNOWN_STRATEGIC_AREAS:
-            if area.lower() in cell_text.lower() and cell_text not in KNOWN_DEPARTMENTS:
-                strategic_area = area
+        for pdf_name in AREA_HEADERS:
+            if pdf_name == stripped_clean or pdf_name in stripped_clean:
+                if current_area is not None:
+                    section_text = "\n".join(lines[current_section_start:i])
+                    sections.append((current_area, section_text))
+                current_area = AREA_HEADERS[pdf_name]
+                current_section_start = i
                 break
 
+    # Don't forget the last section
+    if current_area is not None:
+        section_text = "\n".join(lines[current_section_start:])
+        sections.append((current_area, section_text))
+
+    # Extract departments from each section
+    for area_name, section_text in sections:
+        # Find "Departments:" or "Offices:" and capture until end of section
+        dept_match = re.search(
+            r"(?:Departments|Offices):\s*(.+)",
+            section_text,
+            re.IGNORECASE | re.DOTALL,
+        )
+        if dept_match:
+            dept_text = dept_match.group(1).strip()
+            dept_names = _split_department_names(dept_text)
+            for name in dept_names:
+                # Clean stray single characters and punctuation from column bleed
+                name = re.sub(r"^[a-z.,\s]{1,2}\s", "", name.strip()).strip()
+                name = re.sub(r"\s+[a-z.,]{1,2}$", "", name).strip()
+                if name and len(name) > 3 and not _is_description_text(name):
+                    results.append({
+                        "strategic_area": area_name,
+                        "name": name,
+                    })
+
     return results
+
+
+    # Known multi-word department names that contain commas
+KNOWN_COMMA_DEPTS = [
+    "Parks, Recreation and Open Spaces",
+]
+
+
+def _split_department_names(text: str) -> list[str]:
+    """Split a comma-separated department list.
+
+    Handles: "Dept A, Dept B, and Dept C"
+    Also handles multi-line wrapping and "and" conjunctions.
+    Preserves known department names that contain commas.
+
+    Args:
+        text: Raw department list text.
+
+    Returns:
+        List of individual department names.
+    """
+    # Clean up whitespace and newlines
+    text = re.sub(r"\s+", " ", text).strip()
+
+    # Remove trailing period, footnote markers, page numbers
+    text = re.sub(r"[.\*+]+$", "", text).strip()
+    text = re.sub(r"\d+$", "", text).strip()  # trailing page number
+    # Remove "NOTE:" and everything after
+    text = re.sub(r"NOTE:.*$", "", text, flags=re.IGNORECASE).strip()
+
+    # Replace known comma-containing department names with placeholders
+    placeholders = {}
+    for i, dept_name in enumerate(KNOWN_COMMA_DEPTS):
+        placeholder = f"__DEPT_PLACEHOLDER_{i}__"
+        if dept_name.lower() in text.lower():
+            # Find and replace case-insensitively
+            pattern = re.compile(re.escape(dept_name), re.IGNORECASE)
+            text = pattern.sub(placeholder, text)
+            placeholders[placeholder] = dept_name
+
+    # Split on comma
+    parts = [p.strip() for p in text.split(",")]
+
+    # Handle "and" prefix in parts
+    final_parts = []
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+        # Handle "and the Clerk of the Court and Comptroller" as one unit
+        and_match = re.match(r"^and\s+(?:the\s+)?(.+)", part, re.IGNORECASE)
+        if and_match:
+            final_parts.append(and_match.group(1).strip())
+        else:
+            final_parts.append(part)
+
+    # Restore placeholders and fix known artifacts
+    cleaned = []
+    for name in final_parts:
+        # Restore placeholder department names
+        for placeholder, real_name in placeholders.items():
+            if placeholder in name:
+                name = name.replace(placeholder, real_name)
+
+        # Fix truncated names from column crop
+        name = re.sub(r"\s*\.\s+", " ", name)  # "Clerk of the . Court" → "Clerk of the Court"
+        # Fix known truncations
+        if name == "Judicia Administration":
+            name = "Judicial Administration"
+        cleaned.append(name.strip())
+
+    return cleaned
+
+
+def _is_description_text(text: str) -> bool:
+    """Check if text looks like description prose rather than a department name.
+
+    Department names are proper nouns (short, capitalized).
+    Description text is longer sentences with lowercase words.
+    """
+    # If it contains common description phrases, skip it
+    description_markers = [
+        "to effectuate", "amendment", "mandates", "approved by",
+        "precipitated", "established", "ensuring", "accountable",
+        "voters", "elected positions", "prevents", "ordinances",
+        "charter", "changed to", "directly",
+    ]
+    text_lower = text.lower()
+    return any(marker in text_lower for marker in description_markers)

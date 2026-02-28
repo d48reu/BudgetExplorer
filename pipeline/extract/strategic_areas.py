@@ -1,137 +1,133 @@
 """Extract strategic area budget data from the Budget in Brief PDF.
 
-Strategic areas are the 9 top-level budget categories (Public Safety,
-Transportation & Mobility, etc.) with operating, capital, total budgets
-and employee counts.
+The Budget in Brief is an infographic-style PDF. Strategic area capital
+budgets appear on Page 6 (index 6) as text labels around a pie chart.
 
-Page numbers and bounding boxes must be determined by running
-inspect_pdf() first and examining the debug images.
+Uses word-level positioning to match area names to their dollar amounts.
 """
+
+import re
 
 import pdfplumber
 
-from pipeline.config import DEBUG
 
-# TODO: Update after running inspect_pdf() on the actual PDF.
-# These are placeholder values that must be tuned.
-STRATEGIC_AREA_PAGES = []  # List of 0-indexed page numbers
-STRATEGIC_AREA_BBOX = None  # (x0, top, x1, bottom) in points, or None for full page
+# Page 6 (0-indexed) has capital breakdown by strategic area
+CAPITAL_PAGE = 6
 
-# Table settings tuned for the strategic area summary table.
-# The strategic area table typically has bordered cells.
-STRATEGIC_AREA_TABLE_SETTINGS = {
-    "vertical_strategy": "lines",
-    "horizontal_strategy": "lines",
-    "snap_tolerance": 3,
-    "intersection_tolerance": 3,
+# Area name first-words that anchor the search, mapped to canonical names
+# For multi-word areas, we match the first distinctive word then verify context
+AREA_FIRST_WORDS = {
+    "GENERAL": ("GOVERNMENT", "General Government"),
+    "PUBLIC": ("SAFETY", "Public Safety"),
+    "CONSTITUTIONAL": ("OFFICES", "Constitutional Offices"),
+    "ECONOMIC": ("DEVELOPMENT", "Economic Development"),
+    "TRANSPORTATION": (None, "Transportation & Mobility"),  # "&" or "AND" follows
+    "HEALTH": (None, "Health & Society"),  # "AND" follows
+    "RECREATION": (None, "Recreation & Culture"),  # "AND" follows
+    "NEIGHBORHOOD": (None, "Neighborhood & Infrastructure"),  # "AND" follows
+    "POLICY": ("FORMULATION", "Policy Formulation"),
 }
 
 
 def extract_strategic_areas(pdf_path: str) -> list[dict]:
-    """Extract strategic area budget data from the Budget in Brief PDF.
-
-    Each returned dict contains:
-        - name: Strategic area name (e.g., 'Public Safety')
-        - operating_budget: Raw dollar string from PDF
-        - capital_budget: Raw dollar string from PDF
-        - total_budget: Raw dollar string from PDF
-        - employee_count: Raw string from PDF
-
-    Returns raw string values. The transform module handles conversion
-    to cents.
+    """Extract strategic area capital budget data from the Budget in Brief PDF.
 
     Args:
         pdf_path: Path to the Budget in Brief PDF.
 
     Returns:
-        List of dicts with strategic area budget data.
+        List of dicts with {name, capital_budget} for each strategic area.
     """
-    results = []
-
     with pdfplumber.open(pdf_path) as pdf:
-        pages_to_search = (
-            [pdf.pages[p] for p in STRATEGIC_AREA_PAGES]
-            if STRATEGIC_AREA_PAGES
-            else pdf.pages
-        )
+        if CAPITAL_PAGE >= len(pdf.pages):
+            return []
 
-        for page in pages_to_search:
-            # Crop to the specific table region if bbox is defined
-            target = page.crop(STRATEGIC_AREA_BBOX) if STRATEGIC_AREA_BBOX else page
+        page = pdf.pages[CAPITAL_PAGE]
+        words = page.extract_words(keep_blank_chars=False, x_tolerance=3, y_tolerance=3)
 
-            # Debug: save table detection image
-            if DEBUG:
-                try:
-                    im = target.to_image(resolution=150)
-                    im.debug_tablefinder(STRATEGIC_AREA_TABLE_SETTINGS)
-                    im.save(f"debug_strategic_areas_p{page.page_number}.png")
-                except Exception:
-                    pass
+        # Find area anchor positions
+        area_positions = _find_area_positions(words)
 
-            tables = target.extract_tables(STRATEGIC_AREA_TABLE_SETTINGS)
+        # Find all dollar amounts (excluding the total)
+        dollar_positions = []
+        for w in words:
+            if w["text"].startswith("$") and "," in w["text"] and w["top"] < 700:
+                # Skip amounts in the intro text (y < 200)
+                if w["top"] > 200:
+                    dollar_positions.append((w["text"], w["x0"], w["top"]))
 
-            for table in tables:
-                parsed = _parse_strategic_area_table(table)
-                if parsed:
-                    results.extend(parsed)
-
-    return results
+        # Match each area to nearest dollar amount below it
+        return _match_areas(area_positions, dollar_positions)
 
 
-def _parse_strategic_area_table(table: list[list[str]]) -> list[dict]:
-    """Parse a raw pdfplumber table into strategic area dicts.
+def _find_area_positions(words: list[dict]) -> list[tuple]:
+    """Find strategic area name positions by their anchor words.
 
-    Attempts to identify column headers and extract data rows.
-    Skips header rows and total/summary rows.
-
-    Args:
-        table: Raw table from pdfplumber extract_tables().
-
-    Returns:
-        List of parsed dicts, or empty list if table is not recognized.
+    Returns list of (canonical_name, x, y) tuples.
     """
-    if not table or len(table) < 2:
-        return []
+    positions = []
+    used = set()
 
-    results = []
-
-    # Known strategic area names for matching
-    known_areas = {
-        "Policy Formulation",
-        "Constitutional Offices",
-        "Public Safety",
-        "Transportation & Mobility",
-        "Transportation and Mobility",
-        "Recreation & Culture",
-        "Recreation and Culture",
-        "Neighborhood & Infrastructure",
-        "Neighborhood and Infrastructure",
-        "Health & Society",
-        "Health and Society",
-        "Economic Development",
-        "General Government",
-    }
-
-    for row in table:
-        if not row or not row[0]:
+    for i, w in enumerate(words):
+        if i in used or w["top"] < 200:  # Skip intro text
             continue
 
-        cell_text = str(row[0]).strip()
+        text = w["text"].upper()
+        if text == "TOTAL":  # Skip "TOTAL ADOPTED CAPITAL PLAN"
+            continue
 
-        # Check if this row contains a strategic area name
-        if cell_text in known_areas:
-            # Try to extract columns: name, operating, capital, total, employees
-            area = {"name": cell_text}
+        if text in AREA_FIRST_WORDS:
+            second_word, canonical = AREA_FIRST_WORDS[text]
 
-            if len(row) >= 2 and row[1]:
-                area["operating_budget"] = str(row[1]).strip()
-            if len(row) >= 3 and row[2]:
-                area["capital_budget"] = str(row[2]).strip()
-            if len(row) >= 4 and row[3]:
-                area["total_budget"] = str(row[3]).strip()
-            if len(row) >= 5 and row[4]:
-                area["employee_count"] = str(row[4]).strip()
+            if second_word:
+                # Verify the second word exists nearby
+                found = False
+                for j in range(max(0, i - 3), min(len(words), i + 5)):
+                    if j != i and words[j]["text"].upper() == second_word:
+                        # Check proximity
+                        if abs(words[j]["x0"] - w["x0"]) < 80 and abs(words[j]["top"] - w["top"]) < 25:
+                            found = True
+                            used.add(j)
+                            break
+                if not found:
+                    continue
 
-            results.append(area)
+            positions.append((canonical, w["x0"], w["top"]))
+            used.add(i)
+
+    return positions
+
+
+def _match_areas(area_positions: list[tuple], dollar_positions: list[tuple]) -> list[dict]:
+    """Match each area to its nearest dollar amount below and at similar X."""
+    results = []
+    used_dollars = set()
+
+    for area_name, ax, ay in area_positions:
+        best_amount = None
+        best_dist = float("inf")
+        best_idx = -1
+
+        for i, (amount, dx, dy) in enumerate(dollar_positions):
+            if i in used_dollars:
+                continue
+
+            x_diff = abs(dx - ax)
+            y_diff = dy - ay  # positive = below
+
+            # Must be below the area name, within 150pt vertically and 50pt horizontally
+            if 5 < y_diff < 150 and x_diff < 50:
+                dist = y_diff + x_diff * 0.3
+                if dist < best_dist:
+                    best_dist = dist
+                    best_amount = amount
+                    best_idx = i
+
+        if best_amount:
+            used_dollars.add(best_idx)
+        results.append({
+            "name": area_name,
+            "capital_budget": best_amount or "$0",
+        })
 
     return results

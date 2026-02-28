@@ -1,53 +1,45 @@
 """Extract millage rate data from the Budget in Brief PDF.
 
-The millage section shows property tax rates by taxing authority.
-County authorities (Countywide Operating, UMSA, Fire, Library, etc.)
-are distinguished from non-county authorities (School Board,
-Children's Trust, etc.).
-
-Page numbers and bounding boxes must be determined by running
-inspect_pdf() first and examining the debug images.
+Page 5 (index 5) has a millage table showing property tax rates by
+taxing authority for a $200,000 home example. The table is the third
+lines-based table on the page.
 """
 
 import pdfplumber
 
-from pipeline.config import DEBUG
 
-# TODO: Update after running inspect_pdf() on the actual PDF.
-MILLAGE_PAGES = []  # 0-indexed page numbers
-MILLAGE_BBOX = None  # (x0, top, x1, bottom) or None
+# Page 5 (0-indexed), table index 2 (third table on page)
+MILLAGE_PAGE = 5
+MILLAGE_TABLE_INDEX = 2
 
 MILLAGE_TABLE_SETTINGS = {
     "vertical_strategy": "lines",
     "horizontal_strategy": "lines",
-    "snap_tolerance": 3,
-    "intersection_tolerance": 3,
 }
 
-# Non-county taxing authorities (their millage is not part of the
-# county budget, but is included in residents' total tax bills)
-NON_COUNTY_AUTHORITIES = {
-    "School Board",
-    "Children's Trust",
-    "Children\u2019s Trust",
-    "Everglades Project",
-    "South Florida Water Management District",
-    "Florida Inland Navigation District",
-    "SFWMD",
-    "FIND",
-}
+# Non-county taxing authorities
+NON_COUNTY_KEYWORDS = [
+    "school board",
+    "children's trust",
+    "children\u2019s trust",
+    "everglades",
+    "okeechobee",
+    "water mgmt",
+    "water management",
+    "navigation district",
+    "other",
+]
 
 
 def extract_millage(pdf_path: str) -> list[dict]:
     """Extract millage rate data from the Budget in Brief PDF.
 
     Each returned dict contains:
-        - authority: Taxing authority name (e.g., 'Countywide Operating')
-        - millage_rate: Raw rate string from PDF (e.g., '1.9497')
+        - authority: Taxing authority name
+        - millage_rate: Rate string (e.g., '4.5740')
         - is_county: Boolean indicating county vs. non-county authority
-
-    Returns raw string values for millage_rate. The transform module
-    handles conversion if needed.
+        - tax_amount: Dollar amount for example home (e.g., '$686')
+        - percent_of_total: Percentage string (e.g., '27%')
 
     Args:
         pdf_path: Path to the Budget in Brief PDF.
@@ -55,51 +47,22 @@ def extract_millage(pdf_path: str) -> list[dict]:
     Returns:
         List of dicts with millage rate data.
     """
-    results = []
-
     with pdfplumber.open(pdf_path) as pdf:
-        pages_to_search = (
-            [pdf.pages[p] for p in MILLAGE_PAGES]
-            if MILLAGE_PAGES
-            else pdf.pages
-        )
+        if MILLAGE_PAGE >= len(pdf.pages):
+            return []
 
-        for page in pages_to_search:
-            target = page.crop(MILLAGE_BBOX) if MILLAGE_BBOX else page
+        page = pdf.pages[MILLAGE_PAGE]
+        tables = page.extract_tables(MILLAGE_TABLE_SETTINGS)
 
-            if DEBUG:
-                try:
-                    im = target.to_image(resolution=150)
-                    im.debug_tablefinder(MILLAGE_TABLE_SETTINGS)
-                    im.save(f"debug_millage_p{page.page_number}.png")
-                except Exception:
-                    pass
+        if len(tables) <= MILLAGE_TABLE_INDEX:
+            return []
 
-            tables = target.extract_tables(MILLAGE_TABLE_SETTINGS)
-
-            for table in tables:
-                parsed = _parse_millage_table(table)
-                if parsed:
-                    results.extend(parsed)
-
-    return results
+        table = tables[MILLAGE_TABLE_INDEX]
+        return _parse_millage_table(table)
 
 
 def _parse_millage_table(table: list[list[str]]) -> list[dict]:
-    """Parse a raw pdfplumber table into millage rate dicts.
-
-    Identifies rows that look like millage entries (authority name +
-    a decimal number that looks like a millage rate).
-
-    Args:
-        table: Raw table from pdfplumber extract_tables().
-
-    Returns:
-        List of parsed dicts, or empty list if table is not recognized.
-    """
-    if not table or len(table) < 2:
-        return []
-
+    """Parse the millage rate table."""
     results = []
 
     for row in table:
@@ -108,43 +71,48 @@ def _parse_millage_table(table: list[list[str]]) -> list[dict]:
 
         authority = str(row[0]).strip()
 
-        # Skip header rows, total rows, and empty rows
-        if not authority or authority.lower() in ("", "authority", "total", "millage"):
+        # Skip header, title, and empty rows
+        if not authority or authority.upper() in ("AUTHORITY", "TOTAL", ""):
+            continue
+        if "EXAMPLE OF TAXES" in authority.upper():
             continue
 
-        # Look for a millage rate value in the remaining columns
-        rate_str = None
-        for cell in row[1:]:
-            if cell and _looks_like_millage_rate(str(cell).strip()):
-                rate_str = str(cell).strip()
-                break
+        # Get millage rate from column 1
+        rate_str = str(row[1]).strip() if row[1] else None
+        if not rate_str or not _looks_like_millage_rate(rate_str):
+            continue
 
-        if rate_str and authority:
-            is_county = not any(
-                non_county.lower() in authority.lower()
-                for non_county in NON_COUNTY_AUTHORITIES
-            )
+        # Clean up multi-line authority names (replace newlines with spaces)
+        authority = authority.replace("\n", " ").strip()
+        # Truncate long names to fit VARCHAR(100)
+        if len(authority) > 100:
+            authority = authority[:97] + "..."
 
-            results.append({
-                "authority": authority,
-                "millage_rate": rate_str,
-                "is_county": is_county,
-            })
+        # Determine if county authority
+        authority_lower = authority.lower()
+        is_county = not any(kw in authority_lower for kw in NON_COUNTY_KEYWORDS)
+
+        entry = {
+            "authority": authority,
+            "millage_rate": rate_str,
+            "is_county": is_county,
+        }
+
+        # Tax amount (column 2)
+        if len(row) > 2 and row[2]:
+            entry["tax_amount"] = str(row[2]).strip()
+
+        # Percent of total (column 3)
+        if len(row) > 3 and row[3]:
+            entry["percent_of_total"] = str(row[3]).strip()
+
+        results.append(entry)
 
     return results
 
 
 def _looks_like_millage_rate(value: str) -> bool:
-    """Check if a string looks like a millage rate (small decimal number).
-
-    Millage rates are typically between 0.0001 and 30.0000.
-
-    Args:
-        value: String to check.
-
-    Returns:
-        True if the string looks like a millage rate.
-    """
+    """Check if a string looks like a millage rate (small decimal number)."""
     try:
         rate = float(value.replace(",", ""))
         return 0 < rate < 30
