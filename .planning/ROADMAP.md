@@ -31,12 +31,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Historical data for 5 fiscal years (FY 2021-22 through FY 2025-26) is seeded and queryable
   4. Millage rate data for all taxing authorities is seeded and usable for tax calculations
   5. A verification script confirms data integrity by comparing seeded totals to published figures
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 01-01: PDF extraction pipeline
-- [ ] 01-02: Database schema, migrations, and seed scripts
-- [ ] 01-03: Data verification and historical seeding
+- [ ] 01-01-PLAN.md -- Project scaffolding, DB schema, and PDF extraction modules
+- [ ] 01-02-PLAN.md -- Transform (BigInt cents conversion) and database seeding
+- [ ] 01-03-PLAN.md -- Verification system and historical data framework
 
 ### Phase 2: App Foundation + Design System
 **Goal**: A working Next.js application with the homepage shell, Miami-Dade design system, and data layer that serves as the scaffold for all subsequent phases
@@ -126,7 +126,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Pipeline | 0/3 | Not started | - |
+| 1. Data Pipeline | 0/3 | Planning complete | - |
 | 2. App Foundation + Design System | 0/3 | Not started | - |
 | 3. Budget Visualizations + Explorer | 0/3 | Not started | - |
 | 4. Department Pages + AI + Year-over-Year | 0/3 | Not started | - |
