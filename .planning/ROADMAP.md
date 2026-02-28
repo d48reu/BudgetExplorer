@@ -52,7 +52,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- Next.js project scaffold, Prisma introspection, data access layer, BigInt serialization, formatting utilities
+- [x] 02-01-PLAN.md -- Next.js project scaffold, Prisma introspection, data access layer, BigInt serialization, formatting utilities
 - [ ] 02-02-PLAN.md -- Design system (Tailwind v4 @theme tokens, UI components, layout shell, responsive navigation, footer)
 - [ ] 02-03-PLAN.md -- Homepage shell (hero count-up, quick stats, CTAs) and glossary page
 
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Pipeline | 4/4 | Complete | 2026-02-28 |
-| 2. App Foundation + Design System | 0/3 | Planned | - |
+| 2. App Foundation + Design System | 1/3 | In Progress | - |
 | 3. Budget Visualizations + Explorer | 0/3 | Not started | - |
 | 4. Department Pages + AI + Year-over-Year | 0/3 | Not started | - |
 | 5. Tax Calculator | 0/2 | Not started | - |

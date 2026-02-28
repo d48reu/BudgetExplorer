@@ -5,33 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Residents can instantly see how their specific tax dollars fund county services -- from the total $13.2 billion down to individual departments -- without reading a single PDF.
-**Current focus:** Phase 1: Data Pipeline -- COMPLETE (including gap closure). Ready for Phase 2: App Foundation + Design System
+**Current focus:** Phase 2: App Foundation + Design System -- Plan 01 complete. Continuing with Plan 02.
 
 ## Current Position
 
-Phase: 1 of 6 (Data Pipeline) -- COMPLETE
-Plan: 4 of 4 in current phase -- ALL COMPLETE
-Status: Phase 1 complete (including 01-04 gap closure plan). Ready to begin Phase 2.
-Last activity: 2026-02-28 -- 01-04-PLAN.md completed (historical CSV generation + seeding, 5-year coverage)
+Phase: 2 of 6 (App Foundation + Design System)
+Plan: 1 of 3 in current phase -- COMPLETE
+Status: Plan 02-01 complete (Next.js scaffold, Prisma data layer, formatting utilities). Ready for Plan 02-02 (Design System).
+Last activity: 2026-02-28 -- 02-01-PLAN.md completed (Next.js + Prisma + data layer + formatting)
 
-Progress: [████████████░░░░░░░░░░░░░░░░░░] 24% (4/17 plans complete, Phase 1 done)
+Progress: [█████████████░░░░░░░░░░░░░░░░░] 29% (5/17 plans complete, Phase 2 in progress)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 6 min
-- Total execution time: 0.42 hours
+- Total execution time: 0.54 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-data-pipeline | 4 | 25 min | 6 min |
+| 02-app-foundation-design-system | 1 | 7 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (5min), 01-02 (4min), 01-03 (12min), 01-04 (4min)
-- Trend: stable (01-04 fast due to pre-built infrastructure)
+- Last 5 plans: 01-02 (4min), 01-03 (12min), 01-04 (4min), 02-01 (7min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -60,6 +61,10 @@ Recent decisions affecting current work:
 - [01-04]: FY 2021-22 through FY 2023-24 marked is_actual=true (actual spending); FY 2024-25 marked is_actual=false (adopted budget)
 - [01-04]: Transfers line item correctly skipped during seeding (interagency transfer, not a real department)
 - [01-04]: v_department_yoy view shows budget-type rows only for adopted-vs-adopted comparison
+- [02-01]: Prisma 7 with prisma-client generator and PrismaPg adapter (not prisma-client-js from Prisma 6.x)
+- [02-01]: Next.js 16.1.6 installed (latest stable) -- App Router and Server Components work identically to v15
+- [02-01]: Homepage uses force-dynamic for DB queries at request time (not static generation)
+- [02-01]: BigInt serialization handled centrally in data access layer (queries.ts)
 
 ### Pending Todos
 
@@ -74,5 +79,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 01-04-PLAN.md -- Phase 1 gap closure complete, 5-year historical data seeded
+Stopped at: Completed 02-01-PLAN.md -- Next.js scaffold, Prisma data layer, formatting utilities
 Resume file: None
