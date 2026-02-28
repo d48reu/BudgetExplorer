@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Project scaffolding, DB schema, and PDF extraction modules
+- [x] 01-01-PLAN.md -- Project scaffolding, DB schema, and PDF extraction modules
 - [ ] 01-02-PLAN.md -- Transform (BigInt cents conversion) and database seeding
 - [ ] 01-03-PLAN.md -- Verification system and historical data framework
 

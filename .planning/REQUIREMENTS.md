@@ -9,11 +9,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Data Pipeline
 
-- [ ] **DATA-01**: Budget data extracted from PDF and verified against published totals ($13,233,238,000)
-- [ ] **DATA-02**: All monetary values stored as BigInt cents in PostgreSQL
-- [ ] **DATA-03**: Seed data covers all 9 strategic areas, 35 departments, and FY 2025-26 figures
+- [x] **DATA-01**: Budget data extracted from PDF and verified against published totals ($13,233,238,000)
+- [x] **DATA-02**: All monetary values stored as BigInt cents in PostgreSQL
+- [x] **DATA-03**: Seed data covers all 9 strategic areas, 35 departments, and FY 2025-26 figures
 - [ ] **DATA-04**: Historical data seeded for 5 fiscal years (FY 2021-22 through FY 2025-26)
-- [ ] **DATA-05**: Millage rate data seeded for tax calculator calculations
+- [x] **DATA-05**: Millage rate data seeded for tax calculator calculations
 
 ### Visualization
 
@@ -120,11 +120,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
+| DATA-02 | Phase 1 | Complete |
+| DATA-03 | Phase 1 | Complete |
 | DATA-04 | Phase 1 | Pending |
-| DATA-05 | Phase 1 | Pending |
+| DATA-05 | Phase 1 | Complete |
 | VIZ-01 | Phase 3 | Pending |
 | VIZ-02 | Phase 3 | Pending |
 | VIZ-03 | Phase 3 | Pending |
