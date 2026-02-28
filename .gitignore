@@ -33,3 +33,8 @@ Thumbs.db
 
 # Extracted data output
 extracted_data.json
+
+# Next.js frontend
+budget-explorer-web/node_modules/
+budget-explorer-web/.next/
+budget-explorer-web/.env.local

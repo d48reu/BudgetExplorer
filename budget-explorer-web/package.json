@@ -1,0 +1,37 @@
+{
+  "name": "budget-explorer-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@floating-ui/react": "^0.27.18",
+    "@prisma/client": "^7.4.2",
+    "clsx": "^2.1.1",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-countup": "^6.5.3",
+    "react-dom": "19.2.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma"
+    ]
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "prisma": "^7.4.2",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
