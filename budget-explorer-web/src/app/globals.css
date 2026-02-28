@@ -1,7 +1,55 @@
 @import "tailwindcss";
 
 @theme {
+  /* Miami-Dade brand colors (for data viz, not UI chrome) */
+  --color-mdc-blue: #0057B8;
+  --color-mdc-orange: #F7941D;
+  --color-mdc-green: #00A651;
+  --color-mdc-red: #EF4444;
+
+  /* Neutral UI palette */
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #F9FAFB;
+  --color-border: #E5E7EB;
+  --color-border-strong: #D1D5DB;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+
+  /* YoY change colors (neutral, not good/bad -- per user decision) */
+  --color-change-increase: #0057B8;
+  --color-change-decrease: #F7941D;
+
   /* Font families */
   --font-heading: var(--font-inter), "Inter", sans-serif;
   --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Responsive breakpoints */
+  --breakpoint-xs: 23.4375rem;  /* 375px */
+  --breakpoint-sm: 40rem;       /* 640px */
+  --breakpoint-md: 48rem;       /* 768px */
+  --breakpoint-lg: 64rem;       /* 1024px */
+  --breakpoint-xl: 80rem;       /* 1280px */
+
+  /* Spacing scale for dashboard density */
+  --spacing-card: 1.25rem;      /* 20px */
+  --spacing-section: 2rem;      /* 32px */
+
+  /* Z-index scale (prevents stacking conflicts) */
+  --z-base: 0;
+  --z-nav: 40;
+  --z-tooltip: 50;
+  --z-modal: 60;
+}
+
+/* Base body styles */
+body {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+/* Focus visible ring for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--color-mdc-blue);
+  outline-offset: 2px;
 }
