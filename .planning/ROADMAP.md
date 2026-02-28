@@ -12,7 +12,7 @@ This roadmap transforms the Miami-Dade Budget Explorer from concept to launched 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Data Pipeline** - Extract, verify, and seed all budget data from PDF into PostgreSQL
+- [x] **Phase 1: Data Pipeline** - Extract, verify, and seed all budget data from PDF into PostgreSQL
 - [ ] **Phase 2: App Foundation + Design System** - Next.js scaffold, Prisma data layer, homepage shell, Miami-Dade design system
 - [ ] **Phase 3: Budget Visualizations + Explorer** - Interactive treemap/sunburst drill-down, revenue donut, penny viz, explorer pages
 - [ ] **Phase 4: Department Pages + AI + Year-over-Year** - Department detail pages with AI descriptions and historical comparison
@@ -36,7 +36,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md -- Project scaffolding, DB schema, and PDF extraction modules
 - [x] 01-02-PLAN.md -- Transform (BigInt cents conversion) and database seeding
-- [ ] 01-03-PLAN.md -- Verification system and historical data framework
+- [x] 01-03-PLAN.md -- Verification system and historical data framework
 
 ### Phase 2: App Foundation + Design System
 **Goal**: A working Next.js application with the homepage shell, Miami-Dade design system, and data layer that serves as the scaffold for all subsequent phases
@@ -126,7 +126,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Pipeline | 2/3 | In progress | - |
+| 1. Data Pipeline | 3/3 | Complete | 2026-02-28 |
 | 2. App Foundation + Design System | 0/3 | Not started | - |
 | 3. Budget Visualizations + Explorer | 0/3 | Not started | - |
 | 4. Department Pages + AI + Year-over-Year | 0/3 | Not started | - |
