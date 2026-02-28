@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md -- Project scaffolding, DB schema, and PDF extraction modules
-- [ ] 01-02-PLAN.md -- Transform (BigInt cents conversion) and database seeding
+- [x] 01-02-PLAN.md -- Transform (BigInt cents conversion) and database seeding
 - [ ] 01-03-PLAN.md -- Verification system and historical data framework
 
 ### Phase 2: App Foundation + Design System
@@ -126,7 +126,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Pipeline | 0/3 | Planning complete | - |
+| 1. Data Pipeline | 2/3 | In progress | - |
 | 2. App Foundation + Design System | 0/3 | Not started | - |
 | 3. Budget Visualizations + Explorer | 0/3 | Not started | - |
 | 4. Department Pages + AI + Year-over-Year | 0/3 | Not started | - |
