@@ -1,0 +1,171 @@
+# Requirements: Miami-Dade Budget Explorer
+
+**Defined:** 2026-02-28
+**Core Value:** Residents can instantly see how their specific tax dollars fund county services — from the total $13.2 billion down to individual departments — without reading a single PDF.
+
+## v1 Requirements
+
+Requirements for initial release. Each maps to roadmap phases.
+
+### Data Pipeline
+
+- [ ] **DATA-01**: Budget data extracted from PDF and verified against published totals ($13,233,238,000)
+- [ ] **DATA-02**: All monetary values stored as BigInt cents in PostgreSQL
+- [ ] **DATA-03**: Seed data covers all 9 strategic areas, 35 departments, and FY 2025-26 figures
+- [ ] **DATA-04**: Historical data seeded for 5 fiscal years (FY 2021-22 through FY 2025-26)
+- [ ] **DATA-05**: Millage rate data seeded for tax calculator calculations
+
+### Visualization
+
+- [ ] **VIZ-01**: Interactive treemap showing 9 strategic areas sized by operating budget
+- [ ] **VIZ-02**: Drill-down from strategic area to departments within that area
+- [ ] **VIZ-03**: Revenue source donut chart showing 7 revenue categories
+- [ ] **VIZ-04**: "Penny visualization" — dollar broken into colored segments by strategic area
+- [ ] **VIZ-05**: Year-over-year bar charts comparing current vs. prior 4 fiscal years
+- [ ] **VIZ-06**: Expenditure category breakdown per department (salary, fringes, etc.)
+- [ ] **VIZ-07**: Data table fallback for every chart (accessibility requirement)
+
+### Pages
+
+- [ ] **PAGE-01**: Homepage with hero ($13.2B animated), penny viz, treemap, revenue donut, CTA
+- [ ] **PAGE-02**: Explorer page with full-screen treemap/sunburst and drill-down
+- [ ] **PAGE-03**: Strategic area detail pages showing departments within each area
+- [ ] **PAGE-04**: Department detail pages with budget overview, AI description, YoY comparison
+- [ ] **PAGE-05**: Tax calculator page with property value input and visual breakdown
+- [ ] **PAGE-06**: Year-over-year comparison page
+
+### Calculator
+
+- [ ] **CALC-01**: User enters property assessed value and gets total tax bill
+- [ ] **CALC-02**: Homestead exemption checkbox adjusts calculation
+- [ ] **CALC-03**: Visual breakdown of taxes by authority (County vs. School Board vs. others)
+- [ ] **CALC-04**: County portion drilled into by strategic area and department
+- [ ] **CALC-05**: Dollar amounts displayed alongside percentages
+
+### AI Descriptions
+
+- [ ] **AI-01**: Plain-English summary (2-3 sentences) of what each department does
+- [ ] **AI-02**: "Key Changes" summary of what changed in adopted budget vs. prior year
+- [ ] **AI-03**: Descriptions generated via Claude API and stored in database
+- [ ] **AI-04**: Each description references its fiscal year and generation date
+
+### Search
+
+- [ ] **SRCH-01**: Full-text search across departments, descriptions, and line items
+- [ ] **SRCH-02**: Search results link to relevant department/area pages
+- [ ] **SRCH-03**: Empty state with helpful message when no results found
+
+### Design & UX
+
+- [ ] **UX-01**: Mobile-first responsive design (works on 375px+ viewports)
+- [ ] **UX-02**: Miami-Dade brand colors (#0057B8 blue, #F7941D orange, #00A651 green, #EF4444 red)
+- [ ] **UX-03**: Inter font for headings, system stack for body
+- [ ] **UX-04**: No jargon without tooltip/explanation
+- [ ] **UX-05**: Clean, modern UI — "Mint.com for county budgets"
+- [ ] **UX-06**: Semantic HTML throughout
+- [ ] **UX-07**: Every page has a clear "What am I looking at?" moment
+
+### SEO & Sharing
+
+- [ ] **SEO-01**: Unique title/description/OG image per page type
+- [ ] **SEO-02**: Department pages statically generated for SEO
+- [ ] **SEO-03**: Footer links to source PDF on every page
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Embeddable Widgets
+
+- **EMBED-01**: Iframe-compatible chart components for external sites
+- **EMBED-02**: Department budget widget for commissioner websites
+
+### Data Export
+
+- **EXPORT-01**: CSV download of budget data by department
+- **EXPORT-02**: PDF report generation for department details
+
+### Disbursements
+
+- **DISB-01**: Online Checkbook integration showing actual spending
+- **DISB-02**: Vendor payment search
+
+### Capital Projects
+
+- **CAP-01**: Capital program detail pages with multi-year totals
+- **CAP-02**: Geographic map visualization of capital projects
+
+### Internationalization
+
+- **I18N-01**: Spanish language support for all UI text
+- **I18N-02**: Spanish AI-generated descriptions
+
+## Out of Scope
+
+Explicitly excluded. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| Participatory budgeting / "Build Your Budget" | Fundamentally different product (engagement vs. transparency). Creates political expectations the county can't meet. Triples scope. |
+| User accounts / authentication | Zero-friction access is more important than personalization. No user data to protect. |
+| Real-time spending data | Requires county financial system integration and ongoing data feeds. Different data source entirely. |
+| Budget forecasting / projections | Politically sensitive. The county produces its own forecasts. |
+| Chatbot / conversational Q&A | Runtime AI adds latency, cost, and hallucination risk. Pre-generated descriptions are safer. |
+| Mobile native app | Web-first. Progressive web app features can be added later if demand warrants. |
+| Multi-language (v1) | Build i18n-ready, but ship English-only for v1. |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| DATA-01 | — | Pending |
+| DATA-02 | — | Pending |
+| DATA-03 | — | Pending |
+| DATA-04 | — | Pending |
+| DATA-05 | — | Pending |
+| VIZ-01 | — | Pending |
+| VIZ-02 | — | Pending |
+| VIZ-03 | — | Pending |
+| VIZ-04 | — | Pending |
+| VIZ-05 | — | Pending |
+| VIZ-06 | — | Pending |
+| VIZ-07 | — | Pending |
+| PAGE-01 | — | Pending |
+| PAGE-02 | — | Pending |
+| PAGE-03 | — | Pending |
+| PAGE-04 | — | Pending |
+| PAGE-05 | — | Pending |
+| PAGE-06 | — | Pending |
+| CALC-01 | — | Pending |
+| CALC-02 | — | Pending |
+| CALC-03 | — | Pending |
+| CALC-04 | — | Pending |
+| CALC-05 | — | Pending |
+| AI-01 | — | Pending |
+| AI-02 | — | Pending |
+| AI-03 | — | Pending |
+| AI-04 | — | Pending |
+| SRCH-01 | — | Pending |
+| SRCH-02 | — | Pending |
+| SRCH-03 | — | Pending |
+| UX-01 | — | Pending |
+| UX-02 | — | Pending |
+| UX-03 | — | Pending |
+| UX-04 | — | Pending |
+| UX-05 | — | Pending |
+| UX-06 | — | Pending |
+| UX-07 | — | Pending |
+| SEO-01 | — | Pending |
+| SEO-02 | — | Pending |
+| SEO-03 | — | Pending |
+
+**Coverage:**
+- v1 requirements: 32 total
+- Mapped to phases: 0
+- Unmapped: 32
+
+---
+*Requirements defined: 2026-02-28*
+*Last updated: 2026-02-28 after initial definition*
