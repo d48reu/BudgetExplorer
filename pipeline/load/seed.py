@@ -166,18 +166,7 @@ def seed_strategic_area_budgets(conn, fiscal_year_id: int,
     area_lookup = _build_strategic_area_lookup(cur)
 
     # Build penny lookup: area name -> cents
-    penny_lookup = {}
-    if penny:
-        for p in penny:
-            area_name = clean_department_name(p.get("area", ""))
-            cents_val = p.get("cents")
-            if area_name and cents_val is not None:
-                try:
-                    penny_lookup[area_name.lower()] = int(
-                        str(cents_val).strip()
-                    )
-                except (ValueError, TypeError):
-                    pass
+    penny_lookup = _build_penny_lookup(penny)
 
     seeded = 0
 
@@ -355,18 +344,7 @@ def seed_strategic_area_budgets_from_appendix(
         j_cap_lookup[area_name.lower()] = capital
 
     # Build penny lookup: area name -> cents
-    penny_lookup = {}
-    if penny:
-        for p in penny:
-            area_name = clean_department_name(p.get("area", ""))
-            cents_val = p.get("cents")
-            if area_name and cents_val is not None:
-                try:
-                    penny_lookup[area_name.lower()] = int(
-                        str(cents_val).strip()
-                    )
-                except (ValueError, TypeError):
-                    pass
+    penny_lookup = _build_penny_lookup(penny)
 
     seeded = 0
 
@@ -608,6 +586,38 @@ def seed_all(conn, data: dict, fiscal_year_label: str = "FY 2025-26",
 # ============================================================
 # Internal lookup and matching helpers
 # ============================================================
+
+
+def _build_penny_lookup(penny: list[dict] | None) -> dict:
+    """Build a dict mapping lowercase strategic area name to cents per dollar.
+
+    Handles both extraction key conventions:
+      - "area" / "cents" (legacy BIB format)
+      - "strategic_area" / "cents_per_dollar" (current format)
+
+    Args:
+        penny: List of dicts from penny extraction.
+
+    Returns:
+        Dict mapping lowercase area name -> int cents value.
+    """
+    lookup = {}
+    if not penny:
+        return lookup
+
+    for p in penny:
+        # Support both key conventions
+        area_name = clean_department_name(
+            p.get("strategic_area", "") or p.get("area", "")
+        )
+        cents_val = p.get("cents_per_dollar") or p.get("cents")
+        if area_name and cents_val is not None:
+            try:
+                lookup[area_name.lower()] = int(str(cents_val).strip())
+            except (ValueError, TypeError):
+                pass
+
+    return lookup
 
 
 def _build_department_lookup(cur) -> dict:
