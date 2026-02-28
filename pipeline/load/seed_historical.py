@@ -23,6 +23,29 @@ from pipeline.transform.historical import (
 logger = logging.getLogger(__name__)
 
 
+def resolve_strategic_area(conn, name: str) -> int | None:
+    """Resolve a strategic area name to a database ID.
+
+    Args:
+        conn: psycopg2 connection.
+        name: Strategic area name from the historical data file.
+
+    Returns:
+        strategic_area_id or None if no match found.
+    """
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id FROM strategic_areas WHERE LOWER(name) = LOWER(%s)",
+        (name,),
+    )
+    row = cur.fetchone()
+    cur.close()
+    if row:
+        return row[0]
+    logger.warning("Could not resolve strategic area '%s'", name)
+    return None
+
+
 def resolve_department(
     conn, name: str, alias: str | None
 ) -> int | None:
@@ -155,6 +178,7 @@ def seed_historical_year(
     for record in data:
         dept_name = record["department_name"]
         dept_alias = record.get("department_alias")
+        strategic_area_name = record.get("strategic_area", "")
 
         department_id = resolve_department(conn, dept_name, dept_alias)
 
@@ -166,13 +190,22 @@ def seed_historical_year(
             skipped += 1
             continue
 
+        # Resolve strategic area (required by unique constraint)
+        strategic_area_id = None
+        if strategic_area_name:
+            strategic_area_id = resolve_strategic_area(
+                conn, strategic_area_name
+            )
+
         cur.execute(
             """
             INSERT INTO department_budgets
-                (fiscal_year_id, department_id, operating_budget,
-                 capital_budget, total_budget, employee_count, is_actual)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (fiscal_year_id, department_id, is_actual) DO UPDATE SET
+                (fiscal_year_id, department_id, strategic_area_id,
+                 operating_budget, capital_budget, total_budget,
+                 employee_count, is_actual)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (fiscal_year_id, department_id, strategic_area_id, is_actual)
+            DO UPDATE SET
                 operating_budget = EXCLUDED.operating_budget,
                 capital_budget = EXCLUDED.capital_budget,
                 total_budget = EXCLUDED.total_budget,
@@ -181,6 +214,7 @@ def seed_historical_year(
             (
                 fiscal_year_id,
                 department_id,
+                strategic_area_id,
                 record["operating_budget_cents"],
                 record["capital_budget_cents"],
                 record["total_budget_cents"],
