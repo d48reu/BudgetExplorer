@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model migrations {
+  filename   String    @id @db.VarChar(255)
+  applied_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@map("_migrations")
+}
+
+model budget_descriptions {
+  id                   Int          @id @default(autoincrement())
+  fiscal_year_id       Int
+  entity_type          String       @db.VarChar(50)
+  entity_id            Int
+  summary              String
+  detailed_description String?
+  key_changes          String?
+  generated_at         DateTime?    @default(now()) @db.Timestamptz(6)
+  model_version        String?      @db.VarChar(50)
+  fiscal_years         fiscal_years @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([entity_type, entity_id], map: "idx_budget_descriptions_entity")
+}
+
+model capital_programs {
+  id                Int             @id @default(autoincrement())
+  fiscal_year_id    Int
+  department_id     Int
+  strategic_area_id Int
+  program_name      String          @db.VarChar(500)
+  adopted_amount    BigInt?
+  multi_year_total  BigInt?
+  description       String?
+  departments       departments     @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fiscal_years      fiscal_years    @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  strategic_areas   strategic_areas @relation(fields: [strategic_area_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([fiscal_year_id], map: "idx_capital_programs_fy")
+}
+
+model department_aliases {
+  id                    Int         @id @default(autoincrement())
+  current_department_id Int
+  historical_name       String      @db.VarChar(200)
+  fiscal_year_start     String?     @db.VarChar(20)
+  fiscal_year_end       String?     @db.VarChar(20)
+  notes                 String?
+  departments           departments @relation(fields: [current_department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([historical_name, fiscal_year_start])
+}
+
+model department_budgets {
+  id                Int              @id @default(autoincrement())
+  fiscal_year_id    Int
+  department_id     Int
+  operating_budget  BigInt?
+  capital_budget    BigInt?
+  total_budget      BigInt?
+  employee_count    Int?
+  is_actual         Boolean?         @default(false)
+  strategic_area_id Int?
+  departments       departments      @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fiscal_years      fiscal_years     @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  strategic_areas   strategic_areas? @relation(fields: [strategic_area_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([fiscal_year_id, department_id, strategic_area_id, is_actual], map: "department_budgets_fy_dept_area_actual_key")
+  @@index([strategic_area_id], map: "idx_dept_budgets_area")
+  @@index([department_id], map: "idx_dept_budgets_dept")
+  @@index([fiscal_year_id], map: "idx_dept_budgets_fy")
+}
+
+model department_expenditures {
+  id                      Int                    @id @default(autoincrement())
+  fiscal_year_id          Int
+  department_id           Int
+  expenditure_category_id Int
+  amount                  BigInt
+  is_actual               Boolean?               @default(false)
+  departments             departments            @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  expenditure_categories  expenditure_categories @relation(fields: [expenditure_category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fiscal_years            fiscal_years           @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([fiscal_year_id, department_id, expenditure_category_id, is_actual])
+  @@index([fiscal_year_id], map: "idx_dept_expenditures_fy")
+}
+
+model departments {
+  id                      Int                       @id @default(autoincrement())
+  strategic_area_id       Int
+  name                    String                    @db.VarChar(200)
+  slug                    String                    @unique @db.VarChar(200)
+  abbreviation            String?                   @db.VarChar(20)
+  description             String?
+  pdf_source_url          String?
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  capital_programs        capital_programs[]
+  department_aliases      department_aliases[]
+  department_budgets      department_budgets[]
+  department_expenditures department_expenditures[]
+  strategic_areas         strategic_areas           @relation(fields: [strategic_area_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  disbursements           disbursements[]
+}
+
+model disbursements {
+  id                  Int          @id @default(autoincrement())
+  payee_name          String?      @db.VarChar(500)
+  payment_date        DateTime     @db.Date
+  amount              BigInt
+  disbursement_number String?      @db.VarChar(50)
+  department_name     String?      @db.VarChar(200)
+  department_id       Int?
+  fund_name           String?      @db.VarChar(200)
+  imported_at         DateTime?    @default(now()) @db.Timestamptz(6)
+  departments         departments? @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([payment_date], map: "idx_disbursements_date")
+  @@index([department_id], map: "idx_disbursements_dept")
+  @@index([payee_name], map: "idx_disbursements_payee")
+}
+
+model expenditure_categories {
+  id                      Int                       @id @default(autoincrement())
+  name                    String                    @unique @db.VarChar(100)
+  slug                    String                    @unique @db.VarChar(100)
+  description             String?
+  display_order           Int?
+  department_expenditures department_expenditures[]
+}
+
+model fiscal_years {
+  id                      Int                       @id @default(autoincrement())
+  label                   String                    @unique @db.VarChar(20)
+  start_date              DateTime                  @db.Date
+  end_date                DateTime                  @db.Date
+  total_operating         BigInt?
+  total_capital           BigInt?
+  total_budget            BigInt?
+  total_employees         Int?
+  is_adopted              Boolean?                  @default(true)
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  budget_descriptions     budget_descriptions[]
+  capital_programs        capital_programs[]
+  department_budgets      department_budgets[]
+  department_expenditures department_expenditures[]
+  millage_rates           millage_rates[]
+  revenue_by_source       revenue_by_source[]
+  strategic_area_budgets  strategic_area_budgets[]
+}
+
+model millage_rates {
+  id             Int          @id @default(autoincrement())
+  fiscal_year_id Int
+  authority      String       @db.VarChar(100)
+  millage_rate   Decimal      @db.Decimal(8, 4)
+  is_county      Boolean?     @default(true)
+  display_order  Int?
+  fiscal_years   fiscal_years @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([fiscal_year_id, authority])
+}
+
+model revenue_by_source {
+  id                Int             @id @default(autoincrement())
+  fiscal_year_id    Int
+  revenue_source_id Int
+  amount            BigInt
+  percentage        Decimal?        @db.Decimal(5, 2)
+  is_actual         Boolean?        @default(false)
+  fiscal_years      fiscal_years    @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  revenue_sources   revenue_sources @relation(fields: [revenue_source_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([fiscal_year_id, revenue_source_id, is_actual])
+  @@index([fiscal_year_id], map: "idx_revenue_by_source_fy")
+}
+
+model revenue_sources {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique @db.VarChar(100)
+  slug              String              @unique @db.VarChar(100)
+  description       String?
+  display_order     Int?
+  revenue_by_source revenue_by_source[]
+}
+
+model strategic_area_budgets {
+  id                Int             @id @default(autoincrement())
+  fiscal_year_id    Int
+  strategic_area_id Int
+  operating_budget  BigInt?
+  capital_budget    BigInt?
+  cents_per_dollar  Int?
+  fiscal_years      fiscal_years    @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  strategic_areas   strategic_areas @relation(fields: [strategic_area_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([fiscal_year_id, strategic_area_id])
+}
+
+model strategic_areas {
+  id                     Int                      @id @default(autoincrement())
+  name                   String                   @unique @db.VarChar(100)
+  slug                   String                   @unique @db.VarChar(100)
+  description            String?
+  display_order          Int
+  color                  String?                  @db.VarChar(7)
+  capital_programs       capital_programs[]
+  department_budgets     department_budgets[]
+  departments            departments[]
+  strategic_area_budgets strategic_area_budgets[]
+}
