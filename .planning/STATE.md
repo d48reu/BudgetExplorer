@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 3 of 6 (Budget Visualizations + Explorer)
-Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-02-28 -- v1.1 roadmap created
+Plan: 1 of 3 in current phase
+Status: Executing
+Last activity: 2026-03-01 -- 03-01 shared chart infrastructure complete
 
-Progress: [████████░░░░░░░░░░░░░░░░░░░░░░] 0% v1.1 (0/10 plans)
+Progress: [███████████░░░░░░░░░░░░░░░░░░░] 10% v1.1 (1/10 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 5 min
-- Total execution time: 0.70 hours
+- Total execution time: 0.73 hours
 
 **By Phase:**
 
@@ -29,6 +29,7 @@ Progress: [████████░░░░░░░░░░░░░░░
 |-------|-------|-------|----------|
 | 01-data-pipeline | 4 | 25 min | 6 min |
 | 02-app-foundation-design-system | 4 | 18 min | 5 min |
+| 03-budget-visualizations-explorer | 1 | 2 min | 2 min |
 
 *Updated after each plan completion*
 
@@ -40,9 +41,11 @@ Decisions are logged in PROJECT.md Key Decisions table.
 Full v1.0 decision log archived in milestones/v1.0-ROADMAP.md.
 
 Key decisions carrying forward:
-- [Roadmap]: Nivo (@nivo/treemap, @nivo/sunburst, @nivo/pie at 0.99.0) -- only 3 new npm packages for all v1.1 charts
-- [Research]: Nivo drill-down has NO built-in state management -- needs custom DrillState machine (highest risk item)
-- [Research]: BigInt cents must convert to Number via toChartValue() before any Nivo data prop
+- [03-01]: D3 modules (d3-hierarchy, d3-shape, d3-scale) for complex charts + Recharts for Phase 4 bar/line charts (replaced Nivo)
+- [03-01]: ChartContainer uses render prop pattern for responsive sizing via ResizeObserver
+- [03-01]: DataTableToggle always renders sr-only table for screen reader accessibility (VIZ-07)
+- [03-01]: ChartTooltip is controlled -- parent chart manages open/close state
+- [Research]: BigInt cents must convert to Number via toChartValue() before any D3/Recharts data prop
 - [Research]: AI descriptions pre-generated via Python pipeline, never at runtime
 - [Research]: Full-text search uses PostgreSQL tsvector + $queryRaw (Prisma FTS is Preview-only)
 - [Research]: Tax calculator is pure client-side computation (no API needed)
@@ -55,12 +58,11 @@ None.
 
 ### Blockers/Concerns
 
-- [Research]: Nivo sunburst drill-down with 4 levels needs prototype validation in Phase 3
-- [Research]: Treemap unusable on mobile below 768px -- accordion/list fallback required
+- [Research]: Treemap unusable on mobile below 768px -- accordion/list fallback required (addressed in 03-02)
 - [Research]: Vercel vs Render deployment decision deferred to Phase 6
 
 ## Session Continuity
 
-Last session: 2026-02-28
-Stopped at: v1.1 roadmap created. Ready for /gsd:plan-phase 3.
+Last session: 2026-03-01
+Stopped at: Completed 03-01-PLAN.md (shared chart infrastructure). Ready for 03-02.
 Resume file: None

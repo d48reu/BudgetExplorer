@@ -15,7 +15,7 @@ Requirements carried forward from v1.0 (26 remaining). Each maps to roadmap phas
 - [ ] **VIZ-04**: "Penny visualization" — dollar broken into colored segments by strategic area
 - [ ] **VIZ-05**: Year-over-year bar charts comparing current vs. prior 4 fiscal years
 - [ ] **VIZ-06**: Expenditure category breakdown per department (salary, fringes, etc.)
-- [ ] **VIZ-07**: Data table fallback for every chart (accessibility requirement)
+- [x] **VIZ-07**: Data table fallback for every chart (accessibility requirement)
 
 ### Pages
 
@@ -105,7 +105,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIZ-04 | Phase 3 | Pending |
 | VIZ-05 | Phase 4 | Pending |
 | VIZ-06 | Phase 4 | Pending |
-| VIZ-07 | Phase 3 | Pending |
+| VIZ-07 | Phase 3 | Complete |
 | PAGE-02 | Phase 3 | Pending |
 | PAGE-03 | Phase 3 | Pending |
 | PAGE-04 | Phase 4 | Pending |
