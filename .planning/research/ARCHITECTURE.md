@@ -1,406 +1,558 @@
-# Architecture Research
+# Architecture Patterns: v1.1 Integration
 
-**Domain:** Civic budget visualization (Next.js App Router + PostgreSQL + Recharts/D3)
+**Domain:** Civic budget visualization -- adding interactive Nivo charts, tax calculator, AI descriptions, full-text search, and SEO to existing Next.js 16 App Router application
 **Researched:** 2026-02-28
 **Confidence:** HIGH
+**Focus:** How NEW features integrate with the existing v1.0 architecture (not a from-scratch design)
 
-## Standard Architecture
+## Existing Architecture (v1.0 Baseline)
 
-### System Overview
-
-```
-                    OFFLINE (one-time or annual)
-  ┌──────────────────────────────────────────────────────┐
-  │  ┌──────────┐    ┌───────────┐    ┌──────────────┐   │
-  │  │  Budget   │    │  Python   │    │  JSON Seed   │   │
-  │  │  PDF(s)   │───>│  Pipeline │───>│  Files       │   │
-  │  └──────────┘    │ pdfplumber│    └──────┬───────┘   │
-  │                  │ + Claude  │           │           │
-  │                  └───────────┘           │           │
-  └─────────────────────────────────────────┼───────────┘
-                                            │
-                    BUILD / SEED TIME       │
-  ┌─────────────────────────────────────────┼───────────┐
-  │  ┌──────────────┐    ┌─────────────┐    │           │
-  │  │ prisma db    │<───│  Prisma     │<───┘           │
-  │  │ seed         │    │  Seed       │                │
-  │  │              │    │  Script     │                │
-  │  └──────┬───────┘    └─────────────┘                │
-  │         │                                           │
-  │         v                                           │
-  │  ┌──────────────┐                                   │
-  │  │  PostgreSQL   │                                   │
-  │  │  (Supabase/   │                                   │
-  │  │   Railway)    │                                   │
-  │  └──────┬───────┘                                   │
-  └─────────┼───────────────────────────────────────────┘
-            │
-            │  RUNTIME (Next.js on Vercel)
-  ┌─────────┼───────────────────────────────────────────┐
-  │         v                                           │
-  │  ┌──────────────────────────────────────────────┐   │
-  │  │           Server Components (RSC)             │   │
-  │  │  ┌────────────┐  ┌─────────────┐             │   │
-  │  │  │ Data       │  │ Page        │             │   │
-  │  │  │ Fetchers   │  │ Components  │             │   │
-  │  │  │ (Prisma)   │  │ (layout,    │             │   │
-  │  │  │            │  │  page, etc) │             │   │
-  │  │  └────────────┘  └──────┬──────┘             │   │
-  │  └─────────────────────────┼────────────────────┘   │
-  │                            │ serializable props     │
-  │                            v                        │
-  │  ┌──────────────────────────────────────────────┐   │
-  │  │           Client Components                   │   │
-  │  │  ┌─────────┐  ┌──────────┐  ┌────────────┐  │   │
-  │  │  │ Treemap │  │ Charts   │  │ Tax        │  │   │
-  │  │  │ Drill-  │  │ (Recharts│  │ Calculator │  │   │
-  │  │  │ Down    │  │  bar,pie)│  │ (form +    │  │   │
-  │  │  │ (D3)    │  │          │  │  display)  │  │   │
-  │  │  └─────────┘  └──────────┘  └────────────┘  │   │
-  │  └──────────────────────────────────────────────┘   │
-  └─────────────────────────────────────────────────────┘
-```
-
-### Component Responsibilities
-
-| Component | Responsibility | Typical Implementation |
-|-----------|----------------|------------------------|
-| Python Pipeline | Extract budget data from PDFs, generate AI descriptions | Standalone Python scripts using pdfplumber + Claude API, outputs JSON files |
-| Prisma Seed Script | Transform JSON into database records | TypeScript seed script via `prisma db seed`, runs at deploy or manually |
-| PostgreSQL | Store normalized budget data across fiscal years | Supabase or Railway managed PostgreSQL with Prisma schema |
-| Prisma Client | Type-safe database access from Server Components | Singleton PrismaClient in `lib/prisma.ts` using globalThis pattern |
-| Server Components | Fetch data, render static HTML, pass serialized props to charts | Async page/layout components with direct Prisma queries |
-| Client Components | Interactive charts, form inputs, drill-down state | `'use client'` components receiving serialized data as props |
-| Treemap (D3) | Hierarchical budget drill-down with breadcrumb navigation | Custom D3-based component (not Recharts Treemap) for drill-down |
-| Charts (Recharts) | Bar charts, pie/donut charts, line charts for trends | Recharts composable components for standard chart types |
-| Tax Calculator | Property value input, personalized tax breakdown | Client Component with form state and computed display |
-
-## Recommended Project Structure
+What already exists and must be preserved:
 
 ```
-budget-explorer/
-├── app/                          # Next.js App Router (routing only)
-│   ├── layout.tsx                # Root layout: html, body, Inter font, nav
-│   ├── page.tsx                  # Homepage: hero, treemap, penny viz
-│   ├── loading.tsx               # Global loading skeleton
-│   ├── error.tsx                 # Global error boundary
-│   ├── not-found.tsx             # 404 page
-│   ├── department/
-│   │   └── [slug]/
-│   │       ├── page.tsx          # Department detail (Server Component)
-│   │       └── loading.tsx       # Department loading skeleton
-│   ├── calculator/
-│   │   └── page.tsx              # Tax calculator page
-│   ├── search/
-│   │   └── page.tsx              # Full-text search results
-│   ├── about/
-│   │   └── page.tsx              # About/methodology page
-│   └── api/
-│       └── search/
-│           └── route.ts          # Search API route (full-text search)
-├── components/                   # Shared UI components
-│   ├── charts/                   # All chart components (Client)
-│   │   ├── budget-treemap.tsx    # D3 drill-down treemap
-│   │   ├── revenue-donut.tsx     # Revenue source donut chart
-│   │   ├── trend-bar-chart.tsx   # Year-over-year bar chart
-│   │   ├── penny-viz.tsx         # Dollar breakdown visualization
-│   │   └── chart-wrapper.tsx     # Shared chart container with fallback
-│   ├── calculator/               # Tax calculator components (Client)
-│   │   ├── tax-form.tsx          # Property value input form
-│   │   └── tax-breakdown.tsx     # Personalized breakdown display
-│   ├── layout/                   # Layout components
-│   │   ├── header.tsx            # Site header with nav
-│   │   ├── footer.tsx            # Site footer
-│   │   └── breadcrumb.tsx        # Navigation breadcrumb
-│   ├── department/               # Department-specific components
-│   │   ├── department-card.tsx   # Department summary card
-│   │   ├── department-grid.tsx   # Grid of department cards
-│   │   └── expenditure-table.tsx # Line item table with sort
-│   ├── search/                   # Search components (Client)
-│   │   ├── search-bar.tsx        # Search input with debounce
-│   │   └── search-results.tsx    # Results display
-│   └── ui/                       # Generic UI primitives
-│       ├── skeleton.tsx          # Loading skeleton component
-│       ├── format-currency.tsx   # Currency display (BigInt -> $X,XXX)
-│       └── data-table.tsx        # Accessible data table fallback
-├── lib/                          # Shared utilities and data access
-│   ├── prisma.ts                 # Prisma client singleton
-│   ├── queries/                  # Data access layer
-│   │   ├── budget.ts             # Budget summary queries
-│   │   ├── departments.ts        # Department queries
-│   │   ├── revenue.ts            # Revenue source queries
-│   │   ├── trends.ts             # Year-over-year trend queries
-│   │   └── search.ts             # Full-text search queries
-│   ├── format.ts                 # Number/currency formatting (BigInt cents -> display)
-│   ├── constants.ts              # Miami-Dade colors, millage rates, fiscal years
-│   └── types.ts                  # Shared TypeScript types
-├── prisma/
-│   ├── schema.prisma             # Database schema
-│   ├── seed.ts                   # Seed script (reads JSON, inserts records)
-│   └── seed-data/                # JSON files from Python pipeline
-│       ├── fiscal-years.json
-│       ├── strategic-areas.json
-│       ├── departments.json
-│       ├── revenue-sources.json
-│       ├── expenditure-categories.json
-│       ├── department-budgets.json
-│       ├── millage-rates.json
-│       └── ai-descriptions.json
-├── pipeline/                     # Python data pipeline (separate from web app)
-│   ├── extract.py                # PDF extraction with pdfplumber
-│   ├── transform.py              # Data normalization and validation
-│   ├── describe.py               # AI description generation via Claude API
-│   ├── output/                   # Generated JSON files (copy to prisma/seed-data/)
-│   ├── requirements.txt          # Python dependencies
-│   └── README.md                 # Pipeline usage instructions
-├── public/
-│   ├── og-image.png              # Open Graph image
-│   └── favicon.ico               # Favicon
-├── tailwind.config.ts            # Tailwind with Miami-Dade theme colors
-├── next.config.ts                # Next.js configuration
-├── tsconfig.json                 # TypeScript config
-├── package.json                  # Node dependencies
-└── .env.local                    # Database URL, API keys (not committed)
+budget-explorer-web/src/
+  app/
+    layout.tsx          # Root layout: Inter font, Navbar, Footer, MobileTabBar
+    page.tsx            # Homepage: HeroBanner, QuickStats, CTASection + viz placeholders
+    globals.css         # Tailwind v4 @theme tokens (MDC colors, spacing, z-index)
+    glossary/page.tsx   # Static glossary page with Breadcrumbs
+  components/
+    homepage/           # HeroBanner ('use client'), QuickStats ('use client'), CTASection
+    layout/             # Navbar ('use client'), MobileTabBar, Footer, Breadcrumbs
+    ui/                 # Card, Button, Skeleton, BudgetTerm ('use client' tooltip)
+  lib/
+    db/queries.ts       # getCurrentFiscalYear(), getStrategicAreas(), getQuickStats()
+    prisma.ts           # PrismaClient singleton (PrismaPg adapter, Pool)
+    format.ts           # formatDollarsAbbreviated(), formatDollarsFull(), formatYoYChange()
+    glossary.ts         # GLOSSARY_TERMS array
+    nav-config.ts       # NAV_ITEMS: Home, Explorer, Calculator, Glossary
+  types/
+    budget.ts           # SerializedFiscalYear, SerializedStrategicArea, QuickStats
+  generated/prisma/     # Prisma 7 generated client
+prisma/
+  schema.prisma         # 14 models including budget_descriptions, millage_rates, revenue_by_source
 ```
 
-### Structure Rationale
+**Key architectural decisions already locked in:**
+- BigInt cents stored in DB, serialized to strings at the query layer (not numbers -- v1.0 used string serialization via `.toString()`)
+- Server Components fetch data via `lib/db/queries.ts`, pass serialized props to Client Components
+- `'use client'` directive on all interactive components (HeroBanner uses react-countup, QuickStats uses BudgetTerm tooltips)
+- Navigation routes already defined: `/explorer`, `/calculator`, `/glossary` (Explorer and Calculator are dead links)
+- `dynamic = 'force-dynamic'` on homepage (runtime DB queries, not static generation)
 
-- **`app/` for routing only:** Pages are thin orchestrators that import from `lib/queries/` and `components/`. This keeps routing logic clean and makes components independently testable.
-- **`components/charts/` all Client Components:** Every chart uses `'use client'` because Recharts and D3 require browser APIs (SVG rendering, event handlers, useState for interactivity). They receive pre-fetched, serialized data as props.
-- **`lib/queries/` as data access layer:** All Prisma queries live here, not in page components. This provides a single place to optimize queries, add caching, and handle BigInt serialization. Imported only by Server Components.
-- **`pipeline/` is fully separate:** The Python pipeline is an offline tool with its own dependencies. It produces JSON files that are manually copied into `prisma/seed-data/`. No runtime dependency between pipeline and web app.
-- **`prisma/seed-data/` as the bridge:** JSON files are the contract between the Python pipeline and the TypeScript seed script. This decouples the two languages completely.
+## Updated System Diagram (v1.1 Additions)
 
-## Architectural Patterns
+```
+                    OFFLINE (annual data pipeline)
+  +--------------------------------------------------+
+  |  Budget PDF --> Python Pipeline --> JSON seed      |
+  |                                                    |
+  |  NEW: describe.py calls Claude API for AI          |
+  |  descriptions (summary, detailed, key_changes)     |
+  |  --> ai-descriptions.json seeded to DB             |
+  +--------------------------------------------------+
+                         |
+                    SEED TIME (prisma db seed)
+  +--------------------------------------------------+
+  |  JSON files --> Prisma seed script --> PostgreSQL   |
+  |                                                    |
+  |  NEW: search_vector tsvector column + GIN index    |
+  |  on departments table (via raw SQL migration)      |
+  +--------------------------------------------------+
+                         |
+           RUNTIME (Next.js 16 on Vercel)
+  +--------------------------------------------------+
+  |                                                    |
+  |  SERVER COMPONENTS (data fetching layer)           |
+  |  +----------------------------------------------+  |
+  |  | EXISTING: queries.ts (fiscal year, stats)    |  |
+  |  | NEW: explorer-queries.ts                     |  |
+  |  |   - getTreemapData()                         |  |
+  |  |   - getSunburstData()                        |  |
+  |  |   - getRevenueDonutData()                    |  |
+  |  |   - getPennyVizData()                        |  |
+  |  | NEW: department-queries.ts                   |  |
+  |  |   - getDepartmentBySlug()                    |  |
+  |  |   - getDepartmentYoY()                       |  |
+  |  |   - getDepartmentExpenditures()              |  |
+  |  |   - getAllDepartmentSlugs()                   |  |
+  |  | NEW: calculator-queries.ts                   |  |
+  |  |   - getMillageRates()                        |  |
+  |  |   - getStrategicAreaBreakdown()              |  |
+  |  | NEW: search-queries.ts                       |  |
+  |  |   - fullTextSearch() via $queryRaw           |  |
+  |  +----------------------------------------------+  |
+  |         | serialized props (strings, not BigInt)    |
+  |         v                                          |
+  |  CLIENT COMPONENTS ('use client')                  |
+  |  +----------------------------------------------+  |
+  |  | EXISTING: HeroBanner, QuickStats, BudgetTerm |  |
+  |  | NEW: BudgetTreemap (@nivo/treemap)           |  |
+  |  | NEW: BudgetSunburst (@nivo/sunburst)         |  |
+  |  | NEW: RevenueDonut (@nivo/pie)                |  |
+  |  | NEW: PennyViz (custom SVG)                   |  |
+  |  | NEW: YoYBarChart (@nivo/bar)                 |  |
+  |  | NEW: ExpenditureBreakdown (@nivo/pie)        |  |
+  |  | NEW: TaxCalculatorForm (form + computation)  |  |
+  |  | NEW: TaxBreakdownDisplay (results)           |  |
+  |  | NEW: SearchBar (input + debounce)            |  |
+  |  | NEW: SearchResults (result cards)            |  |
+  |  +----------------------------------------------+  |
+  |                                                    |
+  |  API ROUTES (Route Handlers)                       |
+  |  +----------------------------------------------+  |
+  |  | NEW: /api/search/route.ts (GET)              |  |
+  |  |   - Full-text search via PostgreSQL tsvector  |  |
+  |  |   - Returns serialized results               |  |
+  |  +----------------------------------------------+  |
+  +--------------------------------------------------+
+```
 
-### Pattern 1: Server-First with Client Islands
+## New Routes and File Structure
 
-**What:** Default everything to Server Components. Only add `'use client'` to the specific leaf components that need interactivity (charts, forms, search input). Server Components fetch data directly via Prisma and pass serialized props down.
+### Routes to Create
 
-**When to use:** Every page in this application. The homepage Server Component fetches budget totals, strategic area breakdowns, and revenue data, then passes pre-computed arrays to Client chart components.
+| Route | Type | Data Source | Key Components |
+|-------|------|-------------|----------------|
+| `/explorer` | Server Component page | `explorer-queries.ts` | BudgetTreemap, BudgetSunburst, PennyViz |
+| `/explorer/revenue` | Server Component page | `explorer-queries.ts` | RevenueDonut, revenue data table |
+| `/department/[slug]` | Dynamic Server Component | `department-queries.ts` | AI description, YoYBarChart, ExpenditureBreakdown |
+| `/calculator` | Server Component page | `calculator-queries.ts` | TaxCalculatorForm, TaxBreakdownDisplay |
+| `/search` | Server Component page | `searchParams` prop | SearchBar, SearchResults |
+| `/api/search` | Route Handler (GET) | `search-queries.ts` | JSON response |
 
-**Trade-offs:** Minimal JavaScript shipped to browser (budget data is read-only, no auth). Slight complexity in ensuring all props crossing the server/client boundary are serializable (BigInt must be converted to number or string before passing).
+### New Files to Create
 
-**Example:**
+```
+src/
+  app/
+    explorer/
+      page.tsx                    # Budget explorer with treemap + sunburst
+      revenue/
+        page.tsx                  # Revenue sources donut chart page
+    department/
+      [slug]/
+        page.tsx                  # Department detail with AI description
+        loading.tsx               # Skeleton loading state
+    calculator/
+      page.tsx                    # Tax calculator page
+    search/
+      page.tsx                    # Search results page
+    api/
+      search/
+        route.ts                  # Full-text search API endpoint
+    sitemap.ts                    # Dynamic sitemap for SEO
+    robots.ts                     # Robots.txt generation
+  components/
+    charts/
+      BudgetTreemap.tsx           # Nivo ResponsiveTreeMapHtml with drill-down
+      BudgetSunburst.tsx          # Nivo ResponsiveSunburst with drill-down
+      RevenueDonut.tsx            # Nivo ResponsivePie for revenue sources
+      PennyViz.tsx                # Custom penny/dollar segment visualization
+      YoYBarChart.tsx             # Nivo ResponsiveBar for year-over-year
+      ExpenditureBreakdown.tsx    # Nivo ResponsivePie for expenditure categories
+      ChartContainer.tsx          # Shared wrapper: loading, error, a11y table fallback
+    calculator/
+      TaxCalculatorForm.tsx       # Property value input + homestead toggle
+      TaxBreakdownDisplay.tsx     # Personalized results with per-area breakdown
+    department/
+      DepartmentHeader.tsx        # Name, strategic area, AI summary
+      DepartmentYoY.tsx           # Year-over-year comparison section
+      ExpenditureTable.tsx        # Sortable expenditure category table
+    search/
+      SearchBar.tsx               # Debounced search input
+      SearchResults.tsx           # Result cards with highlights
+  lib/
+    db/
+      explorer-queries.ts         # Treemap, sunburst, revenue, penny data
+      department-queries.ts       # Department detail, YoY, expenditures
+      calculator-queries.ts       # Millage rates, strategic area breakdown
+      search-queries.ts           # Full-text search via $queryRaw
+    chart-colors.ts               # Strategic area color mapping for Nivo
+  types/
+    charts.ts                     # NivoTreemapNode, NivoSunburstNode, etc.
+    calculator.ts                 # TaxInput, TaxBreakdown types
+    search.ts                     # SearchResult, SearchParams types
+```
+
+### Files to Modify
+
+| File | Change | Reason |
+|------|--------|--------|
+| `src/app/page.tsx` | Add BudgetTreemap, PennyViz, RevenueDonut sections below QuickStats | Homepage visualization placeholders already exist in comments |
+| `src/lib/nav-config.ts` | Add 'Search' and 'Departments' nav items, update icons | New routes need navigation |
+| `src/app/layout.tsx` | Add per-route SEO metadata template, possibly add search in header | SEO enhancement |
+| `src/app/globals.css` | Add chart-specific CSS custom properties if needed | Nivo chart styling |
+| `src/types/budget.ts` | Add SerializedDepartmentDetail, SerializedRevenueSource types | New data shapes |
+| `package.json` | Add @nivo/* packages, @anthropic-ai/sdk (if server-side AI) | New dependencies |
+
+## Component Architecture
+
+### Pattern 1: Nivo Charts as Client Component Islands
+
+**What:** Every Nivo chart component gets `'use client'` at the top. The parent Server Component page fetches data via Prisma, transforms it into Nivo's expected data shape, and passes it as props. The chart component itself is purely presentational + interactive.
+
+**Why Nivo requires this:** Nivo uses React Context internally (`createContext`), which is only available in Client Components. Attempting to render any Nivo chart in a Server Component throws: `TypeError: createContext only works in Client Components`.
+
+**Data transformation happens in the query layer, NOT the chart component.** The query function returns data already shaped for Nivo (with `id`, `value`, `children` keys). This keeps chart components thin and testable.
+
+**Confidence:** HIGH (verified via [Nivo GitHub Issue #2626](https://github.com/plouc/nivo/issues/2626))
+
 ```typescript
-// app/page.tsx (Server Component - NO 'use client')
-import { getBudgetOverview } from '@/lib/queries/budget'
-import { BudgetTreemap } from '@/components/charts/budget-treemap'
-import { RevenueDonut } from '@/components/charts/revenue-donut'
-
-export default async function HomePage() {
-  const overview = await getBudgetOverview() // Direct Prisma query
-
-  return (
-    <main>
-      <h1>Miami-Dade County Budget: {overview.fiscalYear}</h1>
-      <p>Total: {formatCurrency(overview.totalBudget)}</p>
-
-      {/* Client Component receives serialized data */}
-      <BudgetTreemap
-        data={overview.strategicAreas}  // Already serialized (BigInt -> number)
-        totalBudget={overview.totalBudget}
-      />
-
-      <RevenueDonut data={overview.revenueSources} />
-    </main>
-  )
-}
-```
-
-### Pattern 2: BigInt Serialization at the Query Layer
-
-**What:** Convert BigInt cents to JavaScript numbers at the data access layer before data ever reaches components. Since Miami-Dade's total budget (~$13.2B = 1,320,000,000,000 cents) fits within Number.MAX_SAFE_INTEGER (9,007,199,254,740,991), this conversion is safe. Format to display strings only in the UI layer.
-
-**When to use:** Every query function in `lib/queries/`. Never let BigInt values leak into component props.
-
-**Trade-offs:** Slight precision loss is irrelevant for budget display (we are showing dollars, not sub-cent values). Avoids JSON serialization errors across the server/client boundary. Keeps component code clean.
-
-**Example:**
-```typescript
-// lib/queries/budget.ts
-import 'server-only'  // Prevents accidental client import
+// src/lib/db/explorer-queries.ts (SERVER ONLY)
 import prisma from '@/lib/prisma'
 
-interface StrategicAreaData {
-  id: number
-  name: string
-  operatingBudget: number  // cents as number, NOT BigInt
-  capitalBudget: number
-  totalBudget: number
-  departments: { name: string; slug: string; budget: number }[]
+export type TreemapNode = {
+  id: string           // Nivo identity key
+  value?: number       // Nivo value key (cents converted to dollars)
+  children?: TreemapNode[]
+  color?: string       // Strategic area hex color
+  slug?: string        // For navigation on click
 }
 
-export async function getBudgetOverview(): Promise<{
-  fiscalYear: string
-  totalBudget: number
-  strategicAreas: StrategicAreaData[]
-}> {
-  const fy = await prisma.fiscalYear.findFirst({
-    where: { isCurrent: true },
+export async function getTreemapData(): Promise<TreemapNode> {
+  const fy = await prisma.fiscal_years.findFirst({
+    where: { label: 'FY 2025-26' },
+  })
+  if (!fy) throw new Error('Fiscal year not found')
+
+  const areas = await prisma.strategic_areas.findMany({
     include: {
-      strategicAreas: {
+      departments: {
         include: {
-          departments: {
-            include: { budgets: true }
-          }
-        }
-      }
-    }
+          department_budgets: {
+            where: { fiscal_year_id: fy.id, is_actual: false },
+          },
+        },
+      },
+      strategic_area_budgets: {
+        where: { fiscal_year_id: fy.id },
+      },
+    },
+    orderBy: { display_order: 'asc' },
   })
 
-  // Serialize BigInt at the boundary
   return {
-    fiscalYear: fy.name,
-    totalBudget: Number(fy.totalBudget),
-    strategicAreas: fy.strategicAreas.map(sa => ({
-      id: sa.id,
-      name: sa.name,
-      operatingBudget: Number(sa.operatingBudget),
-      capitalBudget: Number(sa.capitalBudget),
-      totalBudget: Number(sa.operatingBudget) + Number(sa.capitalBudget),
-      departments: sa.departments.map(d => ({
-        name: d.name,
-        slug: d.slug,
-        budget: Number(d.budgets?.[0]?.totalBudget ?? 0n),
-      })),
+    id: 'Miami-Dade County Budget',
+    children: areas.map((area) => ({
+      id: area.name,
+      color: area.color ?? '#6B7280',
+      slug: area.slug,
+      children: area.departments.map((dept) => {
+        const budget = dept.department_budgets[0]
+        return {
+          id: dept.name,
+          value: Number(budget?.total_budget ?? 0n) / 100, // cents to dollars
+          slug: dept.slug,
+        }
+      }),
     })),
   }
 }
 ```
 
-### Pattern 3: D3 Treemap with React State for Drill-Down
-
-**What:** Use D3's `d3-hierarchy` and `d3-treemap` layout algorithms to compute rectangle positions, but render with React (SVG elements managed by React, not D3 DOM manipulation). Manage drill-down state (current node, breadcrumb path) in React useState. Recharts' Treemap does NOT support drill-down natively (confirmed via GitHub issue #1276, closed without implementation).
-
-**When to use:** The homepage treemap and any hierarchical budget drill-down visualization.
-
-**Trade-offs:** More code than a Recharts Treemap, but full control over drill-down behavior, animations, and breadcrumb navigation. D3 handles the math; React handles the DOM. This is the established pattern for interactive treemaps in React.
-
-**Example:**
 ```typescript
-// components/charts/budget-treemap.tsx
+// src/components/charts/BudgetTreemap.tsx (CLIENT COMPONENT)
 'use client'
 
-import { useState, useMemo } from 'react'
-import * as d3 from 'd3-hierarchy'
+import { useState, useCallback } from 'react'
+import { ResponsiveTreeMapHtml } from '@nivo/treemap'
+import { useRouter } from 'next/navigation'
+import type { TreemapNode } from '@/lib/db/explorer-queries'
 
-interface TreeNode {
-  name: string
-  value?: number
-  children?: TreeNode[]
+type Props = {
+  data: TreemapNode
 }
 
-interface BreadcrumbItem {
-  name: string
-  node: d3.HierarchyRectangularNode<TreeNode>
-}
+export function BudgetTreemap({ data }: Props) {
+  const router = useRouter()
+  const [currentData, setCurrentData] = useState<TreemapNode>(data)
+  const [breadcrumbs, setBreadcrumbs] = useState<{ label: string; data: TreemapNode }[]>([])
 
-export function BudgetTreemap({ data, width, height }: {
-  data: TreeNode
-  width: number
-  height: number
-}) {
-  const [currentNode, setCurrentNode] = useState<d3.HierarchyRectangularNode<TreeNode> | null>(null)
-  const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([])
-
-  const root = useMemo(() => {
-    return d3.treemap<TreeNode>()
-      .size([width, height])
-      .padding(2)
-      .round(true)(
-        d3.hierarchy(data)
-          .sum(d => d.value ?? 0)
-          .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
-      )
-  }, [data, width, height])
-
-  const displayNode = currentNode ?? root
-
-  function handleDrillDown(node: d3.HierarchyRectangularNode<TreeNode>) {
-    if (node.children) {
-      setBreadcrumbs(prev => [...prev, { name: node.data.name, node: displayNode }])
-      setCurrentNode(node)
+  const handleClick = useCallback((node: { data: TreemapNode }) => {
+    const clickedNode = node.data
+    if (clickedNode.children && clickedNode.children.length > 0) {
+      // Drill down into strategic area
+      setBreadcrumbs(prev => [...prev, { label: currentData.id, data: currentData }])
+      setCurrentData(clickedNode)
+    } else if (clickedNode.slug) {
+      // Navigate to department page
+      router.push(`/department/${clickedNode.slug}`)
     }
-  }
+  }, [currentData, router])
 
-  function handleBreadcrumbClick(index: number) {
+  const handleBreadcrumbClick = useCallback((index: number) => {
     const target = breadcrumbs[index]
-    setCurrentNode(target.node === root ? null : target.node)
+    setCurrentData(target.data)
     setBreadcrumbs(prev => prev.slice(0, index))
-  }
-
-  // Re-layout children of the display node to fill full dimensions
-  const leaves = useMemo(() => {
-    if (!displayNode.children) return []
-    const sub = d3.treemap<TreeNode>()
-      .size([width, height])
-      .padding(2)
-      .round(true)(
-        d3.hierarchy({ name: displayNode.data.name, children: displayNode.children.map(c => c.data) })
-          .sum(d => d.value ?? 0)
-          .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
-      )
-    return sub.leaves()
-  }, [displayNode, width, height])
+  }, [breadcrumbs])
 
   return (
     <div>
-      {/* Breadcrumb navigation */}
-      <nav aria-label="Budget breadcrumb">
-        <button onClick={() => { setCurrentNode(null); setBreadcrumbs([]) }}>
-          Total Budget
-        </button>
+      <nav aria-label="Treemap breadcrumb" className="flex gap-2 mb-4 text-sm">
         {breadcrumbs.map((crumb, i) => (
-          <button key={i} onClick={() => handleBreadcrumbClick(i)}>
-            {crumb.name}
+          <button
+            key={i}
+            onClick={() => handleBreadcrumbClick(i)}
+            className="text-mdc-blue hover:underline"
+          >
+            {crumb.label} &gt;
           </button>
         ))}
+        <span className="font-semibold">{currentData.id}</span>
       </nav>
-
-      {/* Treemap rendered by React, positioned by D3 */}
-      <svg width={width} height={height}>
-        {leaves.map((leaf, i) => (
-          <g key={i} onClick={() => handleDrillDown(leaf)}>
-            <rect
-              x={leaf.x0} y={leaf.y0}
-              width={leaf.x1 - leaf.x0} height={leaf.y1 - leaf.y0}
-              fill={getColorForArea(leaf.data.name)}
-              style={{ cursor: leaf.children ? 'pointer' : 'default' }}
-            />
-            <text x={leaf.x0 + 4} y={leaf.y0 + 16} fontSize={12}>
-              {leaf.data.name}
-            </text>
-          </g>
-        ))}
-      </svg>
+      <div style={{ height: 500 }}>
+        <ResponsiveTreeMapHtml
+          data={currentData}
+          identity="id"
+          value="value"
+          valueFormat="$.2s"
+          label="id"
+          labelSkipSize={40}
+          onClick={handleClick}
+          colors={(node) => node.data.color ?? '#6B7280'}
+          borderWidth={2}
+          borderColor={{ from: 'color', modifiers: [['darker', 0.3]] }}
+          animate={true}
+          motionConfig="gentle"
+        />
+      </div>
     </div>
   )
 }
 ```
 
-### Pattern 4: Static Generation with Long Revalidation
-
-**What:** Use `generateStaticParams` to pre-render all 35 department pages at build time. Set `revalidate` to a very long interval (e.g., 86400 seconds = 1 day, or even `false` for no revalidation until the next deploy). Budget data changes once per year, so pages are effectively static.
-
-**When to use:** Department detail pages (`/department/[slug]`), homepage, any page displaying budget data.
-
-**Trade-offs:** Near-zero runtime cost on Vercel. First visitor gets cached HTML instantly. Only needs rebuild/redeploy when annual budget data is seeded. No runtime database queries after initial build.
-
-**Example:**
 ```typescript
-// app/department/[slug]/page.tsx
-import { getDepartmentBySlug, getAllDepartmentSlugs } from '@/lib/queries/departments'
+// src/app/explorer/page.tsx (SERVER COMPONENT)
+import { getTreemapData, getSunburstData, getPennyVizData } from '@/lib/db/explorer-queries'
+import { BudgetTreemap } from '@/components/charts/BudgetTreemap'
+import { BudgetSunburst } from '@/components/charts/BudgetSunburst'
+import { PennyViz } from '@/components/charts/PennyViz'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+
+export const metadata = {
+  title: 'Explore the Budget',
+  description: "Interactive treemap and sunburst visualizations of Miami-Dade County's $13.2 billion budget.",
+}
+
+export default async function ExplorerPage() {
+  const [treemapData, sunburstData, pennyData] = await Promise.all([
+    getTreemapData(),
+    getSunburstData(),
+    getPennyVizData(),
+  ])
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-(--spacing-section)">
+      <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Explorer' }]} />
+      <h1 className="text-3xl font-heading font-bold mt-6 mb-2">Explore the Budget</h1>
+      <p className="text-text-secondary mb-8">
+        Click any area to drill down. Click a department to see its detail page.
+      </p>
+
+      <section aria-label="Budget treemap">
+        <BudgetTreemap data={treemapData} />
+      </section>
+
+      <section aria-label="Budget sunburst" className="mt-(--spacing-section)">
+        <BudgetSunburst data={sunburstData} />
+      </section>
+
+      <section aria-label="Penny visualization" className="mt-(--spacing-section)">
+        <PennyViz data={pennyData} />
+      </section>
+    </div>
+  )
+}
+```
+
+### Pattern 2: Tax Calculator -- Server-Fetched Rates, Client-Side Computation
+
+**What:** Millage rates and strategic area budget proportions are fetched by the Server Component and passed as props. All computation (taxable value calculation, per-area breakdown) happens client-side in the form component. No API call needed on form submit.
+
+**Why this pattern:** The computation is purely mathematical (property value * millage rate = tax). The data (millage rates) is static for the fiscal year. Doing this client-side avoids unnecessary round-trips and makes the calculator feel instant.
+
+**Homestead exemption:** Standard Florida homestead exemption logic: first $25,000 exempt from all taxes, next $25,000 taxable, next $25,000 exempt from non-school taxes only, remainder taxable. For simplicity and since this is county-only (not school board), apply $50,000 exemption when homestead toggle is on.
+
+```typescript
+// src/lib/db/calculator-queries.ts
+import prisma from '@/lib/prisma'
+
+export type MillageRateData = {
+  authority: string
+  rate: number     // decimal millage rate
+  isCounty: boolean
+}
+
+export type StrategicAreaProportion = {
+  name: string
+  slug: string
+  color: string
+  proportion: number  // 0-1 fraction of operating budget
+}
+
+export async function getCalculatorData() {
+  const fy = await prisma.fiscal_years.findFirst({
+    where: { label: 'FY 2025-26' },
+  })
+  if (!fy) throw new Error('Fiscal year not found')
+
+  const [millageRates, areaBudgets] = await Promise.all([
+    prisma.millage_rates.findMany({
+      where: { fiscal_year_id: fy.id },
+      orderBy: { display_order: 'asc' },
+    }),
+    prisma.strategic_area_budgets.findMany({
+      where: { fiscal_year_id: fy.id },
+      include: { strategic_areas: true },
+    }),
+  ])
+
+  const totalOperating = Number(fy.total_operating ?? 0n)
+
+  return {
+    millageRates: millageRates.map((mr) => ({
+      authority: mr.authority,
+      rate: Number(mr.millage_rate),
+      isCounty: mr.is_county ?? true,
+    })),
+    strategicAreaProportions: areaBudgets
+      .map((ab) => ({
+        name: ab.strategic_areas.name,
+        slug: ab.strategic_areas.slug,
+        color: ab.strategic_areas.color ?? '#6B7280',
+        proportion: totalOperating > 0
+          ? Number(ab.operating_budget ?? 0n) / totalOperating
+          : 0,
+      }))
+      .sort((a, b) => b.proportion - a.proportion),
+    fiscalYear: fy.label,
+  }
+}
+```
+
+```typescript
+// src/components/calculator/TaxCalculatorForm.tsx
+'use client'
+
+import { useState, useMemo } from 'react'
+import type { MillageRateData, StrategicAreaProportion } from '@/lib/db/calculator-queries'
+
+type Props = {
+  millageRates: MillageRateData[]
+  strategicAreaProportions: StrategicAreaProportion[]
+}
+
+export function TaxCalculatorForm({ millageRates, strategicAreaProportions }: Props) {
+  const [propertyValue, setPropertyValue] = useState<number | ''>('')
+  const [hasHomestead, setHasHomestead] = useState(false)
+
+  const results = useMemo(() => {
+    if (propertyValue === '' || propertyValue <= 0) return null
+
+    const exemption = hasHomestead ? 50_000 : 0
+    const taxableValue = Math.max(0, propertyValue - exemption)
+
+    // Total county millage (sum of is_county=true rates)
+    const countyMillage = millageRates
+      .filter((mr) => mr.isCounty)
+      .reduce((sum, mr) => sum + mr.rate, 0)
+
+    const totalCountyTax = (taxableValue / 1000) * countyMillage
+
+    // Per-area breakdown based on operating budget proportions
+    const perAreaBreakdown = strategicAreaProportions.map((area) => ({
+      ...area,
+      taxAmount: totalCountyTax * area.proportion,
+    }))
+
+    return {
+      taxableValue,
+      countyMillage,
+      totalCountyTax,
+      perAreaBreakdown,
+      millageDetails: millageRates.filter((mr) => mr.isCounty),
+    }
+  }, [propertyValue, hasHomestead, millageRates, strategicAreaProportions])
+
+  return (
+    <div>
+      {/* Form inputs */}
+      <label>Property Value ($)</label>
+      <input
+        type="number"
+        value={propertyValue}
+        onChange={(e) => setPropertyValue(e.target.value ? Number(e.target.value) : '')}
+        min={0}
+        step={1000}
+      />
+      <label>
+        <input
+          type="checkbox"
+          checked={hasHomestead}
+          onChange={(e) => setHasHomestead(e.target.checked)}
+        />
+        Homestead Exemption
+      </label>
+
+      {/* Results rendered by TaxBreakdownDisplay */}
+      {results && <TaxBreakdownDisplay results={results} />}
+    </div>
+  )
+}
+```
+
+### Pattern 3: Department Detail Pages with generateStaticParams
+
+**What:** Pre-render all 35 department pages at build time using `generateStaticParams`. Each page shows: AI-generated description (from `budget_descriptions` table), year-over-year budget chart, expenditure category breakdown, and department metadata.
+
+**Why generateStaticParams:** Budget data changes once per year. Static pages mean zero runtime DB queries for department pages, instant load from Vercel CDN, and perfect SEO (full HTML at crawl time).
+
+**Dynamic metadata:** Each department page gets its own `<title>`, `<meta description>`, and Open Graph tags via `generateMetadata`.
+
+**Confidence:** HIGH (Next.js official pattern)
+
+```typescript
+// src/app/department/[slug]/page.tsx
 import { notFound } from 'next/navigation'
+import {
+  getDepartmentBySlug,
+  getDepartmentYoY,
+  getDepartmentExpenditures,
+  getAllDepartmentSlugs,
+} from '@/lib/db/department-queries'
+import { DepartmentHeader } from '@/components/department/DepartmentHeader'
+import { YoYBarChart } from '@/components/charts/YoYBarChart'
+import { ExpenditureBreakdown } from '@/components/charts/ExpenditureBreakdown'
+import { ExpenditureTable } from '@/components/department/ExpenditureTable'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+import type { Metadata } from 'next'
 
 // Pre-render all 35 department pages at build time
 export async function generateStaticParams() {
   const slugs = await getAllDepartmentSlugs()
-  return slugs.map(slug => ({ slug }))
+  return slugs.map((slug) => ({ slug }))
 }
 
-// Revalidate once per day (safety net; data only changes yearly)
-export const revalidate = 86400
+// Dynamic SEO metadata per department
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const dept = await getDepartmentBySlug(slug)
+  if (!dept) return {}
+
+  return {
+    title: dept.name,
+    description: dept.aiSummary ?? `Explore ${dept.name}'s budget, spending breakdown, and year-over-year trends.`,
+    openGraph: {
+      title: `${dept.name} | Miami-Dade Budget Explorer`,
+      description: dept.aiSummary ?? `Budget details for ${dept.name}`,
+    },
+  }
+}
 
 export default async function DepartmentPage({
   params,
@@ -408,259 +560,609 @@ export default async function DepartmentPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const department = await getDepartmentBySlug(slug)
-  if (!department) notFound()
+  const [dept, yoyData, expenditures] = await Promise.all([
+    getDepartmentBySlug(slug),
+    getDepartmentYoY(slug),
+    getDepartmentExpenditures(slug),
+  ])
+
+  if (!dept) notFound()
 
   return (
-    <article>
-      <h1>{department.name}</h1>
-      <p>{department.aiDescription}</p>
-      {/* ... charts and tables */}
-    </article>
+    <div className="max-w-4xl mx-auto px-4 py-(--spacing-section)">
+      <Breadcrumbs
+        items={[
+          { label: 'Home', href: '/' },
+          { label: 'Explorer', href: '/explorer' },
+          { label: dept.strategicAreaName, href: `/explorer#${dept.strategicAreaSlug}` },
+          { label: dept.name },
+        ]}
+      />
+
+      <DepartmentHeader
+        name={dept.name}
+        strategicArea={dept.strategicAreaName}
+        strategicAreaColor={dept.strategicAreaColor}
+        totalBudget={dept.totalBudget}
+        employeeCount={dept.employeeCount}
+        aiSummary={dept.aiSummary}
+        aiDetailedDescription={dept.aiDetailedDescription}
+        aiKeyChanges={dept.aiKeyChanges}
+      />
+
+      <section aria-label="Year-over-year trends" className="mt-(--spacing-section)">
+        <h2 className="text-xl font-heading font-semibold mb-4">Budget Over Time</h2>
+        <YoYBarChart data={yoyData} />
+      </section>
+
+      <section aria-label="Expenditure breakdown" className="mt-(--spacing-section)">
+        <h2 className="text-xl font-heading font-semibold mb-4">How the Money Is Spent</h2>
+        <ExpenditureBreakdown data={expenditures.chartData} />
+        <ExpenditureTable data={expenditures.tableData} />
+      </section>
+    </div>
   )
 }
 ```
 
-### Pattern 5: Prisma Client Singleton
+### Pattern 4: Full-Text Search via PostgreSQL tsvector + API Route Handler
 
-**What:** Instantiate PrismaClient once using the globalThis pattern to prevent connection pool exhaustion during Next.js hot module reload in development.
+**What:** Add a `search_vector tsvector` generated column to the `departments` table (combining `name` and `description` fields). Create a GIN index on it. Use a Next.js Route Handler (`/api/search`) that queries with `$queryRaw` using `to_tsquery()`. The `/search` page reads `searchParams` from the URL and renders results.
 
-**When to use:** Always. This is required infrastructure, not optional.
+**Why not Prisma's built-in full-text search:** Prisma's FTS preview feature does not support tsvector columns or weighted search. For a small dataset (35 departments + descriptions), PostgreSQL native FTS is more than sufficient and avoids adding a third-party search service.
 
-**Trade-offs:** None. This is the officially documented pattern from both Prisma and Next.js.
+**Why Route Handler instead of Server Action:** Search is a GET request (cacheable, shareable URLs, browser back button works). Route Handlers are the correct pattern for GET endpoints. Server Actions are for mutations (POST).
 
-**Example:**
+**Confidence:** HIGH for PostgreSQL FTS approach; MEDIUM for Prisma `$queryRaw` integration (requires raw SQL migration outside Prisma's schema management)
+
+```sql
+-- Migration: Add full-text search support
+-- Run via raw SQL migration (not Prisma migrate, which doesn't support tsvector)
+
+ALTER TABLE departments
+ADD COLUMN search_vector tsvector
+GENERATED ALWAYS AS (
+  setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
+  setweight(to_tsvector('english', coalesce(description, '')), 'B')
+) STORED;
+
+CREATE INDEX idx_departments_search ON departments USING GIN (search_vector);
+
+-- Also make budget_descriptions searchable
+ALTER TABLE budget_descriptions
+ADD COLUMN search_vector tsvector
+GENERATED ALWAYS AS (
+  setweight(to_tsvector('english', coalesce(summary, '')), 'A') ||
+  setweight(to_tsvector('english', coalesce(detailed_description, '')), 'B') ||
+  setweight(to_tsvector('english', coalesce(key_changes, '')), 'C')
+) STORED;
+
+CREATE INDEX idx_budget_descriptions_search ON budget_descriptions USING GIN (search_vector);
+```
+
 ```typescript
-// lib/prisma.ts
-import { PrismaClient } from '@prisma/client'
+// src/lib/db/search-queries.ts
+import prisma from '@/lib/prisma'
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+export type SearchResult = {
+  type: 'department' | 'description'
+  name: string
+  slug: string
+  strategicArea: string
+  excerpt: string
+  rank: number
 }
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query'] : [],
+export async function fullTextSearch(query: string): Promise<SearchResult[]> {
+  if (!query || query.trim().length < 2) return []
+
+  // Sanitize and format query for tsquery
+  const sanitized = query.trim().replace(/[^\w\s]/g, '').split(/\s+/).join(' & ')
+
+  const results = await prisma.$queryRaw<SearchResult[]>`
+    SELECT
+      'department' as type,
+      d.name,
+      d.slug,
+      sa.name as "strategicArea",
+      ts_headline('english', coalesce(d.description, d.name),
+        to_tsquery('english', ${sanitized}),
+        'StartSel=<mark>, StopSel=</mark>, MaxWords=50, MinWords=25'
+      ) as excerpt,
+      ts_rank(d.search_vector, to_tsquery('english', ${sanitized})) as rank
+    FROM departments d
+    JOIN strategic_areas sa ON sa.id = d.strategic_area_id
+    WHERE d.search_vector @@ to_tsquery('english', ${sanitized})
+
+    UNION ALL
+
+    SELECT
+      'description' as type,
+      d.name,
+      d.slug,
+      sa.name as "strategicArea",
+      ts_headline('english', coalesce(bd.summary, ''),
+        to_tsquery('english', ${sanitized}),
+        'StartSel=<mark>, StopSel=</mark>, MaxWords=50, MinWords=25'
+      ) as excerpt,
+      ts_rank(bd.search_vector, to_tsquery('english', ${sanitized})) as rank
+    FROM budget_descriptions bd
+    JOIN departments d ON bd.entity_type = 'department' AND bd.entity_id = d.id
+    JOIN strategic_areas sa ON sa.id = d.strategic_area_id
+    WHERE bd.search_vector @@ to_tsquery('english', ${sanitized})
+
+    ORDER BY rank DESC
+    LIMIT 50
+  `
+
+  return results
+}
+```
+
+```typescript
+// src/app/api/search/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { fullTextSearch } from '@/lib/db/search-queries'
+
+export async function GET(request: NextRequest) {
+  const query = request.nextUrl.searchParams.get('q')
+
+  if (!query || query.trim().length < 2) {
+    return NextResponse.json({ results: [], query: '' })
+  }
+
+  const results = await fullTextSearch(query)
+
+  return NextResponse.json({
+    results,
+    query: query.trim(),
+    count: results.length,
+  })
+}
+```
+
+```typescript
+// src/app/search/page.tsx (SERVER COMPONENT)
+import { fullTextSearch } from '@/lib/db/search-queries'
+import { SearchBar } from '@/components/search/SearchBar'
+import { SearchResults } from '@/components/search/SearchResults'
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Search',
+  description: 'Search Miami-Dade County budget departments, descriptions, and spending data.',
+}
+
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  const { q } = await searchParams
+  const results = q ? await fullTextSearch(q) : []
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-(--spacing-section)">
+      <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'Search' }]} />
+      <h1 className="text-3xl font-heading font-bold mt-6 mb-4">Search the Budget</h1>
+      <SearchBar initialQuery={q ?? ''} />
+      {q && <SearchResults results={results} query={q} />}
+    </div>
+  )
+}
+```
+
+### Pattern 5: AI Descriptions -- Offline Generation, Not Runtime
+
+**What:** AI-generated budget descriptions are produced by the Python pipeline (using the Anthropic Claude API) and stored in the `budget_descriptions` table. The web app reads them like any other database column. There is NO runtime Claude API call from the Next.js app.
+
+**Why offline:** Descriptions are deterministic per fiscal year. Generating them once and storing them avoids: per-request API costs, latency (2-5 seconds per Claude call), rate limiting concerns, and API key exposure in the web app. The 35 departments generate approximately 35 API calls total per fiscal year, costing roughly $0.50-$2.00.
+
+**Schema already exists:** The `budget_descriptions` table with `summary`, `detailed_description`, `key_changes`, and `model_version` columns is already in the Prisma schema from v1.0.
+
+**Confidence:** HIGH (this is the pattern described in PROJECT.md constraints)
+
+```typescript
+// src/lib/db/department-queries.ts (relevant excerpt)
+export async function getDepartmentBySlug(slug: string) {
+  const fy = await prisma.fiscal_years.findFirst({
+    where: { label: 'FY 2025-26' },
+  })
+  if (!fy) return null
+
+  const dept = await prisma.departments.findUnique({
+    where: { slug },
+    include: {
+      strategic_areas: true,
+      department_budgets: {
+        where: { fiscal_year_id: fy.id, is_actual: false },
+      },
+    },
+  })
+  if (!dept) return null
+
+  // Fetch AI description from budget_descriptions table
+  const description = await prisma.budget_descriptions.findFirst({
+    where: {
+      fiscal_year_id: fy.id,
+      entity_type: 'department',
+      entity_id: dept.id,
+    },
   })
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+  const budget = dept.department_budgets[0]
 
-export default prisma
+  return {
+    name: dept.name,
+    slug: dept.slug,
+    strategicAreaName: dept.strategic_areas.name,
+    strategicAreaSlug: dept.strategic_areas.slug,
+    strategicAreaColor: dept.strategic_areas.color ?? '#6B7280',
+    totalBudget: budget?.total_budget?.toString() ?? '0',
+    operatingBudget: budget?.operating_budget?.toString() ?? '0',
+    capitalBudget: budget?.capital_budget?.toString() ?? '0',
+    employeeCount: budget?.employee_count ?? null,
+    // AI-generated fields (may be null if pipeline hasn't run yet)
+    aiSummary: description?.summary ?? null,
+    aiDetailedDescription: description?.detailed_description ?? null,
+    aiKeyChanges: description?.key_changes ?? null,
+  }
+}
 ```
 
-## Data Flow
+### Pattern 6: SEO with generateMetadata and Dynamic Sitemap
 
-### Request Flow (Page Load)
+**What:** Each page exports a static `metadata` object or async `generateMetadata` function. A `sitemap.ts` file at `src/app/sitemap.ts` queries all department slugs and generates a sitemap. A `robots.ts` file controls crawler access.
 
-```
-User requests /department/fire-rescue
-    |
-    v
-Next.js Router matches app/department/[slug]/page.tsx
-    |
-    v
-Server Component (page.tsx) calls getDepartmentBySlug('fire-rescue')
-    |
-    v
-lib/queries/departments.ts runs Prisma query against PostgreSQL
-    |
-    v
-Query result: BigInt values converted to numbers at query layer
-    |
-    v
-Server Component renders HTML + passes serialized props to Client Components
-    |
-    v
-Client Components hydrate: charts render SVG, interactivity activates
-    |
-    v
-User sees fully interactive page (treemap clickable, charts tooltippable)
-```
+**Existing state:** The root `layout.tsx` already has a base `metadata` object with `title.template: '%s | Miami-Dade Budget Explorer'`. The homepage and glossary pages already have page-specific metadata.
 
-### Data Pipeline Flow (Annual/Manual)
+**New:** Department pages use `generateMetadata` to include the department name and AI summary in the `<title>` and Open Graph tags. The sitemap includes all static routes plus all 35 department routes.
 
-```
-Budget PDF published by Miami-Dade County
-    |
-    v
-pipeline/extract.py: pdfplumber extracts tables, text from PDF
-    |
-    v
-pipeline/transform.py: normalizes data, validates totals, structures hierarchy
-    |                   (strategic areas -> departments -> line items)
-    v
-pipeline/describe.py: sends each department to Claude API for plain-English description
-    |
-    v
-pipeline/output/: JSON files written (one per table)
-    |
-    v
-Manual copy: JSON files placed in prisma/seed-data/
-    |
-    v
-prisma db seed: TypeScript seed script reads JSON, inserts records
-    |
-    v
-PostgreSQL updated with new fiscal year data
-    |
-    v
-Redeploy: next build regenerates all static pages with fresh data
+```typescript
+// src/app/sitemap.ts
+import type { MetadataRoute } from 'next'
+import { getAllDepartmentSlugs } from '@/lib/db/department-queries'
+
+const BASE_URL = 'https://budgetexplorer.miamidade.tools'
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const departmentSlugs = await getAllDepartmentSlugs()
+
+  const staticRoutes: MetadataRoute.Sitemap = [
+    { url: BASE_URL, lastModified: new Date(), changeFrequency: 'yearly', priority: 1.0 },
+    { url: `${BASE_URL}/explorer`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.9 },
+    { url: `${BASE_URL}/explorer/revenue`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.7 },
+    { url: `${BASE_URL}/calculator`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.8 },
+    { url: `${BASE_URL}/glossary`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.5 },
+    { url: `${BASE_URL}/search`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.4 },
+  ]
+
+  const departmentRoutes: MetadataRoute.Sitemap = departmentSlugs.map((slug) => ({
+    url: `${BASE_URL}/department/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'yearly' as const,
+    priority: 0.6,
+  }))
+
+  return [...staticRoutes, ...departmentRoutes]
+}
 ```
 
-### Client-Side State Flow (Treemap Drill-Down)
+```typescript
+// src/app/robots.ts
+import type { MetadataRoute } from 'next'
 
-```
-User clicks "Public Safety" in treemap
-    |
-    v
-onClick handler fires in BudgetTreemap component
-    |
-    v
-useState updates: currentNode = Public Safety node
-                   breadcrumbs = [...prev, { name: "Total Budget", node: root }]
-    |
-    v
-useMemo recalculates: D3 treemap layout for Public Safety children
-                       (Fire Rescue, Police, Corrections, etc.)
-    |
-    v
-React re-renders SVG rectangles with new positions/sizes
-    |
-    v
-User sees Public Safety departments filling full treemap area
-    + breadcrumb shows: Total Budget > Public Safety
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: { userAgent: '*', allow: '/' },
+    sitemap: 'https://budgetexplorer.miamidade.tools/sitemap.xml',
+  }
+}
 ```
 
-### Key Data Flows
+## Data Flow Diagrams
 
-1. **Budget overview (homepage):** Server Component fetches fiscal year + all strategic areas with department rollups via single Prisma query with includes. Passes pre-computed arrays to BudgetTreemap (Client) and RevenueDonut (Client).
+### Homepage Visualization Data Flow
 
-2. **Department detail:** Server Component fetches single department with expenditure categories, historical budgets, and AI description. Passes trend data to TrendBarChart (Client) and line items to ExpenditureTable (Client, for sorting).
+```
+page.tsx (Server Component)
+  |
+  |-- getTreemapData()  --> Prisma: strategic_areas + departments + department_budgets
+  |                          Returns: TreemapNode hierarchy (id/value/children/color)
+  |-- getSunburstData() --> Same data, different shape (Nivo sunburst format)
+  |-- getPennyVizData() --> Prisma: strategic_area_budgets (cents_per_dollar)
+  |-- getRevenueDonutData() --> Prisma: revenue_by_source + revenue_sources
+  |
+  v
+Pass as props to Client Components:
+  <BudgetTreemap data={treemapData} />     -- @nivo/treemap, drill-down via useState
+  <BudgetSunburst data={sunburstData} />   -- @nivo/sunburst, drill-down via useState
+  <PennyViz data={pennyData} />            -- Custom SVG, no interactivity beyond tooltip
+  <RevenueDonut data={revenueData} />      -- @nivo/pie, interactive legends
+```
 
-3. **Tax calculator:** Fully client-side. Millage rates are fetched by Server Component at page level and passed as props. Form input and computation happen entirely in the browser.
+### Tax Calculator Data Flow
 
-4. **Search:** Client Component sends query to `/api/search` route. Route handler queries PostgreSQL full-text search via Prisma. Returns serialized results. No Server Component data fetching needed because search is user-initiated.
+```
+/calculator page.tsx (Server Component)
+  |
+  |-- getCalculatorData() --> Prisma: millage_rates + strategic_area_budgets
+  |                           Returns: { millageRates[], strategicAreaProportions[] }
+  v
+<TaxCalculatorForm
+  millageRates={data.millageRates}
+  strategicAreaProportions={data.strategicAreaProportions}
+/>
+  |
+  |-- User types property value, toggles homestead
+  |-- useMemo recomputes:
+  |     taxableValue = propertyValue - exemption
+  |     totalCountyTax = (taxableValue / 1000) * countyMillage
+  |     perArea = strategicAreaProportions.map(area => tax * area.proportion)
+  |
+  v
+<TaxBreakdownDisplay results={computedResults} />
+  Renders: total tax, per-area breakdown, millage rate details
+  No API call. Instant feedback.
+```
+
+### Search Data Flow
+
+```
+User types in SearchBar (Client Component)
+  |
+  |-- Debounce 300ms
+  |-- router.push(`/search?q=${encodeURIComponent(query)}`)
+  |     (URL-based state, enables browser back/forward and sharing)
+  v
+/search page.tsx (Server Component)
+  |
+  |-- const { q } = await searchParams
+  |-- fullTextSearch(q) --> Prisma $queryRaw:
+  |     departments.search_vector @@ to_tsquery(q)
+  |     UNION budget_descriptions.search_vector @@ to_tsquery(q)
+  |     ts_headline for highlighted excerpts
+  |     ORDER BY ts_rank DESC
+  |
+  v
+<SearchResults results={results} query={q} />
+  Renders: result cards with <mark> highlights, department links
+```
+
+### Department Detail Data Flow
+
+```
+/department/[slug] page.tsx (Server Component)
+  |
+  |-- generateStaticParams() --> getAllDepartmentSlugs() (35 slugs, build-time)
+  |-- generateMetadata({ params }) --> department name + AI summary for SEO
+  |
+  |-- getDepartmentBySlug(slug)
+  |     Prisma: departments + strategic_areas + department_budgets + budget_descriptions
+  |     Returns: { name, slug, totalBudget, aiSummary, aiDetailedDescription, aiKeyChanges }
+  |
+  |-- getDepartmentYoY(slug)
+  |     Prisma: department_budgets across 5 fiscal years
+  |     Returns: [{ year: 'FY 2021-22', operating: '...', capital: '...' }, ...]
+  |
+  |-- getDepartmentExpenditures(slug)
+  |     Prisma: department_expenditures + expenditure_categories
+  |     Returns: { chartData: NivoPieData[], tableData: ExpenditureRow[] }
+  |
+  v
+<DepartmentHeader />           -- AI summary, key changes, metadata
+<YoYBarChart data={yoyData} /> -- @nivo/bar, grouped bars (operating + capital)
+<ExpenditureBreakdown />       -- @nivo/pie, category percentages
+<ExpenditureTable />           -- HTML table, sortable, accessible
+```
+
+## Component Boundary Rules
+
+### Server vs Client Decision Matrix
+
+| Component | Server or Client | Why |
+|-----------|-----------------|-----|
+| Any page.tsx | Server | Fetches data via Prisma, renders initial HTML |
+| Any Nivo chart | Client | Requires React Context, SVG interactivity |
+| TaxCalculatorForm | Client | Form state, user input, real-time computation |
+| SearchBar | Client | Keyboard input, debounce, router.push |
+| SearchResults | Server or Client | Server if rendered from page.tsx with searchParams; Client if using API route |
+| DepartmentHeader | Server | Static text rendering, no interactivity |
+| ExpenditureTable | Client | Sortable columns require useState |
+| Breadcrumbs | Server | Static navigation, no state |
+| ChartContainer | Server | Wrapper div with aria attributes, heading |
+
+### Props Crossing Server-Client Boundary
+
+All props must be serializable. The existing codebase uses string serialization for BigInt (`.toString()`). Continue this pattern.
+
+| Type | Serialization | Example |
+|------|---------------|---------|
+| BigInt cents | `.toString()` -> string | `'1323323800000'` |
+| Decimal (millage) | `Number()` -> number | `9.5778` |
+| Date | Not passed as props | Formatted to string in query layer |
+| Nivo data nodes | Plain objects with id/value/children | See TreemapNode type above |
+| Colors | Hex string | `'#0057B8'` |
+
+## Accessibility Architecture
+
+### Chart Accessibility
+
+Every Nivo chart component must be wrapped with an accessible fallback pattern:
+
+```typescript
+// src/components/charts/ChartContainer.tsx
+type Props = {
+  title: string
+  description: string
+  tableData: { label: string; value: string }[]
+  children: React.ReactNode
+}
+
+export function ChartContainer({ title, description, tableData, children }: Props) {
+  return (
+    <figure role="img" aria-label={`${title}: ${description}`}>
+      <figcaption className="sr-only">{title}. {description}</figcaption>
+      {/* Visual chart for sighted users */}
+      <div aria-hidden="true">
+        {children}
+      </div>
+      {/* Data table for screen readers */}
+      <table className="sr-only">
+        <caption>{title}</caption>
+        <thead>
+          <tr><th>Category</th><th>Amount</th></tr>
+        </thead>
+        <tbody>
+          {tableData.map((row) => (
+            <tr key={row.label}>
+              <td>{row.label}</td>
+              <td>{row.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </figure>
+  )
+}
+```
+
+### Keyboard Navigation
+
+- Treemap drill-down: `onClick` + `onKeyDown` (Enter/Space) on nodes
+- Search: Standard form input, `<label>` associated with `<input>`
+- Calculator: Tab order follows form fields, results announced via `aria-live`
+
+## New Dependencies
+
+```bash
+# Nivo chart packages (install exactly these -- each is a separate package)
+pnpm add @nivo/treemap @nivo/sunburst @nivo/pie @nivo/bar @nivo/core @nivo/colors
+
+# Note: @nivo/core is a peer dependency of all Nivo packages
+# React 19 is supported as of Nivo 0.88.0+
+```
+
+**No @anthropic-ai/sdk in the web app.** AI descriptions are generated by the Python pipeline and stored in the database. The web app reads them as plain text from the `budget_descriptions` table.
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Runtime Claude API Calls from Next.js
+
+**What people do:** Call the Anthropic API from a Route Handler or Server Action to generate descriptions on-demand.
+**Why it's wrong for this project:** Descriptions are static per fiscal year. Runtime calls add 2-5 second latency, per-request API costs ($0.01-0.05 per description), rate limiting risk, and API key management in the web app.
+**Do this instead:** Generate all descriptions in the Python pipeline, store in `budget_descriptions`, read as static data.
+
+### Anti-Pattern 2: Client-Side Data Fetching for Charts
+
+**What people do:** Use `useEffect` + `fetch` inside chart components to load data.
+**Why it's wrong:** Creates loading waterfall (page loads -> JS hydrates -> fetch fires -> data arrives -> chart renders). Doubles the perceived load time. Also prevents static generation.
+**Do this instead:** Fetch all chart data in the Server Component, pass as props. Chart components render immediately with data.
+
+### Anti-Pattern 3: Using Nivo in Server Components
+
+**What people do:** Import `ResponsiveTreeMap` directly in a Server Component page.
+**Why it's wrong:** Crashes with `TypeError: createContext only works in Client Components`. Nivo uses React Context internally.
+**Do this instead:** Always wrap Nivo charts in a separate file with `'use client'` directive.
+
+### Anti-Pattern 4: Storing Computed Tax Results in the Database
+
+**What people do:** Create an API endpoint that takes property value and returns computed tax, or store common calculations.
+**Why it's wrong:** The computation is `taxableValue * millageRate / 1000`. It is pure math with no external data dependency beyond the millage rates (which are already loaded). An API call adds latency for no benefit.
+**Do this instead:** Load millage rates in the Server Component, pass to Client Component, compute in `useMemo`.
+
+### Anti-Pattern 5: Full-Text Search with Prisma's Preview Feature
+
+**What people do:** Enable Prisma's `fullTextSearch` preview feature and use `search` filter.
+**Why it's wrong:** Prisma's preview FTS does not support tsvector columns, weighted search, or `ts_headline` for result highlighting. It uses basic LIKE queries under the hood, which are slower and less relevant.
+**Do this instead:** Use `$queryRaw` with proper PostgreSQL `to_tsvector`, `to_tsquery`, `ts_rank`, and `ts_headline` functions. Create the tsvector column and GIN index via raw SQL migration.
+
+## Build Order (Dependency Chain)
+
+```
+Phase 1: Data Layer + Queries (no visible UI changes)
+  - explorer-queries.ts (treemap, sunburst, penny, revenue data)
+  - department-queries.ts (detail, YoY, expenditures)
+  - calculator-queries.ts (millage rates, proportions)
+  - New TypeScript types (charts.ts, calculator.ts, search.ts)
+  - Raw SQL migration for search_vector columns + GIN indexes
+  - search-queries.ts ($queryRaw full-text search)
+  Depends on: existing Prisma schema, existing prisma.ts singleton
+  |
+  v
+Phase 2: Chart Components (independent, can be built in parallel)
+  - ChartContainer.tsx (a11y wrapper)
+  - BudgetTreemap.tsx (@nivo/treemap with drill-down)
+  - BudgetSunburst.tsx (@nivo/sunburst with drill-down)
+  - RevenueDonut.tsx (@nivo/pie)
+  - PennyViz.tsx (custom SVG)
+  - YoYBarChart.tsx (@nivo/bar)
+  - ExpenditureBreakdown.tsx (@nivo/pie)
+  Depends on: @nivo/* packages installed, query types defined
+  |
+  v
+Phase 3: Explorer + Department Pages (main content routes)
+  - /explorer page with treemap, sunburst, penny viz
+  - /explorer/revenue page with donut chart
+  - /department/[slug] page with generateStaticParams
+  - Department components (DepartmentHeader, ExpenditureTable)
+  - Homepage updated to include visualizations
+  Depends on: chart components, query functions
+  |
+  v
+Phase 4: Calculator + Search (user-input features)
+  - /calculator page with TaxCalculatorForm
+  - TaxBreakdownDisplay component
+  - /search page with SearchBar, SearchResults
+  - /api/search route handler
+  - SearchBar with debounce + URL state
+  Depends on: query functions, basic UI components
+  |
+  v
+Phase 5: SEO + Polish
+  - sitemap.ts (dynamic with department slugs)
+  - robots.ts
+  - generateMetadata on all new pages
+  - Open Graph images
+  - nav-config.ts updates (add Search, rename Explorer)
+  - Accessibility audit on all new components
+  Depends on: all routes exist, all content rendered
+```
+
+**Critical path:** Phase 1 must complete before Phases 2-3. Phase 2 components can be built in parallel. Phase 3 integrates Phase 2 components into pages. Phase 4 is independent of Phase 3 (no shared components). Phase 5 is purely additive.
 
 ## Scaling Considerations
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 0-1k users | Current architecture is ideal. Static pages served from Vercel CDN edge. PostgreSQL only hit at build time (not runtime for most pages). Zero scaling concerns. |
-| 1k-100k users | Add ISR revalidation headers. Consider moving search to a dedicated API route with rate limiting. Vercel handles CDN scaling automatically. |
-| 100k+ users | Unlikely for a county budget tool, but: add Redis caching for search results, consider Algolia for full-text search instead of PostgreSQL. Pre-render search result pages for common queries. |
+| Concern | Current (< 1k users) | At 10k users | At 100k users |
+|---------|----------------------|--------------|---------------|
+| Chart rendering | Nivo renders client-side, zero server cost | Same | Same (client-side) |
+| Department pages | Static via generateStaticParams, CDN-served | Same | Same |
+| Tax calculator | Fully client-side computation | Same | Same |
+| Search | PostgreSQL FTS on 35 departments | Add 60s response cache | Consider Algolia if dataset grows |
+| API route /api/search | Serverless function, cold start ~200ms | Add rate limiting | Add Redis cache |
 
-### Scaling Priorities
-
-1. **First bottleneck (search):** Full-text search against PostgreSQL is the only runtime database query. At scale, add debouncing on client (already planned), response caching with short TTL, and eventually a search index.
-
-2. **Second bottleneck (none for static pages):** The treemap, department pages, and calculator are all statically generated or fully client-side. Vercel CDN handles any traffic volume for static assets.
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Fetching Data in Client Components via useEffect
-
-**What people do:** Import Prisma or call fetch() inside chart components to load data.
-**Why it's wrong:** Doubles the JavaScript bundle (Prisma client code ships to browser), exposes database connection strings, creates loading waterfalls (page loads, then JS loads, then data loads), and prevents static generation.
-**Do this instead:** Fetch all data in the Server Component (page.tsx), serialize it, and pass as props to Client Components. The chart receives data immediately at hydration time.
-
-### Anti-Pattern 2: Using Recharts Treemap for Drill-Down
-
-**What people do:** Try to build drill-down navigation using Recharts' `<Treemap>` component with onClick handlers to swap data.
-**Why it's wrong:** Recharts Treemap has no native drill-down support (GitHub issue #1276, closed without implementation). Building it on top requires fighting the library's rendering pipeline, and custom content rendering is limited.
-**Do this instead:** Use D3's `d3-hierarchy` and `d3-treemap` for layout math, render rectangles with React SVG. Full control over drill-down state, transitions, and breadcrumb navigation.
-
-### Anti-Pattern 3: Passing BigInt Directly to Client Components
-
-**What people do:** Return Prisma query results directly as props without serializing BigInt values.
-**Why it's wrong:** `JSON.stringify` throws "Do not know how to serialize a BigInt." This error surfaces at the server/client boundary when Next.js serializes props for the RSC payload. It is a runtime error, not a build error, so it appears only when the page is visited.
-**Do this instead:** Convert BigInt to number in the query layer (`Number(bigintValue)`). For this project, all budget values fit within Number.MAX_SAFE_INTEGER. Use the `server-only` package on query files to prevent accidental client import.
-
-### Anti-Pattern 4: Monolithic Page Components
-
-**What people do:** Put data fetching, layout, chart rendering, and formatting all in a single page.tsx file that grows to 300+ lines.
-**Why it's wrong:** Untestable, hard to read, impossible to reuse components across pages.
-**Do this instead:** Page components should be thin orchestrators: import from `lib/queries/`, import from `components/`, wire them together with minimal logic. Each file under 100 lines.
-
-### Anti-Pattern 5: Python Pipeline Coupled to Web App Runtime
-
-**What people do:** Call Python scripts from Next.js API routes or build pipeline, or have the web app directly read PDFs.
-**Why it's wrong:** Adds Python as a runtime dependency, complicates deployment (Vercel does not natively run Python), creates fragile inter-process communication.
-**Do this instead:** Keep the pipeline fully offline. It produces JSON files. Those files are committed to the repo or manually placed in `prisma/seed-data/`. The web app never knows Python exists.
-
-## Integration Points
-
-### External Services
-
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| PostgreSQL (Supabase/Railway) | Prisma Client via `DATABASE_URL` | Use connection pooler URL for serverless (Supabase provides PgBouncer URL). Add `?pgbouncer=true&connection_limit=1` for serverless compatibility. |
-| Anthropic Claude API | Python `anthropic` SDK in pipeline only | Only used offline during description generation. API key stays in pipeline `.env`, never in web app. |
-| Vercel | Next.js deployment via `vercel.json` or Git push | Static pages cached on CDN edge. Only `/api/search` route runs as serverless function. |
-
-### Internal Boundaries
-
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| Python pipeline -> Web app | JSON files in `prisma/seed-data/` | Fully decoupled. No runtime dependency. Contract is the JSON schema matching Prisma model shapes. |
-| Server Components -> Client Components | Serializable props (no BigInt, no Date objects, no functions) | Convert BigInt to number in query layer. Pass only plain objects and arrays. |
-| Page components -> Query layer | Function imports from `lib/queries/` | Server-only boundary. Query functions tagged with `import 'server-only'` to prevent client bundling. |
-| Client Components -> API Routes | `fetch('/api/search?q=...')` | Only for user-initiated actions (search). Budget data never fetched client-side. |
-
-## Build Order (Dependencies)
-
-The following ordering reflects hard technical dependencies between components:
-
-```
-Phase 1: Foundation
-  Database schema (Prisma) + seed data (JSON) + seed script
-  Must exist before any page can fetch data.
-    |
-    v
-Phase 2: Data Layer
-  lib/prisma.ts singleton + lib/queries/*.ts functions + lib/format.ts
-  Must exist before any Server Component can render.
-    |
-    v
-Phase 3: Static Pages (Server Components)
-  Homepage (page.tsx) + Department pages + Layout + Navigation
-  Can render immediately with query data, even without charts.
-    |
-    v
-Phase 4: Interactive Charts (Client Components)
-  Treemap (D3), Recharts bar/pie/donut charts, penny visualization
-  Receives data from Phase 3 pages. Can be built and tested independently.
-    |
-    v
-Phase 5: User Features
-  Tax calculator, full-text search, year-over-year comparison
-  Depends on data layer and UI components from prior phases.
-    |
-    v
-Phase 6: Polish
-  SEO metadata, Open Graph images, accessibility audit, responsive refinement
-  Everything functional; this is optimization.
-```
-
-**Critical path:** Phases 1-3 must be sequential. Phases 4-5 can partially overlap since charts are independent Client Components that receive props. Phase 6 is purely additive.
+**Bottom line:** This is a read-heavy, static-content application. The only runtime database query is search, and the dataset is tiny (35 departments). Scaling is a non-concern for the foreseeable future.
 
 ## Sources
 
-- [Next.js Official Docs: Server and Client Components](https://nextjs.org/docs/app/getting-started/server-and-client-components) - HIGH confidence (official docs, updated 2026-02-27)
-- [Next.js Official Docs: Caching and Revalidating](https://nextjs.org/docs/app/getting-started/caching-and-revalidating) - HIGH confidence (official docs, updated 2026-02-27)
-- [Next.js Official Docs: Project Structure](https://nextjs.org/docs/app/getting-started/project-structure) - HIGH confidence (official docs, updated 2026-02-27)
-- [Next.js Official Docs: generateStaticParams](https://nextjs.org/docs/app/api-reference/functions/generate-static-params) - HIGH confidence
-- [Prisma: How to use Prisma ORM with Next.js](https://www.prisma.io/docs/guides/nextjs) - HIGH confidence (official Prisma docs)
-- [Prisma BigInt Serialization Discussion #9793](https://github.com/prisma/prisma/discussions/9793) - HIGH confidence (official GitHub)
-- [Prisma BigInt Issue #22736 with Next.js 14](https://github.com/prisma/prisma/issues/22736) - HIGH confidence (official GitHub)
-- [Recharts Treemap API](https://recharts.github.io/en-US/api/Treemap/) - HIGH confidence (official docs)
-- [Recharts Treemap Drill-Down Issue #1276](https://github.com/recharts/recharts/issues/1276) - HIGH confidence (official GitHub, confirmed no native support)
-- [D3 Treemap Documentation](https://d3js.org/d3-hierarchy/treemap) - HIGH confidence (official D3 docs)
-- [D3 Zoomable Treemap Observable Example](https://observablehq.com/@d3/zoomable-treemap) - HIGH confidence (official Observable)
-- [react-d3-treemap npm package](https://www.npmjs.com/package/react-d3-treemap) - MEDIUM confidence (community library, may be unmaintained)
-- [Visual Town Budget (GoInvo)](https://github.com/goinvo/Visual-Town-Budget) - MEDIUM confidence (open source civic tech reference)
-- [Centralize Prisma Serialization in Next.js](https://www.buildwithmatija.com/blog/centralize-prisma-serialization-nextjs) - MEDIUM confidence (verified blog post)
+- [Nivo React 19 Support - GitHub Issue #2618](https://github.com/plouc/nivo/issues/2618) - HIGH confidence (resolved, React 19 supported since ~0.88.0)
+- [Nivo SSR with Next.js 13+ - GitHub Issue #2626](https://github.com/plouc/nivo/issues/2626) - HIGH confidence (confirmed: must use 'use client')
+- [Nivo TreeMap Documentation](https://nivo.rocks/treemap/) - HIGH confidence (official docs)
+- [Nivo Sunburst Documentation](https://nivo.rocks/sunburst/) - HIGH confidence (official docs)
+- [Nivo Pie Documentation](https://nivo.rocks/pie/) - HIGH confidence (official docs)
+- [Next.js generateMetadata](https://nextjs.org/docs/app/api-reference/functions/generate-metadata) - HIGH confidence (official docs)
+- [Next.js generateStaticParams](https://nextjs.org/docs/app/api-reference/functions/generate-static-params) - HIGH confidence (official docs)
+- [Next.js Route Handlers](https://nextjs.org/docs/app/getting-started/route-handlers) - HIGH confidence (official docs)
+- [Next.js Adding Search and Pagination](https://nextjs.org/learn/dashboard-app/adding-search-and-pagination) - HIGH confidence (official tutorial)
+- [Prisma Full-Text Search (Preview)](https://www.prisma.io/docs/orm/prisma-client/queries/full-text-search) - HIGH confidence (official docs, but preview feature is limited)
+- [PostgreSQL Full-Text Search with Prisma via $queryRaw](https://medium.com/@chauhananubhav16/bulletproof-full-text-search-fts-in-prisma-with-postgresql-tsvector-without-migration-drift-c421f63aaab3) - MEDIUM confidence (community article, verified approach)
+- [@anthropic-ai/sdk npm](https://www.npmjs.com/package/@anthropic-ai/sdk) - HIGH confidence (official package)
+- [Miami-Dade Property Tax Calculation](https://www.propertyexemption.com/property-tax/miami-property-tax/) - MEDIUM confidence (third-party guide, formula verified)
+- [Next.js Server and Client Components](https://nextjs.org/docs/app/getting-started/server-and-client-components) - HIGH confidence (official docs)
+- [Nivo Sunburst Drill-Down Demo](https://github.com/plouc/nivo/commit/b058f7b7a9750ce923e59b03bd6413391d6fa72f) - HIGH confidence (official repo)
 
 ---
-*Architecture research for: Miami-Dade Budget Explorer*
+*Architecture research for: Miami-Dade Budget Explorer v1.1*
 *Researched: 2026-02-28*
+*Supersedes v1.0 architecture research (same file path)*

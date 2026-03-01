@@ -1,280 +1,343 @@
-# Stack Research
+# Stack Research: v1.1 New Feature Additions
 
-**Domain:** Civic budget visualization web application
+**Domain:** Civic budget visualization -- interactive charts, tax calculator, AI descriptions, search, SEO
 **Researched:** 2026-02-28
 **Confidence:** HIGH
 
-## Recommended Stack
+## Existing Stack (DO NOT CHANGE -- validated in v1.0)
 
-### Core Technologies
+| Technology | Version | Status |
+|------------|---------|--------|
+| Next.js | 16.1.6 | Keep |
+| React | 19.2.3 | Keep |
+| Prisma | 7.4.2 | Keep (PrismaPg adapter) |
+| PostgreSQL | 16+ | Keep |
+| Tailwind CSS | v4 | Keep (@theme tokens) |
+| @floating-ui/react | 0.27.18 | Keep (tooltips) |
+| react-countup | 6.5.3 | Keep (hero counter) |
+| clsx | 2.1.1 | Keep |
+| pnpm | 9.x | Keep |
+| Python pipeline | pdfplumber 0.11.9, anthropic 0.83.0 | Keep |
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Next.js | 16.1.6 | Full-stack React framework | Current stable release. Turbopack default (2-5x faster builds). App Router with Server Components lets you query Prisma directly in page components without API routes. React 19.2 View Transitions for smooth drill-down animations. Cache Components for explicit caching control. Node.js 20.9+ required. |
-| TypeScript | 5.7+ | Type safety | Required by Next.js 16. Prisma 7 generates 98% fewer types for schema evaluation, so TypeScript builds are fast even with BigInt models. |
-| React | 19.2 | UI library | Ships with Next.js 16. View Transitions API enables animated chart transitions. React Compiler (stable in Next.js 16) auto-memoizes chart components, preventing expensive re-renders during drill-downs. |
-| Tailwind CSS | 4.2.1 | Styling | CSS-first config via @theme directive (no tailwind.config.js). 5x faster builds with Oxide engine. @starting-style variant for enter/exit animations without JS. Built-in container queries. |
-| PostgreSQL | 16+ | Database | Handles $13.2B budget with BigInt cents. Full-text search for department/line-item queries. JSON columns for storing AI-generated descriptions. Recommended host: Railway or Supabase. |
-| Prisma ORM | 7.4.x | Database ORM | Rust-free architecture: 3x faster queries, 90% smaller bundles. BigInt precision fix in 7.3.0 prevents silent data loss. TypeScript-native generated client. Use `provider = "prisma-client"` (not `prisma-client-js`). |
-| pnpm | 9.x | Package manager | Strict dependency resolution prevents phantom dependencies. Fast installs via content-addressable storage. Specified in PROJECT.md constraints. |
+## New Dependencies for v1.1
 
-### Visualization Libraries
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| Recharts | 3.7.0 | Primary charting | Bar charts, line charts, area charts, pie/donut charts, basic treemaps. Use for revenue breakdown donut, year-over-year comparisons, expenditure category bars. Recharts 3 is a full rewrite with better state management and 3,500+ unit tests. |
-| @nivo/sunburst | 0.99.0 | Sunburst visualization | The budget hierarchy drill-down (total -> strategic area -> department -> line item). Nivo sunburst is production-ready with built-in animations, theming, and click handlers. Recharts does NOT have sunburst support (open issue since 2017). |
-| @nivo/treemap | 0.99.0 | Treemap visualization | Alternative hierarchy view to sunburst. Nivo treemap supports SVG and Canvas renderers, with Canvas better for 35+ departments. Both @nivo packages share the same theming system, so visual consistency is easy. |
-| D3.js | 7.9.0 | Low-level calculations | Import individual modules only (d3-scale, d3-format, d3-hierarchy). Use for custom number formatting ($13.2B -> "$13.2B"), scale calculations, and any visualization Recharts/Nivo cannot handle. Do NOT use D3 for DOM manipulation -- let React own the DOM. |
-| @number-flow/react | 0.5.14 | Animated number transitions | Budget totals, tax calculator results, year-over-year deltas. Smooth digit-by-digit rolling animation. 2.5kb. Better than building custom animated counters with Motion. |
-
-### Animation & Interaction
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| motion | 12.34.x | Layout animations | Drill-down transitions between budget views, card expand/collapse, page transitions. Use AnimatePresence for mount/unmount animations. Only needed if React 19.2 View Transitions are insufficient for a specific interaction. |
-| tw-animate-css | latest | Tailwind animation utilities | TailwindCSS v4 compatible replacement for tailwindcss-animate. Adds animate-in, animate-out, delays, stagger utilities. Use for subtle UI polish (fade-ins, slide-ups on scroll). |
-
-### Data Pipeline (Python)
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| pdfplumber | 0.11.9 | PDF extraction | Extract tables from Miami-Dade Budget in Brief PDF. Supports Python 3.10-3.14. Use region-based extraction (crop to specific page areas) for complex budget tables. Inspect layout before defining extraction strategy. |
-| anthropic | latest | AI descriptions | Generate plain-English department descriptions. Use claude-sonnet-4-5-20250929 per PROJECT.md. Batch processing with structured output for consistent JSON. |
-| pandas | 2.x | Data transformation | Clean and reshape extracted budget data before loading to PostgreSQL. Convert string dollar amounts to BigInt cents. |
-| psycopg2-binary | 2.9.x | PostgreSQL driver | Direct database loading from Python pipeline. Use COPY for bulk inserts of budget line items. |
-
-### Development Tools
-
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| ESLint (flat config) | Linting | Next.js 16 removed `next lint`. Use ESLint directly with @next/eslint-plugin-next (now defaults to flat config). |
-| Biome | Fast linting/formatting | Alternative to ESLint+Prettier. Single tool for both. Consider if ESLint setup is too complex. |
-| Prisma Studio | Database GUI | Built into Prisma CLI. `npx prisma studio` for visual data inspection during development. |
-| next-devtools-mcp | AI debugging | New in Next.js 16. MCP integration for AI-assisted debugging with contextual route awareness. |
-
-## Installation
+### Total: 3 npm packages
 
 ```bash
-# Core framework
-pnpm add next@latest react@latest react-dom@latest
-
-# Database
-pnpm add prisma@latest @prisma/client@latest
-
-# Visualization
-pnpm add recharts@latest @nivo/sunburst@latest @nivo/treemap@latest @nivo/core@latest
-pnpm add d3-scale d3-format d3-hierarchy
-pnpm add @number-flow/react
-
-# Animation
-pnpm add motion
-pnpm add tw-animate-css
-
-# Styling (Tailwind v4 - PostCSS plugin or Vite plugin)
-pnpm add tailwindcss@latest @tailwindcss/postcss@latest
-
-# Dev dependencies
-pnpm add -D typescript @types/react @types/react-dom @types/d3-scale @types/d3-format @types/d3-hierarchy
-pnpm add -D eslint @next/eslint-plugin-next
-pnpm add -D prisma
-
-# Python data pipeline (separate environment)
-# pip install pdfplumber anthropic pandas psycopg2-binary
+pnpm add @nivo/treemap@0.99.0 @nivo/sunburst@0.99.0 @nivo/pie@0.99.0
 ```
 
-## Alternatives Considered
+That is the **complete** list of new npm packages. Everything else uses built-in Next.js features or existing PostgreSQL capabilities.
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| Recharts 3 + Nivo | Chart.js / react-chartjs-2 | Never for this project. Chart.js uses Canvas only (no SVG), making accessibility harder. No treemap/sunburst support. |
-| Recharts 3 + Nivo | Visx (Airbnb) | If you need maximum control over every SVG element. Visx v3.12.0 provides low-level D3 primitives as React components, but requires more code to build a treemap than Nivo. Choose if Nivo's opinionated styling fights your design. |
-| Recharts 3 + Nivo | AG Charts | If you need commercial-grade charts with enterprise support. AG Charts has treemap and sunburst. But it is paid for commercial use. |
-| @nivo/sunburst | Recharts sunburst | Recharts has NO sunburst component. Issue #576 open since 2017. Do not wait for it. |
-| @nivo/treemap | Recharts Treemap | If your treemap needs are simple (no drill-down, no Canvas fallback). Recharts Treemap works for flat hierarchies. Nivo treemap is better for nested drill-down with 35 departments. |
-| @number-flow/react | Custom Motion counter | If you need non-numeric animations. NumberFlow handles currency formatting, locale-aware separators, and digit-by-digit transitions out of the box. |
-| Prisma 7 | Drizzle ORM | If you want SQL-closer syntax and smaller bundle. Drizzle is lighter but has less mature migration tooling. Prisma 7's Rust-free rewrite closes the bundle size gap significantly. |
-| Prisma 7 | Kysely | If you want type-safe raw SQL. Good for complex queries, but you lose Prisma's migration system and Studio. |
-| Next.js 16 | Next.js 15 | Only if a critical dependency is incompatible with Next.js 16. As of Feb 2026, Next.js 16 is stable (16.1.6). For a greenfield project, use 16. |
-| Tailwind CSS 4 | Tailwind CSS 3 | Only if a UI component library you depend on hasn't migrated to v4. shadcn/ui works with Tailwind v4. |
-| pdfplumber | Camelot / Tabula | If pdfplumber fails on a specific table layout. Try pdfplumber first -- it handles most budget PDFs well. Camelot uses OpenCV for visual line detection, which helps with borderless tables. |
-| pdfplumber | PyMuPDF (fitz) | For faster extraction of simple text. But pdfplumber is significantly better at tables. |
-| Motion (Framer Motion) | React Spring | If you want physics-based animations only. Motion is more versatile (layout, gestures, variants, AnimatePresence). |
-| Railway / Supabase | Neon | If you want serverless PostgreSQL with auto-scaling to zero. Good for low-traffic civic tools. Prisma works with all three. |
+---
 
-## What NOT to Use
+## Visualization: Nivo
+
+| Package | Version | Purpose | Confidence |
+|---------|---------|---------|------------|
+| @nivo/treemap | 0.99.0 | Budget drill-down: total -> strategic areas -> departments | HIGH |
+| @nivo/sunburst | 0.99.0 | Radial hierarchy view of budget breakdown | HIGH |
+| @nivo/pie | 0.99.0 | Revenue source donut chart (`innerRadius={0.5}`) | HIGH |
+
+**React 19 compatibility:** Confirmed. All @nivo/* packages declare peer dependency `react: "^16.14 || ^17.0 || ^18.0 || ^19.0"`. Verified via `npm view` on 2026-02-28.
+
+**Why Nivo (and not alternatives):**
+- Recharts has NO sunburst or treemap components (sunburst issue #576 open since 2017, never implemented)
+- Victory has no treemap support
+- Chart.js / react-chartjs-2 has no treemap or sunburst; canvas-only limits accessibility
+- Visx (Airbnb) provides low-level D3 primitives requiring significant boilerplate
+- D3 alone requires too much imperative code; conflicts with React's DOM ownership
+- Nivo provides treemap + sunburst + pie in one unified ecosystem with shared theming via `@nivo/core` (pulled in automatically as a dependency)
+
+**Transitive dependencies pulled in by Nivo** (no action needed, just awareness):
+- `@nivo/core`, `@nivo/colors`, `@nivo/theming`, `@nivo/tooltip`, `@nivo/text` (shared infra)
+- `@nivo/arcs`, `@nivo/legends` (for pie/sunburst)
+- `@react-spring/core` + `@react-spring/web` (animations)
+- `d3-hierarchy` ^3.1.2 (treemap/sunburst layout math)
+- `d3-shape` ^3.2.0 (arc generation for pie)
+- `lodash` ^4.17.21
+
+**Critical Next.js integration pattern:** Nivo components use React context internally, which requires `"use client"` directive. Data fetching stays in Server Components; chart rendering in Client Components.
+
+```typescript
+// Server Component (page.tsx) -- fetches data
+const areas = await prisma.strategic_area_budgets.findMany({ ... });
+const chartData = transformToNivoFormat(areas);
+return <BudgetTreemap data={chartData} />;
+
+// Client Component (BudgetTreemap.tsx) -- renders chart
+"use client";
+import { ResponsiveTreeMap } from '@nivo/treemap';
+export function BudgetTreemap({ data }) { ... }
+```
+
+### Penny Visualization: No Library Needed
+
+The "penny visualization" (dollar broken into colored segments by strategic area) uses the existing `strategic_area_budgets.cents_per_dollar` column. Build with:
+- Pure CSS grid or flexbox with colored segments
+- Each segment width = `cents_per_dollar` percent
+- Strategic area colors from `strategic_areas.color` column
+- This is a styling exercise, not a charting problem
+
+### Year-over-Year Comparisons: No Library Needed
+
+Bar comparisons for 5 fiscal years can be built with:
+- Tailwind CSS width percentages for horizontal bars
+- Or reuse `@nivo/pie` (already added) if ring comparison is desired
+- The data exists in `department_budgets` table with `fiscal_year_id` foreign key
+- The `v_department_yoy` database view already computes prior-year values via LAG()
+
+**If bar charts are needed later:** Add `@nivo/bar` at that point. Do not add it now.
+
+---
+
+## AI-Generated Descriptions: Python Pipeline (No New Dependencies)
+
+| Technology | Version | Already Installed | Confidence |
+|------------|---------|-------------------|------------|
+| anthropic (Python SDK) | 0.83.0 | Yes | HIGH |
+
+**Use the existing Python pipeline, NOT a Node.js SDK.**
+
+Rationale:
+1. The `budget_descriptions` table already exists with `summary`, `detailed_description`, `key_changes`, and `model_version` columns
+2. Descriptions are generated once per budget cycle (annually), not per user request
+3. Python pipeline (`/pipeline/`) already has anthropic 0.83.0 installed
+4. Adding `@anthropic-ai/sdk` to Node.js would introduce runtime API latency and unpredictable costs
+5. Model: `claude-sonnet-4-5-20250929` per PROJECT.md constraints
+
+**Implementation:** Add a new pipeline command `python -m pipeline generate-descriptions` that:
+1. Reads department and strategic area data from PostgreSQL
+2. Calls Claude API for each entity (batch, not real-time)
+3. Writes results to `budget_descriptions` table
+4. Records `model_version` for reproducibility
+
+**Do NOT add @anthropic-ai/sdk (v0.78.0) to the Node.js app** unless a real-time AI feature (chatbot, ask-about-budget) is added in a future milestone.
+
+---
+
+## Full-Text Search: PostgreSQL Native via $queryRaw (No New Dependencies)
+
+| Technology | Version | Already Available | Confidence |
+|------------|---------|-------------------|------------|
+| PostgreSQL tsvector + GIN index | native | Yes (PostgreSQL 16) | HIGH |
+| Prisma $queryRaw | 7.4.2 | Yes | HIGH |
+
+**Why PostgreSQL native FTS, not Prisma's preview feature:**
+- `fullTextSearchPostgres` is still a Preview feature in Prisma 7 (GA only for MySQL)
+- Preview features can change between versions
+- The search corpus is tiny (~35 departments, ~9 strategic areas, ~300 budget descriptions)
+- `$queryRaw` with `to_tsvector`/`plainto_tsquery` is simple, stable, and fully type-safe
+
+**Why NOT Elasticsearch, Algolia, or Meilisearch:**
+- Massive overkill for ~350 searchable rows
+- Adds operational complexity (another service to deploy and pay for)
+- PostgreSQL handles this volume in single-digit milliseconds
+
+**Implementation approach:**
+
+1. SQL migration -- add generated tsvector columns with GIN indexes:
+
+```sql
+ALTER TABLE departments ADD COLUMN search_vector tsvector
+  GENERATED ALWAYS AS (
+    to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))
+  ) STORED;
+CREATE INDEX idx_departments_search ON departments USING gin(search_vector);
+
+ALTER TABLE budget_descriptions ADD COLUMN search_vector tsvector
+  GENERATED ALWAYS AS (
+    to_tsvector('english',
+      coalesce(summary, '') || ' ' ||
+      coalesce(detailed_description, '') || ' ' ||
+      coalesce(key_changes, ''))
+  ) STORED;
+CREATE INDEX idx_descriptions_search ON budget_descriptions USING gin(search_vector);
+```
+
+2. Search function using Prisma `$queryRaw`:
+
+```typescript
+export async function searchBudget(query: string) {
+  const sanitized = query.replace(/[^\w\s]/g, '').trim();
+  if (!sanitized) return [];
+
+  return prisma.$queryRaw`
+    SELECT d.name, d.slug, sa.name as strategic_area, 'department' as type,
+           ts_rank(d.search_vector, plainto_tsquery('english', ${sanitized})) as rank
+    FROM departments d
+    JOIN strategic_areas sa ON sa.id = d.strategic_area_id
+    WHERE d.search_vector @@ plainto_tsquery('english', ${sanitized})
+    UNION ALL
+    SELECT bd.summary as name, d.slug, sa.name as strategic_area, 'description' as type,
+           ts_rank(bd.search_vector, plainto_tsquery('english', ${sanitized})) as rank
+    FROM budget_descriptions bd
+    JOIN departments d ON d.id = bd.entity_id AND bd.entity_type = 'department'
+    JOIN strategic_areas sa ON sa.id = d.strategic_area_id
+    WHERE bd.search_vector @@ plainto_tsquery('english', ${sanitized})
+    ORDER BY rank DESC
+    LIMIT 20
+  `;
+}
+```
+
+3. Expose via Next.js Server Action or Route Handler (`app/api/search/route.ts`)
+
+**Note on Prisma schema:** The `search_vector` columns are `GENERATED ALWAYS AS ... STORED`, so Prisma schema needs `Unsupported("tsvector")?` annotation. Since we use `$queryRaw` for search, this column does not need to be modeled in Prisma -- it exists at the database level only. Add via raw SQL migration, not Prisma migrate.
+
+---
+
+## SEO: Next.js Built-in Features (Zero New Dependencies)
+
+| Feature | Implementation | New Packages | Confidence |
+|---------|---------------|--------------|------------|
+| Page metadata | `generateMetadata()` in each page.tsx | None (built-in) | HIGH |
+| Open Graph tags | Return `openGraph` object from generateMetadata | None (built-in) | HIGH |
+| Twitter cards | Return `twitter` object from generateMetadata | None (built-in) | HIGH |
+| Dynamic OG images | `opengraph-image.tsx` file convention with `ImageResponse` from `next/og` | None (built-in) | HIGH |
+| Sitemap | `app/sitemap.ts` file convention | None (built-in) | HIGH |
+| Robots.txt | `app/robots.ts` file convention | None (built-in) | HIGH |
+| JSON-LD structured data | `<script type="application/ld+json">` in page components | None | HIGH |
+
+**Why NOT add next-seo:** Deprecated for App Router. The built-in Metadata API replaced it entirely. Mixing the two causes conflicts.
+
+**Why NOT add schema-dts for JSON-LD typing:** Only 6-8 JSON-LD objects needed across the entire site. Hand-typing the few Schema.org interfaces (`GovernmentOrganization`, `Dataset`, `WebPage`) is simpler than adding a 1.1MB type-only package.
+
+**Key patterns:**
+
+```typescript
+// app/departments/[slug]/page.tsx
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const dept = await getDepartment(params.slug);
+  return {
+    title: `${dept.name} | Miami-Dade Budget Explorer`,
+    description: dept.description || `${dept.name} budget breakdown`,
+    openGraph: {
+      title: `${dept.name} Budget`,
+      description: `See how ${dept.name} spends its $${formatDollars(dept.total_budget)} budget`,
+      type: 'website',
+    },
+  };
+}
+```
+
+```typescript
+// app/sitemap.ts
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const departments = await prisma.departments.findMany({ select: { slug: true } });
+  const strategicAreas = await prisma.strategic_areas.findMany({ select: { slug: true } });
+
+  return [
+    { url: 'https://budgetexplorer.miamidade.tools', lastModified: new Date(), priority: 1.0 },
+    { url: 'https://budgetexplorer.miamidade.tools/explorer', priority: 0.9 },
+    { url: 'https://budgetexplorer.miamidade.tools/calculator', priority: 0.8 },
+    ...departments.map(d => ({
+      url: `https://budgetexplorer.miamidade.tools/departments/${d.slug}`,
+      priority: 0.7,
+    })),
+    ...strategicAreas.map(sa => ({
+      url: `https://budgetexplorer.miamidade.tools/areas/${sa.slug}`,
+      priority: 0.7,
+    })),
+  ];
+}
+```
+
+```typescript
+// app/departments/[slug]/opengraph-image.tsx
+import { ImageResponse } from 'next/og';
+
+export default async function OGImage({ params }: { params: { slug: string } }) {
+  const dept = await getDepartment(params.slug);
+  return new ImageResponse(
+    <div style={{ display: 'flex', fontSize: 48, background: '#0057B8',
+      color: 'white', width: '100%', height: '100%',
+      alignItems: 'center', justifyContent: 'center', padding: 48 }}>
+      <div>
+        <div style={{ fontSize: 24, opacity: 0.8 }}>Miami-Dade Budget Explorer</div>
+        <div>{dept.name}</div>
+        <div style={{ fontSize: 32 }}>
+          ${(Number(dept.total_budget) / 100 / 1e6).toFixed(1)}M Budget
+        </div>
+      </div>
+    </div>,
+    { width: 1200, height: 630 }
+  );
+}
+```
+
+**OG image limitation:** Satori (the engine behind `ImageResponse`) does not support CSS Grid, `calc()`, or CSS custom properties. Use flexbox and inline styles only in OG image templates.
+
+---
+
+## Tax Calculator: No New Dependencies
+
+The tax calculator is pure computation:
+- **Input:** Property assessed value (user-entered number)
+- **Data:** `millage_rates` table (already seeded with FY 2025-26 rates, total: 9.5778 mills)
+- **Math:** `tax = assessed_value * millage_rate / 1000` for each authority
+- **Output:** Breakdown table showing tax per authority, mapped to strategic area spending
+
+**Implementation:**
+- Server Component fetches millage rates from database
+- Client Component handles the interactive input/slider
+- Pure TypeScript arithmetic -- no math library needed
+- If visual breakdown desired, reuse `@nivo/pie` (already being added)
+- BigInt is not needed here since we are working with user-input property values and display-formatted results
+
+---
+
+## What NOT to Add for v1.1
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| D3.js for DOM manipulation | Conflicts with React's virtual DOM. D3.select() and React both want to own the DOM, causing bugs and memory leaks. | Use D3 only for math (scales, formats, layouts). Let React render SVG. |
-| Recharts for sunburst charts | Feature does not exist. Open GitHub issue since 2017, never implemented. | @nivo/sunburst |
-| Chart.js with React | Canvas-only rendering. No SVG output means no semantic HTML, harder accessibility (no element inspection, no aria labels on chart segments). | Recharts (SVG) or Nivo (SVG + Canvas option) |
-| Float/Decimal for money | JavaScript floating point: 0.1 + 0.2 !== 0.3. Budget calculations with $13.2B will accumulate errors. | BigInt cents in PostgreSQL + Prisma BigInt type. Format with d3-format or Intl.NumberFormat in display layer only. |
-| Pages Router | Legacy. App Router is the standard for new Next.js projects. Server Components, streaming, and parallel routes only work with App Router. | App Router |
-| tailwind.config.js | Tailwind v4 uses CSS-first configuration with @theme directive. JS config still works but is the legacy path. | @theme directive in CSS |
-| next lint | Removed in Next.js 16. Will error if you try to use it. | ESLint CLI directly, or Biome |
-| middleware.ts | Deprecated in Next.js 16. Still works but will be removed. | proxy.ts |
-| Prisma provider "prisma-client-js" | Old generator. Prisma 7 uses "prisma-client" for the Rust-free TypeScript-native client. | `provider = "prisma-client"` |
-| JSON.stringify on BigInt directly | Throws "Do not know how to serialize a BigInt". Common crash in Next.js Server -> Client Component boundaries. | Convert BigInt to string/number in repository layer before passing to Client Components. |
+| @anthropic-ai/sdk (Node.js) | Descriptions are batch-generated offline in Python pipeline | anthropic Python SDK (already installed) |
+| Recharts | No sunburst or treemap; would duplicate Nivo functionality | @nivo/* packages |
+| next-seo | Deprecated for App Router; conflicts with built-in Metadata API | Next.js generateMetadata |
+| schema-dts | 1.1MB of types for 6-8 JSON-LD objects | Hand-type the few interfaces needed |
+| Elasticsearch / Algolia / Meilisearch | Overkill for ~350 searchable rows | PostgreSQL native full-text search |
+| Prisma fullTextSearchPostgres | Still Preview; raw SQL is simpler and stable | Prisma $queryRaw with tsvector |
+| @nivo/bar, @nivo/line | Not needed for any v1.1 feature | Add later if bar/line charts needed |
+| framer-motion / motion | Nivo provides animations via @react-spring (transitive dep) | @react-spring (comes with Nivo) |
+| D3.js (direct) | Nivo wraps D3 internally; no need for separate D3 install | Nivo components |
+| @number-flow/react | react-countup already handles animated numbers in v1.0 | Existing react-countup |
+| tw-animate-css | Tailwind v4 has built-in animation utilities | Tailwind CSS native |
+| pandas (Python) | Not needed for description generation | Direct SQL queries in pipeline |
 
-## Stack Patterns by Variant
+---
 
-**If deploying to Vercel (recommended for Next.js):**
-- Use Vercel's built-in Turbopack support (default in Next.js 16)
-- Use Railway or Supabase for PostgreSQL (Vercel Postgres is Neon under the hood)
-- Environment variables via Vercel dashboard
-- Edge functions not needed (budget data is not latency-sensitive)
+## Version Compatibility Matrix
 
-**If deploying to Render.com (per developer preference):**
-- Use Render's Node.js service for Next.js
-- Use Render PostgreSQL for database
-- May need custom build command: `pnpm build`
-- Set `NODE_ENV=production` in environment
-
-**If budget data extraction fails with pdfplumber:**
-- Try Camelot with `flavor='lattice'` for tables with visible borders
-- Try Camelot with `flavor='stream'` for borderless tables
-- Last resort: manual data entry from PDF into CSV, then import via Python script
-- The Budget in Brief PDF is structured enough that pdfplumber should work
-
-## Version Compatibility
-
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
-| Next.js 16.1.x | React 19.2.x | Must upgrade both together. Next.js 16 requires React 19.2. |
-| Next.js 16.1.x | Node.js 20.9+ | Node 18 is NOT supported. Use Node 20 LTS or 22 LTS. |
-| Next.js 16.1.x | TypeScript 5.1+ | TypeScript 5 required minimum. |
-| Prisma 7.4.x | Node.js 18.18+ | Prisma 7 supports Node 18.18+, but since Next.js 16 requires 20.9+, use 20.9+. |
-| Prisma 7.4.x | PostgreSQL 12+ | Works with PG 12-16. Recommend PG 16 for best performance. |
-| Tailwind CSS 4.2.x | Next.js 16 | Use @tailwindcss/postcss plugin. Tailwind v4 works with Turbopack. |
-| Recharts 3.7.x | React 18-19 | Recharts 3 supports React 18 and 19. |
-| @nivo/* 0.99.x | React 18-19 | Nivo 0.99 tested with React 18 and 19. |
-| motion 12.x | React 19 | Motion 12 has React 19 test suite in CI. |
-| pdfplumber 0.11.9 | Python 3.10-3.14 | Tested across these Python versions. |
-
-## Key Configuration Patterns
-
-### Prisma Singleton for Next.js (Critical)
-
-```typescript
-// lib/prisma.ts
-import { PrismaClient } from '@prisma/client'
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma
-}
-```
-
-### BigInt Serialization for Server -> Client Components (Critical)
-
-```typescript
-// lib/serialize.ts
-// Convert BigInt fields to numbers before passing to Client Components
-export function serializeBudget<T extends Record<string, unknown>>(obj: T): T {
-  return JSON.parse(
-    JSON.stringify(obj, (_, value) =>
-      typeof value === 'bigint' ? Number(value) : value
-    )
-  )
-}
-
-// Usage in Server Component:
-// const data = await prisma.departmentBudget.findMany()
-// return <ClientChart data={data.map(serializeBudget)} />
-```
-
-**Important:** For budget values up to $13.2B ($13,233,238,000), storing as cents means max value is 1,323,323,800,000 (1.3 trillion cents). This is well within Number.MAX_SAFE_INTEGER (9,007,199,254,740,991), so converting BigInt to Number is safe for this project. If dealing with national-level budgets (trillions of dollars), you would need to keep BigInt and serialize to string instead.
-
-### Tailwind v4 CSS-First Config
-
-```css
-/* app/globals.css */
-@import "tailwindcss";
-@import "tw-animate-css";
-
-@theme {
-  --color-mdc-blue: #0057B8;
-  --color-mdc-orange: #F7941D;
-  --color-mdc-green: #00A651;
-  --color-mdc-red: #EF4444;
-  --font-sans: 'Inter', sans-serif;
-}
-```
-
-### Next.js 16 Server Component Data Fetching
-
-```typescript
-// app/budget/page.tsx (Server Component - default)
-import { prisma } from '@/lib/prisma'
-import { BudgetTreemap } from '@/components/BudgetTreemap' // Client Component
-
-export default async function BudgetPage() {
-  const strategicAreas = await prisma.strategicArea.findMany({
-    include: {
-      departments: {
-        include: { budgets: true }
-      }
-    }
-  })
-
-  // Serialize BigInt before passing to Client Component
-  const data = JSON.parse(
-    JSON.stringify(strategicAreas, (_, v) =>
-      typeof v === 'bigint' ? Number(v) : v
-    )
-  )
-
-  return <BudgetTreemap data={data} />
-}
-```
-
-### D3 for Math, React for Rendering
-
-```typescript
-// Use D3 for calculations only
-import { scaleLinear } from 'd3-scale'
-import { format } from 'd3-format'
-
-const formatDollars = format('$,.0f')
-const formatBillions = (cents: number) =>
-  format('$.2f')(cents / 100_000_000_000) + 'B'
-
-// Let React render the SVG
-function BudgetBar({ value, maxValue }: { value: number; maxValue: number }) {
-  const scale = scaleLinear().domain([0, maxValue]).range([0, 100])
-  return (
-    <div
-      className="h-4 bg-mdc-blue rounded"
-      style={{ width: `${scale(value)}%` }}
-    />
-  )
-}
-```
+| New Package | Compatible With | Verified |
+|-------------|-----------------|----------|
+| @nivo/treemap@0.99.0 | React ^19.0 | Yes -- npm view peerDependencies |
+| @nivo/sunburst@0.99.0 | React ^19.0 | Yes -- npm view peerDependencies |
+| @nivo/pie@0.99.0 | React ^19.0 | Yes -- npm view peerDependencies |
+| @nivo/*@0.99.0 | Next.js 16 App Router | Yes -- requires "use client" on chart wrappers |
+| @nivo/*@0.99.0 | @react-spring 9.4.5, ^9.7.2, or ^10.0 | Transitive dep, auto-resolved |
+| PostgreSQL tsvector | Prisma 7.4.2 $queryRaw | Yes -- raw SQL bypasses Prisma schema |
+| next/og ImageResponse | Next.js 16.1.6 | Yes -- built-in module |
 
 ## Sources
 
-- [Next.js 16 Release Blog](https://nextjs.org/blog/next-16) -- HIGH confidence. Official Vercel blog, Oct 2025. Verified upgrade guide at nextjs.org/docs shows 16.1.6 as current.
-- [Next.js 16 Upgrade Guide](https://nextjs.org/docs/app/guides/upgrading/version-16) -- HIGH confidence. Official docs, last updated 2026-02-27.
-- [Prisma 7 Announcement](https://www.prisma.io/blog/announcing-prisma-orm-7-0-0) -- HIGH confidence. Official Prisma blog.
-- [Prisma 7.3.0 BigInt Fix](https://www.prisma.io/blog/prisma-orm-7-3-0) -- HIGH confidence. Official release notes documenting BigInt JSON precision fix.
-- [Recharts GitHub Releases](https://github.com/recharts/recharts/releases) -- HIGH confidence. v3.7.0 confirmed on npm.
-- [Recharts Sunburst Issue #576](https://github.com/recharts/recharts/issues/576) -- HIGH confidence. Open since March 2017, confirms no sunburst support.
-- [Nivo Sunburst Documentation](https://nivo.rocks/sunburst/) -- HIGH confidence. Official docs with interactive examples.
-- [Nivo Treemap Documentation](https://nivo.rocks/treemap/) -- HIGH confidence. Official docs.
-- [Tailwind CSS v4.0 Release](https://tailwindcss.com/blog/tailwindcss-v4) -- HIGH confidence. Official blog.
-- [pdfplumber GitHub](https://github.com/jsvine/pdfplumber) -- HIGH confidence. v0.11.9 confirmed on PyPI.
-- [Motion (Framer Motion) Docs](https://motion.dev/docs/react) -- HIGH confidence. Official docs. v12.34.x confirmed.
-- [NumberFlow React](https://number-flow.barvian.me/) -- MEDIUM confidence. npm confirms v0.5.14. Small but actively maintained.
-- [D3.js npm](https://www.npmjs.com/package/d3) -- HIGH confidence. v7.9.0 is latest stable.
-- [Prisma BigInt Serialization Discussion](https://github.com/prisma/prisma/discussions/9793) -- MEDIUM confidence. Community solutions verified across multiple sources.
-- [Prisma Singleton Pattern](https://www.prisma.io/docs/orm/more/help-and-troubleshooting/nextjs-help) -- HIGH confidence. Official Prisma docs for Next.js.
+- [@nivo/treemap npm](https://www.npmjs.com/package/@nivo/treemap) -- v0.99.0, peer deps verified via `npm view` (HIGH)
+- [@nivo/sunburst npm](https://www.npmjs.com/package/@nivo/sunburst) -- v0.99.0, peer deps verified (HIGH)
+- [@nivo/pie npm](https://www.npmjs.com/package/@nivo/pie) -- v0.99.0, peer deps verified (HIGH)
+- [Nivo GitHub: React 19 support issue #2618](https://github.com/plouc/nivo/issues/2618) -- confirmed resolved (HIGH)
+- [Nivo GitHub: Next.js "use client" issue #2626](https://github.com/plouc/nivo/issues/2626) -- confirmed required (HIGH)
+- [Nivo Sunburst docs](https://nivo.rocks/sunburst/) -- official (HIGH)
+- [Nivo Treemap docs](https://nivo.rocks/treemap/) -- official (HIGH)
+- [Nivo Pie docs](https://nivo.rocks/pie/) -- official, innerRadius for donut (HIGH)
+- [@anthropic-ai/sdk npm](https://www.npmjs.com/package/@anthropic-ai/sdk) -- v0.78.0 available but not recommended (HIGH)
+- [Prisma Full-Text Search docs](https://www.prisma.io/docs/orm/prisma-client/queries/full-text-search) -- PostgreSQL FTS still Preview (MEDIUM)
+- [PostgreSQL FTS with Prisma raw SQL](https://www.pedroalonso.net/blog/postgres-full-text-search/) -- pattern verified (MEDIUM)
+- [Next.js generateMetadata](https://nextjs.org/docs/app/api-reference/functions/generate-metadata) -- official docs (HIGH)
+- [Next.js OG images](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/opengraph-image) -- official docs (HIGH)
+- [Next.js sitemap.ts](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap) -- official docs (HIGH)
+- [Next.js JSON-LD guide](https://nextjs.org/docs/app/guides/json-ld) -- official docs (HIGH)
+- [Next.js robots.ts](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/robots) -- official docs (HIGH)
+- [Recharts sunburst issue #576](https://github.com/recharts/recharts/issues/576) -- open since 2017, never implemented (HIGH)
 
 ---
-*Stack research for: Miami-Dade Budget Explorer*
+*Stack research for: Miami-Dade Budget Explorer v1.1 feature additions*
 *Researched: 2026-02-28*

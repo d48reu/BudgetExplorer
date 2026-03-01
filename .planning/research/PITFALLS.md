@@ -1,201 +1,265 @@
 # Pitfalls Research
 
-**Domain:** Civic Budget Data Visualization (Miami-Dade County)
+**Domain:** Adding Interactive Visualizations, Tax Calculator, AI Descriptions, Search, and SEO to Existing Miami-Dade Budget Explorer
 **Researched:** 2026-02-28
-**Confidence:** HIGH (multi-source verification across all critical areas)
+**Confidence:** HIGH (multi-source verification; existing codebase analyzed alongside current documentation)
+
+**Context:** This is a v1.1 pitfalls analysis. The existing app ships Next.js 16 with App Router, Prisma 7 with PrismaPg adapter, PostgreSQL, BigInt cents for all monetary values, and a working homepage with Server Components. The pitfalls below focus on what goes wrong when ADDING treemap/sunburst drill-down, tax calculator, Claude API descriptions, full-text search, and SEO to this specific codebase.
 
 ## Critical Pitfalls
 
-### Pitfall 1: BigInt Serialization Blows Up JSON API Responses
+### Pitfall 1: Nivo Sunburst/Treemap Drill-Down Is Not Built-In -- Requires Custom State Management
 
 **What goes wrong:**
-Prisma returns BigInt values for monetary fields stored as `BIGINT` in PostgreSQL. When Next.js API routes or Server Components try to serialize these to JSON via `JSON.stringify()`, they throw `TypeError: Do not know how to serialize a BigInt`. This crashes entire API responses, not just the affected field.
+Developers assume Nivo's treemap or sunburst component has a `drillDown` prop or built-in zoom behavior. It does not. The `onClick` handler fires with a `ComputedDatum` that historically lacked a `parent` property (Issue #1936). Without this, "zoom out" is impossible unless you track the hierarchy yourself. Teams build the chart, wire up onClick, then discover they cannot navigate back up the tree -- forcing a mid-feature rewrite of their state management.
 
 **Why it happens:**
-JavaScript's native `JSON.stringify()` has no built-in support for BigInt. Prisma returns actual BigInt objects for BigInt columns, and unlike numbers, they cannot be implicitly converted. Developers test with small seed data that fits in Number range and never encounter the error until real budget numbers appear.
+Nivo's documentation shows a "drill down to children" recipe on the sunburst page, which makes it look like a supported feature. In reality, it is a demo pattern that requires external state to track breadcrumb history and re-slice the data tree on each click. Developers prototype with one level of nesting and think it works, then hit the wall when implementing 4-level drill-down (Total -> Strategic Area -> Department -> Expenditure Category).
 
 **How to avoid:**
-1. Use Prisma 7.x (current stable is 7.4.x) which automatically casts BigInt to text inside JSON aggregation for relation joins.
-2. For direct queries, create a Prisma Client extension that applies BigInt-to-string conversion across all operations:
+1. Build the drill-down state machine FIRST, before touching Nivo. Define: current node path (breadcrumb), data slice function, zoom-in handler, zoom-out handler.
+2. Use this pattern for state:
 ```typescript
-const prisma = new PrismaClient().$extends({
-  result: {
-    $allModels: {
-      // Convert BigInt fields to string in all results
-    },
-  },
-  query: {
-    $allOperations: async ({ args, query }) => {
-      const result = await query(args);
-      return JSON.parse(
-        JSON.stringify(result, (key, value) =>
-          typeof value === "bigint" ? value.toString() : value
-        )
-      );
-    },
-  },
-});
+type DrillState = {
+  path: string[]        // ['root', 'public-safety', 'fire-rescue']
+  currentData: TreeNode // sliced subset of full tree
+}
 ```
-3. Create a single `formatCurrency(cents: bigint): string` utility used everywhere. Never format money inline.
-4. Never use `Number(bigintValue)` for display -- values above `Number.MAX_SAFE_INTEGER` (9,007,199,254,740,991 = ~$90 trillion) silently lose precision. Miami-Dade's $13.2B budget is safe, but aggregated multi-year totals in cents could approach the limit.
+3. Manage the full hierarchy tree in a `useRef` or context, and derive `currentData` from `path` on each navigation.
+4. The `path` property on Nivo's `ComputedDatum` (added in later versions) lists ancestors -- verify your installed version has it before relying on it.
+5. Prototype all 4 levels of drill-down with real budget data BEFORE building any UI polish. If the interaction feels wrong at the prototype stage, consider switching to a simpler drill-down pattern (click row in a sorted bar chart to expand, accordion-style).
 
 **Warning signs:**
-- Any `TypeError: Do not know how to serialize a BigInt` in server logs
-- Monetary values appearing as `null` or `0` in API responses
-- Tests passing with small fixture data but failing with real budget numbers
-- Prisma `$queryRaw` returning Number instead of BigInt (known Prisma bug -- always verify type)
+- onClick handler works for drill-in but no mechanism for drill-out
+- Breadcrumb component shows path but clicking it does not update the chart
+- Nivo re-renders the entire chart on every drill action (no transition, just a jump)
+- Data tree is reshaped in a way that loses parent references
 
 **Phase to address:**
-Phase 1 (Database & Data Model) -- establish the Prisma extension and formatting utility before any API route or component touches monetary data.
+Phase 1 (Interactive Visualizations) -- build the drill-down state machine and validate it with a throwaway Nivo prototype in the first 2 days. This is the single highest-risk feature in v1.1.
 
 ---
 
-### Pitfall 2: D3.js and React Fighting Over the DOM
+### Pitfall 2: BigInt Cents Leak Into Nivo Data Props, Crashing Visualizations
 
 **What goes wrong:**
-D3.js manipulates the DOM directly (selections, enter/update/exit pattern, transitions). React manages the DOM through its Virtual DOM. When both try to control the same DOM elements, you get: ghost elements that survive React re-renders, memory leaks from orphaned D3 event listeners, React unmounting elements that D3 still references, and visual glitches where D3 renders duplicate elements on top of React's output.
+The existing codebase serializes BigInt to strings in `queries.ts` (e.g., `fy.total_budget?.toString() ?? '0'`). But when building Nivo chart data, developers query Prisma directly and forget to convert -- or they convert to string but Nivo expects `number` for its `value` property. Nivo silently renders zero-height rectangles or throws "value is not a number" errors. The chart appears but shows wrong proportions, or renders as a single colored block.
 
 **Why it happens:**
-D3 tutorials and examples assume D3 owns the entire SVG. Developers copy D3 examples into useEffect hooks without accounting for React's lifecycle. The problem is invisible during initial render and only appears on re-renders, route changes, or component unmounts -- exactly the cases developers skip during manual testing.
+The current serialization pattern converts BigInt to string in `queries.ts`, which works for display. But Nivo treemap/sunburst `value` fields must be JavaScript `number`. Converting BigInt cents directly to Number is safe for Miami-Dade's budget values (max ~$13.2B = 1,323,323,800,000 cents, well within `Number.MAX_SAFE_INTEGER`), but the conversion step is easy to forget. Additionally, the existing `formatDollarsAbbreviated()` in `format.ts` accepts `string | number` but Nivo data prep needs raw numbers, not formatted strings.
 
 **How to avoid:**
-1. **Use D3 for math only, React for rendering.** Use D3's scales, layouts, and data transforms (`d3-scale`, `d3-hierarchy`, `d3-shape`), but render all SVG elements through React JSX. This eliminates DOM conflicts entirely.
-2. If D3 must touch the DOM (for complex transitions), isolate it inside a ref-based container:
+1. Create a dedicated `toChartValue(cents: bigint | string | null): number` utility that converts cents to dollars as a Number, with an explicit safety check:
 ```typescript
-const svgRef = useRef<SVGSVGElement>(null);
-useEffect(() => {
-  if (!svgRef.current) return;
-  const svg = d3.select(svgRef.current);
-  // D3 code here
-  return () => {
-    svg.selectAll("*").remove(); // Clean up on unmount
-    // Remove event listeners explicitly
-  };
-}, [data]);
+export function toChartValue(cents: bigint | string | null): number {
+  if (cents === null) return 0
+  const n = Number(cents)
+  if (!Number.isSafeInteger(n) && typeof cents === 'bigint') {
+    console.warn(`Value ${cents} exceeds safe integer range for charts`)
+  }
+  return n / 100 // cents to dollars
+}
 ```
-3. **Never** let D3 append elements that React also renders. Pick one owner per DOM subtree.
-4. Use Recharts for standard charts (bar, line, pie, area). Reserve D3 only for the treemap/sunburst if Recharts Treemap proves insufficient.
+2. Create chart-specific data query functions separate from display query functions. The chart queries return `number` values; the display queries return `string` values.
+3. Never pass Prisma results directly to Nivo data arrays. Always transform through a typed mapping function.
 
 **Warning signs:**
-- Duplicate chart elements appearing after navigation
-- Charts rendering correctly on first load but breaking on re-render
-- Browser memory climbing steadily when navigating between pages with charts
-- Console warnings about DOM nodes not matching during hydration
+- Chart renders but all segments appear equal size
+- Console shows NaN or Infinity in chart calculations
+- Treemap renders as a single block with no subdivisions
+- Type errors at build time about `string` not assignable to `number`
 
 **Phase to address:**
-Phase 2 (Visualization Components) -- establish the D3-for-math-only pattern as a project convention before any visualization code is written.
+Phase 1 (Interactive Visualizations) -- establish `toChartValue()` and chart-specific query functions before building any visualization component.
 
 ---
 
-### Pitfall 3: Next.js Hydration Mismatches With Client-Side Charts
+### Pitfall 3: force-dynamic on Every Page Kills SEO and Performance
 
 **What goes wrong:**
-Chart components render different output on server vs client, causing React hydration errors: `Text content does not match server-rendered HTML` or `Hydration failed because the initial UI does not match what was rendered on the server`. This creates visual flicker, broken interactivity, and console errors that accumulate.
+The existing homepage uses `export const dynamic = 'force-dynamic'`, which means it is server-rendered on every single request. If this pattern is copied to department detail pages (`/departments/[slug]`), the strategic area pages, and the explorer page, then: every page hit generates a database query, no page is statically rendered for search engine crawlers, Time to First Byte (TTFB) depends on database latency, and Vercel serverless cold starts add 200-500ms to every uncached request. Google's crawler sees slow pages and deprioritizes them.
 
 **Why it happens:**
-Chart libraries (Recharts, D3) depend on browser APIs (`window`, `document`, `ResizeObserver`) that don't exist during SSR. Components that access `window.innerWidth` for responsive sizing, use `Date.now()` or locale-dependent formatting, or rely on CSS media queries for conditional rendering will produce different output on server vs client.
+The v1.0 homepage set `force-dynamic` because it queries the database. Developers copy this pattern to every new page because "it works." For a budget app where data changes once per year (annual budget cycle), this is dramatically over-fetching. The data is effectively static for 12 months.
 
 **How to avoid:**
-1. Use `next/dynamic` with `ssr: false` for all chart components:
+1. Use `generateStaticParams` for department and strategic area pages -- these slugs are known at build time:
 ```typescript
-const BudgetTreemap = dynamic(
-  () => import("@/components/charts/BudgetTreemap"),
-  { ssr: false, loading: () => <ChartSkeleton /> }
-);
+// app/departments/[slug]/page.tsx
+export async function generateStaticParams() {
+  const departments = await prisma.departments.findMany({
+    select: { slug: true }
+  })
+  return departments.map(d => ({ slug: d.slug }))
+}
 ```
-2. **Critical App Router constraint:** `dynamic(... { ssr: false })` cannot be called in a Server Component. Create a Client Component wrapper first, then import that wrapper into the Server Component.
-3. Always provide a meaningful loading skeleton (not a spinner) that matches the chart's approximate dimensions to prevent layout shift (CLS).
-4. Never use `suppressHydrationWarning` as a fix -- it hides the symptom but leaves the mismatch. Only use it for inherently differing content like timestamps.
+2. Use ISR with a long revalidation period: `export const revalidate = 86400` (24 hours) as a safety net.
+3. Remove `force-dynamic` from the homepage. Replace with `revalidate = 3600` (1 hour) or even `revalidate = 86400`.
+4. The tax calculator page is the ONE page that should remain dynamic (user input varies), but even there, the millage rate data should be fetched with caching.
+5. Use `unstable_cache` or the `"use cache"` directive (Next.js 15+) for database queries that return budget data.
 
 **Warning signs:**
-- Console errors mentioning "hydration" on any page with charts
-- Charts briefly showing wrong data then "jumping" to correct state
-- Cumulative Layout Shift (CLS) scores above 0.1 in Lighthouse
-- Chart components importing browser-only APIs at module level
+- Every page file contains `export const dynamic = 'force-dynamic'`
+- Lighthouse TTFB exceeds 800ms on department pages
+- Google Search Console shows "Slow" Core Web Vitals for indexed pages
+- Vercel dashboard shows high serverless function invocations for a low-traffic site
 
 **Phase to address:**
-Phase 2 (Visualization Components) -- every chart component must use the dynamic import pattern from day one. Create a `ClientChart` wrapper utility in Phase 1.
+Phase 4 (SEO & Launch) -- but the pattern must be established in Phase 2 (Department Detail Pages) when creating the first batch of static department pages.
 
 ---
 
-### Pitfall 4: Civic Tech Information Overload Kills User Engagement
+### Pitfall 4: Prisma Cannot Create or Query tsvector Columns Natively
 
 **What goes wrong:**
-Developers build budget tools that present all the data because "transparency means showing everything." The resulting interface looks like a spreadsheet with pie charts. Residents visit, feel overwhelmed, and leave within 10 seconds. The tool gets praised by data nerds and ignored by the public it was built for.
+Developers try to add PostgreSQL full-text search by adding a `tsvector` column to the Prisma schema. Prisma does not support the `tsvector` type -- it must be marked as `Unsupported("tsvector")`. This means: Prisma migrations cannot create the column properly, GIN indexes on tsvector columns get removed during `prisma migrate dev` drift detection, `prisma db push` may drop the search column entirely, and all full-text search queries must use `$queryRaw` or TypedSQL.
 
 **Why it happens:**
-The team understands the data deeply and assumes users share that context. Budget literacy is assumed: terms like "operating expenditures," "general fund," "enterprise fund," "debt service," and "millage rate" are treated as self-evident. The design optimizes for completeness over comprehension.
+Prisma's `fullTextSearch` preview feature (for PostgreSQL) uses `ILIKE` and `@@` operators but does not manage `tsvector` columns or GIN indexes. Developers read about Prisma's "full-text search" feature and assume it handles everything. In reality, for production-quality PostgreSQL FTS with proper indexing, you need raw SQL for column creation, index management, and querying.
 
 **How to avoid:**
-1. **Progressive disclosure:** Start with the simplest view (9 strategic areas as colored blocks with dollar amounts). Let users drill down on their own terms: Strategic Area -> Departments -> Line Items.
-2. **Plain English first:** Every budget category needs a one-sentence description a 10th-grader would understand. "Public Safety: $2.8B" is useless. "Police, fire, corrections, and emergency services: $2.8 billion -- $850 per resident" tells a story.
-3. **"What Does My Dollar Buy?" as the landing hook:** Don't start with the total budget. Start with the user's personal connection: their property value and what their taxes actually fund.
-4. **Limit visible data points:** Show max 9-12 items per view. The Miami-Dade budget has 9 strategic areas -- this is a natural first level. Don't show all 35 departments at once.
-5. **No jargon without a tooltip.** Every technical term gets a hover definition.
-6. **Test with non-technical users early.** If your mom can't explain what she sees in 30 seconds, the design fails.
+1. Do NOT add tsvector columns to `schema.prisma`. Manage them entirely in raw SQL migrations.
+2. Create the tsvector column and GIN index in a standalone SQL migration file that Prisma does not manage:
+```sql
+-- Manual migration: add full-text search
+ALTER TABLE departments ADD COLUMN search_vector tsvector
+  GENERATED ALWAYS AS (
+    to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))
+  ) STORED;
+CREATE INDEX idx_departments_search ON departments USING GIN(search_vector);
+```
+3. Use Prisma's `$queryRaw` with tagged template literals for search queries:
+```typescript
+const results = await prisma.$queryRaw`
+  SELECT id, name, slug,
+    ts_rank(search_vector, plainto_tsquery('english', ${query})) as rank
+  FROM departments
+  WHERE search_vector @@ plainto_tsquery('english', ${query})
+  ORDER BY rank DESC
+  LIMIT 20
+`
+```
+4. Add a `prisma migrate diff` check to CI that warns if Prisma tries to drop search-related columns or indexes.
+5. Consider TypedSQL (`.sql` files with `$queryRawTyped`) for type-safe raw search queries in Prisma 7.
 
 **Warning signs:**
-- Homepage shows more than one chart or more than 12 data points
-- No plain-English descriptions alongside budget numbers
-- Users need to scroll to understand the main story
-- Analytics show high bounce rate (>60%) on landing page
-- Budget terms appear without explanation
+- `prisma migrate dev` generates a migration that drops the `search_vector` column
+- `prisma db push` warnings about "column not in schema"
+- Search queries using `LIKE '%term%'` instead of `@@` operator (not using GIN index)
+- Search response time exceeds 200ms for simple queries (missing GIN index)
 
 **Phase to address:**
-Phase 1 (Design & UX) -- content hierarchy and progressive disclosure structure must be defined before any visualization code. Phase 3 (AI Descriptions) must generate plain-English descriptions for every entity.
+Phase 3 (Full-Text Search) -- set up the raw SQL migration approach from the start. Do not attempt to use Prisma's schema for FTS columns.
 
 ---
 
-### Pitfall 5: PDF Parsing Produces Silently Wrong Budget Numbers
+### Pitfall 5: Claude API Descriptions Generated at Runtime Blow Up Costs and Latency
 
 **What goes wrong:**
-pdfplumber extracts tables from the Miami-Dade budget PDF, but merged cells, multi-line headers, spanning rows, and inconsistent formatting cause: numbers assigned to wrong departments, columns shifting by one, subtotals parsed as line items, dollar signs and parentheses (negatives) stripped incorrectly, and thousands separators creating duplicate entries. The extracted data "looks right" on spot-check but contains errors that compound through aggregation.
+Developers wire up Claude API calls in Server Components or API routes so that department descriptions are generated on-the-fly when users visit pages. With 35 departments, 9 strategic areas, and 5 fiscal years, that is ~220 potential API calls. Each call takes 2-5 seconds and costs ~$0.003-0.015 per call (Sonnet input + output tokens). Under traffic, this creates: $3-15/day in API costs for a simple budget site, 2-5 second latency added to every department page load, rate limiting errors (429) when multiple users browse simultaneously, and inconsistent descriptions (different users see different outputs for the same department).
 
 **Why it happens:**
-Government budget PDFs are designed for print, not data extraction. They use complex table layouts with merged header cells, repeated headers across pages, varying column widths between sections, and decorative lines that pdfplumber interprets as table borders. The Budget in Brief PDF is a summary document with especially creative formatting.
+Server Components make API calls feel "free" because there is no client-side code to write. The pattern `const description = await generateDescription(department)` inside a page component looks clean and works perfectly in development with one user. The cost and latency only become apparent in production.
 
 **How to avoid:**
-1. **Visual debugging is mandatory:** Use pdfplumber's `page.to_image()` to overlay detected table boundaries on each page. Visually verify every table extraction before trusting the data.
-2. **Validate totals against known figures:** The total budget ($13,233,238,000), operating budget ($8,575,606,000), and capital budget ($4,657,632,000) are published figures. Sum extracted data and compare. If sums don't match, the extraction is wrong.
-3. **Manual verification table:** Create a spreadsheet mapping each department's known budget to the extracted value. Flag any discrepancy over $1,000.
-4. **Configure table detection explicitly:** Don't rely on pdfplumber's default `extract_tables()`. Tune `table_settings` with explicit `vertical_strategy`, `horizontal_strategy`, `snap_tolerance`, and `join_tolerance` per section of the PDF.
-5. **Treat PDF extraction as a one-time pipeline, not a runtime operation.** Extract once, verify manually, seed to database. Don't re-parse at runtime.
-6. **Consider manual data entry for the Budget in Brief.** It's only ~35 departments with a few figures each. 2 hours of manual entry with verification may be more reliable than days of debugging pdfplumber configurations.
+1. Treat AI descriptions as a DATA PIPELINE step, not a runtime operation. Generate all descriptions once, store them in the existing `budget_descriptions` table, and serve them as static data.
+2. Create a standalone script (`scripts/generate-descriptions.ts`) that:
+   - Queries all departments and their budget data
+   - Generates descriptions via Claude API with structured output
+   - Stores results in `budget_descriptions` with `model_version` and `generated_at` timestamps
+   - Is idempotent (skips already-generated descriptions)
+3. The `budget_descriptions` table already exists in the schema with `entity_type`, `entity_id`, `summary`, `detailed_description`, `key_changes`, and `model_version` columns. Use it.
+4. Run the generation script manually or via CI after data pipeline updates. Never call Claude API from the web application.
+5. Cache descriptions aggressively -- they change only when budget data changes (once per year).
 
 **Warning signs:**
-- Extracted row counts don't match expected department counts
-- Column sums don't match published totals
-- `None` values appearing in extracted table cells (merged cell artifact)
-- Negative numbers appearing as positive (parenthetical notation stripped)
-- Department names truncated or concatenated with adjacent cell content
+- `ANTHROPIC_API_KEY` appears in the Next.js `.env` file (should only be in the pipeline `.env`)
+- Import of `@anthropic-ai/sdk` in any file under `src/` (should only be in `scripts/` or `pipeline/`)
+- Department pages take >2 seconds to load
+- Anthropic dashboard shows API calls correlating with page views
 
 **Phase to address:**
-Phase 0 (Data Pipeline) -- this must be completed and verified before any other phase begins. Bad data propagates through the entire application.
+Phase 2 (AI Descriptions) -- build the generation script first, run it once to populate `budget_descriptions`, then build department pages that simply query the table.
 
 ---
 
-### Pitfall 6: Recharts Treemap Limitations Force Mid-Project Library Switch
+### Pitfall 6: Tax Calculator Millage Math Precision Errors
 
 **What goes wrong:**
-Developers choose Recharts for its simplicity, then discover its Treemap component lacks: drill-down interaction (click to zoom into a category), smooth animated transitions between levels, proper label positioning for small rectangles, responsive behavior that works on mobile, and custom tooltip positioning for nested hierarchies. Mid-project, they either hack workarounds that are fragile or switch to D3 treemap, which means rewriting the core visualization.
+The tax calculator takes a user's property value and applies millage rates to show their tax breakdown by service. Millage rates are stored as `DECIMAL(8,4)` in PostgreSQL (e.g., 9.5778). Developers convert the Prisma `Decimal` type to JavaScript `number` and do arithmetic like `propertyValue * millageRate / 1000`. JavaScript floating-point math produces results like `$2,874.1999999999997` instead of `$2,874.20`. Users notice and lose trust in the tool's accuracy.
 
 **Why it happens:**
-Recharts Treemap works well for static, single-level treemaps. The BudgetExplorer needs a multi-level drill-down treemap (Strategic Area -> Department -> Line Items) with animations, which pushes beyond Recharts Treemap's design intent.
+Prisma returns `Decimal` fields as `Prisma.Decimal` objects (a wrapper around decimal.js). Developers call `.toNumber()` to get a JavaScript float, then do arithmetic. The millage formula `assessed_value * mills / 1000` compounds floating-point errors because the multiplication and division are both imprecise.
 
 **How to avoid:**
-1. **Prototype the treemap interaction in Phase 2 before committing.** Build a working drill-down prototype with real budget data using Recharts Treemap. If it can't handle the interaction within 2 days of effort, switch to D3 `d3-hierarchy` + `treemapSquarify` with React rendering.
-2. **Have the D3 fallback plan ready.** Write the D3 treemap layout code separately so it can be swapped in without rewriting components.
-3. **Consider Recharts for simple charts + D3 for treemap from the start.** Use Recharts for bar charts (year-over-year comparison), pie/donut charts (revenue sources), and line charts (trends). Use D3 layout calculations + React SVG rendering for the treemap/sunburst.
-4. **Alternative: Replace treemap with drill-down stacked bar chart on mobile.** Treemaps are notoriously bad on small screens. NNGroup research confirms that simpler bar charts outperform treemaps for data comparison. Use treemap on desktop, stacked bar chart on mobile.
+1. Do ALL millage arithmetic in integer cents. Convert the user's property value to cents, multiply by millage rate scaled to avoid decimals:
+```typescript
+// Property value: $400,000
+// Millage rate: 9.5778 mills
+// Formula: (value * millage) / 1000
+// In cents: (40_000_000 * 95778) / 10_000_000
+const taxCents = Math.round(
+  (propertyValueCents * millageRateScaled) / 10_000_000n
+)
+```
+2. Alternatively, use the `Decimal` library directly (already available via Prisma's dependency):
+```typescript
+import { Decimal } from '@prisma/client/runtime/library'
+const tax = new Decimal(propertyValue).mul(millageRate).div(1000)
+const displayValue = tax.toFixed(2) // Exact: "$2,874.20"
+```
+3. Display calculated taxes with exactly 2 decimal places. Never show more than 2 decimal places for dollar amounts in the calculator.
+4. Add a disclaimer: "This is an estimate. Actual taxes may vary based on exemptions, assessments, and rate changes." Miami-Dade's own Property Appraiser tool includes this disclaimer.
+5. Validate against Miami-Dade's official tax estimator at `apps.miamidadepa.gov/PAOnlineTools/Taxes/TaxEstimator.aspx` for a few sample property values.
 
 **Warning signs:**
-- Recharts Treemap `onClick` handler doesn't support drill-down state management
-- Labels overflow or disappear on small rectangles
-- Animation between treemap states is jerky or absent
-- Mobile users can't tap individual rectangles reliably
+- Displayed tax amounts have more than 2 decimal places
+- Calculator results differ from Miami-Dade's official estimator by more than $1
+- JavaScript `number * number / 1000` arithmetic appears in calculator code without rounding
+- Tests pass with round numbers but fail with real millage rates
 
 **Phase to address:**
-Phase 2 (Visualization Components) -- build the treemap prototype first, before any other chart. This is the highest-risk visualization component.
+Phase 2 (Tax Calculator) -- establish the Decimal arithmetic pattern before building any calculator UI.
+
+---
+
+### Pitfall 7: Nivo Charts Destroy Mobile Experience
+
+**What goes wrong:**
+Treemap and sunburst charts render beautifully on desktop but become unusable on mobile (375px viewport). Small rectangles in the treemap are untappable (below 44x44px WCAG minimum), sunburst arc labels overlap and become unreadable, and the drill-down interaction conflicts with scroll/swipe gestures. Nivo's `ResponsiveTreeMap` adjusts size but does not adjust the data density or interaction model for small screens. Known issue: Nivo interactive charts have documented problems on iOS specifically (Issue #445).
+
+**Why it happens:**
+Developers build and test on desktop monitors. Responsive wrappers (`ResponsiveTreeMap`, `ResponsiveSunburst`) resize the chart container but do not reduce the number of data points. A 9-segment treemap on a 1440px screen becomes a 9-segment treemap on a 375px screen, with each segment being 4x smaller. Miami-Dade's audience is primarily mobile (residents checking on phones).
+
+**How to avoid:**
+1. Design mobile-first: plan the mobile view BEFORE the desktop view.
+2. On mobile (<768px), replace treemap/sunburst with a simpler visualization:
+   - Sorted horizontal bar chart (one bar per strategic area)
+   - Accordion list with budget amounts and colored indicators
+   - Stacked bar chart with drill-down via tap-to-expand
+3. Use a responsive component switch, not CSS hiding:
+```typescript
+'use client'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+
+export function BudgetVisualization({ data }) {
+  const isMobile = useMediaQuery('(max-width: 767px)')
+
+  if (isMobile) return <BudgetBarChart data={data} />
+  return <BudgetTreemap data={data} />
+}
+```
+4. Test every chart interaction on a real phone (not just browser dev tools). Browser emulation misses iOS-specific touch event bugs.
+5. Ensure all tappable chart areas are at least 44x44px per WCAG 2.5.5.
+
+**Warning signs:**
+- Chart looks correct on desktop but tiny segments are untappable on phone
+- Users cannot drill down on mobile because tap targets are too small
+- Chart labels overlap on narrow viewports
+- Sunburst center hole disappears on small screens
+
+**Phase to address:**
+Phase 1 (Interactive Visualizations) -- define mobile alternative alongside desktop chart from the start, not as an afterthought.
 
 ---
 
@@ -205,24 +269,26 @@ Shortcuts that seem reasonable but create long-term problems.
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Hardcoding budget data as JSON instead of database | Ship MVP faster | Can't add years, can't search, can't do year-over-year comparison | Phase 1 MVP only, migrate to DB in Phase 2 |
-| Using `Number()` for BigInt display | Simpler formatting code | Precision loss on large aggregations, inconsistent rounding | Never -- always format from BigInt |
-| Skipping data table fallbacks for charts | Faster initial development | Fails WCAG 1.1.1, excludes screen reader users, potential ADA liability for a government transparency tool | Never -- civic tools have heightened accessibility obligations |
-| Using `suppressHydrationWarning` on chart containers | Silences console errors | Masks real rendering bugs that cause visual glitches | Never -- fix the root cause |
-| Inlining currency formatting per-component | Faster to write each component | Inconsistent formatting ($13.2B vs $13,200,000,000 vs $13.2 billion) | Never -- use single utility |
-| Skipping PDF extraction validation | Faster pipeline development | Wrong numbers in production, loss of public trust | Never -- verify against published totals |
+| Generating AI descriptions at runtime instead of pre-computing | Simpler architecture, no pipeline script | $3-15/day API costs, 2-5s latency per page, inconsistent descriptions | Never -- descriptions change once per year |
+| Using `LIKE '%term%'` for search instead of tsvector + GIN | Works without raw SQL, no migration headaches | Full table scan on every search, O(n) performance, no ranking | Only acceptable during prototype phase, must migrate before launch |
+| Keeping `force-dynamic` on all pages | Simpler mental model, always fresh data | Poor SEO, high serverless costs, slow TTFB | Only for pages with user-specific data (tax calculator results) |
+| Using `Number()` for Prisma Decimal millage rates | Simpler code, no Decimal dependency in components | Floating-point precision errors in tax calculations | Never for financial calculations -- use Decimal library |
+| Skipping mobile-specific chart design | Ship one visualization faster | Mobile users (majority of audience) cannot use the core feature | Never -- design mobile-first |
+| Hardcoding current fiscal year in queries | Faster development | Breaks when FY 2026-27 data is added, requires code changes instead of data changes | Only in v1.1 if adding a fiscal year selector is out of scope, but isolate the hardcoded value to one constant |
 
 ## Integration Gotchas
 
-Common mistakes when connecting to external services.
+Common mistakes when connecting v1.1 features to the existing system.
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Prisma + BigInt + Next.js API Routes | Returning raw Prisma results from API routes without serialization | Create a Prisma client extension that converts BigInt to string, or serialize in a data access layer before API response |
-| pdfplumber + government PDFs | Using default `extract_tables()` without configuring table detection settings | Inspect each page visually with `to_image()`, configure `table_settings` per section, validate totals |
-| Anthropic Claude API for descriptions | Generating descriptions at build time with no caching, causing API rate limits and costs on every build | Generate once, store in database as `ai_descriptions` table, regenerate only on data changes |
-| Vercel + Server Components + Prisma | Prisma Client instantiation creating multiple connections in serverless environment | Use singleton pattern: `globalThis.prisma ??= new PrismaClient()` in development; Vercel handles pooling via Prisma Accelerate or direct connection in production |
-| Next.js + `@vercel/og` for OG images | Generating OG images client-side or with chart library rendering | Use `@vercel/og` with ImageResponse in route handlers; render simplified chart representations (colored bars, not full interactive charts) |
+| Nivo + BigInt data from Prisma | Passing `string` cents to Nivo `value` props, or passing raw BigInt | Create `toChartValue()` utility that converts BigInt cents to Number dollars; use in all chart data preparation |
+| Prisma 7 + PostgreSQL tsvector | Adding tsvector column to `schema.prisma` | Manage tsvector columns and GIN indexes in raw SQL migrations outside Prisma's schema management |
+| Prisma Decimal + Tax Calculator | Calling `.toNumber()` on millage rates and doing float arithmetic | Use `Decimal` library for all millage arithmetic, round to 2 decimal places at display time only |
+| Claude API + `budget_descriptions` table | Calling Claude API from Server Components at request time | Pre-generate descriptions in a pipeline script, store in DB, serve as static data |
+| Next.js metadata + Department pages | Using static metadata that is identical across all department pages | Use `generateMetadata()` with department-specific titles, descriptions, and OG images |
+| `generateStaticParams` + Prisma singleton | Prisma connection pool exhausted during static generation of 35+ pages | Ensure Prisma singleton pattern is used; pool size is sufficient for concurrent page generation; add `connection_limit` to DATABASE_URL |
+| Nivo + Server Components | Importing Nivo directly in a Server Component (Nivo requires browser APIs) | Create `'use client'` wrapper components; use `next/dynamic` with `ssr: false` and loading skeletons |
 
 ## Performance Traps
 
@@ -230,51 +296,54 @@ Patterns that work at small scale but fail as usage grows.
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Loading all 5 years of budget data on initial page load | Slow first contentful paint, large JS bundle | Load current year by default, lazy-load comparison data on user interaction | When dataset exceeds ~500 line items across years |
-| Rendering treemap with 200+ rectangles in SVG | Janky scrolling, high CPU on mobile, touch events lag | Aggregate to department level (35 items max), show line items only on drill-down | > 100 SVG elements on mobile devices |
-| Re-creating Intl.NumberFormat on every render | Cumulative performance hit on pages with many formatted numbers | Create formatter once at module level: `const usdFormat = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })` | Pages with > 50 formatted monetary values |
-| Unoptimized Prisma queries fetching full department objects when only names are needed | Slow API responses, high memory usage on serverless | Use `select` to fetch only required fields; use `include` sparingly | > 50 concurrent users on serverless |
-| Client-side year-over-year calculation | Recalculates percentage changes on every render | Compute year-over-year deltas in the data pipeline or server-side, store as pre-computed columns | When comparing > 3 fiscal years with > 100 line items |
+| Fetching full department tree for every chart render | Slow page load, high memory usage | Fetch hierarchical data once in a Server Component, pass pre-shaped data to Client Component charts | > 200 data points across all fiscal years |
+| Nivo SVG treemap with 100+ rectangles | Janky hover, slow transitions, high CPU | Use TreeMapCanvas for large datasets (>50 nodes); aggregate small departments into "Other" | > 50 visible rectangles on mobile |
+| Re-rendering entire Nivo chart on drill-down | Full chart flicker, lost animation state | Use React.memo on chart wrapper; only change the `data` prop, keep `theme` and `colors` stable | Any drill-down interaction |
+| Search without debouncing | Database hammered on every keystroke, laggy UI | Debounce search input by 300ms; show loading state during search | > 5 concurrent users searching |
+| Loading all fiscal years for year-over-year comparison upfront | Large initial payload, slow Time to Interactive | Load current year by default; lazy-load comparison data when user selects "Compare" | > 3 fiscal years with expenditure breakdowns |
+| OG image generation on every request | Slow social sharing previews, high serverless cost | Pre-generate OG images at build time or use ISR with long revalidation | Any social media sharing |
 
 ## Security Mistakes
 
-Domain-specific security issues beyond general web security.
+Domain-specific security issues for v1.1 features.
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Exposing Anthropic API key in client-side code | API key theft, unauthorized usage, billing surprise | AI descriptions are pre-generated and stored in DB. The API key lives only in the data pipeline `.env`, never in the Next.js app |
-| Database connection string in client bundle | Full database access exposure | Prisma runs only in Server Components and API routes. Verify with `"use server"` directive. Never import Prisma client in files with `"use client"` |
-| Unsanitized search input passed to Prisma `$queryRaw` | SQL injection | Use Prisma's type-safe query builder for search. If raw SQL is needed, use tagged template literals: `` prisma.$queryRaw`SELECT ... WHERE name ILIKE ${`%${input}%`}` `` |
-| No rate limiting on API routes | DoS attacks on search/calculator endpoints | Apply rate limiting middleware (e.g., `@upstash/ratelimit` or Vercel's built-in edge rate limiting) on public API routes |
+| Anthropic API key in Next.js environment variables | Key exposed in client bundle or server logs, unauthorized API usage | API key belongs ONLY in the data pipeline `.env`. The Next.js app should never import or reference the Anthropic SDK |
+| Search input passed directly to `$queryRaw` without parameterization | SQL injection via search box | Always use Prisma's tagged template literals for raw queries: `` prisma.$queryRaw`...WHERE search_vector @@ plainto_tsquery('english', ${userInput})` `` -- Prisma auto-parameterizes |
+| Tax calculator accepting and displaying arbitrary user input | XSS via property value field reflected in results | Validate input is a positive number between 0 and 100,000,000. Display only the computed result, never echo raw user input into HTML |
+| Department slug used in `$queryRaw` without validation | SQL injection via crafted URL slug | Validate slug matches `/^[a-z0-9-]+$/` before using in any query. Use Prisma's type-safe `findUnique({ where: { slug } })` instead of raw SQL for slug lookups |
 
 ## UX Pitfalls
 
-Common user experience mistakes in this domain.
+Common user experience mistakes specific to v1.1 features.
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Showing raw dollar amounts without context | "$2.8B for Public Safety" means nothing to most people | Show per-capita cost ("$850 per resident"), percentage of total ("21% of budget"), and year-over-year change ("+5.2%") |
-| Treemap labels disappearing on small rectangles | Users can't identify small departments | Use tooltip on hover/tap, or switch to sorted bar chart when rectangles are too small to label |
-| Color-only encoding of budget categories | Colorblind users (8% of males) can't distinguish categories | Combine color with patterns, labels, or numbering. Use colorblind-safe palette (the Miami-Dade brand colors blue/orange/green are reasonably distinguishable) |
-| "Penny visualization" without interaction | Static penny breakdown is forgettable | Make it interactive: hover/tap a segment to see department details, animate the penny splitting |
-| Tax calculator requiring manual millage rate knowledge | User abandonment -- nobody knows their millage rate | Auto-detect from address or just ask for property value. Apply the county millage rate (9.5778 mills) automatically. Explain what millage means in a tooltip |
-| Presenting operating and capital budgets mixed together | Confuses the narrative -- recurring costs vs. one-time investments are different stories | Separate tabs or toggle: "Day-to-Day Operations ($8.6B)" vs "Building the Future ($4.7B)" |
-| Charts without data table alternatives | Screen reader users get zero information from chart-heavy pages | Provide a visually hidden `<table>` for every chart, or a toggle to switch between chart and table view |
+| Tax calculator requires knowing your assessed value vs. market value | Users enter market value (Zillow estimate), get wrong tax amount | Explain the difference. Link to Miami-Dade Property Appraiser lookup. Default to "market value" and apply a standard assessment ratio, with a note |
+| AI descriptions sound robotic or use budget jargon | Users skip the descriptions, defeating the purpose of plain-English explanations | Prompt Claude with explicit instructions: "Write for a Miami resident with no budget background. No jargon. Use specific examples. One paragraph max." Review all 35 descriptions manually before publishing |
+| Search returns raw database matches with no context | User searches "parks" and gets a list of department names with no indication of relevance | Show search snippets with highlighted matching terms. Include budget amounts in search results. Group results by type (departments, strategic areas, descriptions) |
+| Treemap shows budget amounts without context | "$2.8B for Public Safety" is meaningless to most residents | Show per-capita cost, percentage of total, and year-over-year change in chart tooltips. The existing `formatYoYChange()` in `format.ts` already supports this |
+| SEO metadata is generic across all pages | Social shares show "Miami-Dade Budget Explorer" for every page, no department-specific info | Use `generateMetadata()` to create unique titles ("Fire Rescue Budget: $1.2B | Miami-Dade Budget Explorer") and descriptions per department page |
+| Drill-down has no breadcrumb or back button | Users drill into a department and cannot figure out how to return to the overview | Show a breadcrumb trail (Total > Public Safety > Fire Rescue) with each level clickable. Add a "Back to Overview" button prominently |
 
 ## "Looks Done But Isn't" Checklist
 
-Things that appear complete but are missing critical pieces.
+Things that appear complete but are missing critical pieces for v1.1 features.
 
-- [ ] **Treemap visualization:** Often missing keyboard navigation -- verify Tab can reach the chart and Arrow keys navigate between segments
-- [ ] **Currency formatting:** Often missing consistent significant figures -- verify "$13.2B" vs "$13,233,238,000" is chosen by context (overview vs detail) and never mixed within same view
-- [ ] **Tax calculator:** Often missing input validation -- verify edge cases: $0 property value, $100M property value, non-numeric input, negative values
-- [ ] **Mobile charts:** Often missing touch target sizes -- verify all tappable chart areas are at least 44x44px per WCAG 2.5.5
-- [ ] **Year-over-year comparison:** Often missing "new department" handling -- verify what happens when a department exists in FY2025-26 but not FY2021-22 (show as "NEW" not as error)
-- [ ] **Search functionality:** Often missing empty state -- verify what users see when search returns no results (helpful message, not blank page)
-- [ ] **OG/social sharing:** Often missing per-page OG images -- verify that sharing a department page shows that department's data in the preview, not generic site image
-- [ ] **AI descriptions:** Often missing staleness indicator -- verify descriptions note which fiscal year they describe and when they were generated
-- [ ] **Accessibility:** Often missing skip navigation link -- verify users can skip past the main navigation to content, especially important for chart-heavy pages
-- [ ] **Data integrity:** Often missing validation against source -- verify that sum of all department budgets equals published total ($13,233,238,000)
+- [ ] **Treemap drill-down:** Often missing zoom-out. Verify clicking a breadcrumb or back button returns to the parent level with animation, not a page reload
+- [ ] **Sunburst chart:** Often missing center label. Verify the center shows the current drill level name and total value, updating on each drill action
+- [ ] **Tax calculator:** Often missing homestead exemption. Miami-Dade homestead exemption ($50K off assessed value) dramatically changes results. Verify a checkbox for "Primary residence?" is included
+- [ ] **Tax calculator:** Often missing disclaimer. Verify "This is an estimate" disclaimer with link to official Property Appraiser estimator
+- [ ] **AI descriptions:** Often missing fiscal year context. Verify each description mentions the fiscal year it describes ("In FY 2025-26, Fire Rescue...")
+- [ ] **AI descriptions:** Often missing "key changes" section. Verify `key_changes` column is populated and displayed, showing year-over-year budget narrative
+- [ ] **Full-text search:** Often missing empty state. Verify search for "xyzzy123" shows a helpful message, not a blank page or error
+- [ ] **Full-text search:** Often missing search result ranking. Verify results are ordered by relevance (ts_rank), not alphabetically or by ID
+- [ ] **SEO sitemap:** Often missing. Verify `app/sitemap.ts` exists and returns all department and strategic area URLs with correct lastmod dates
+- [ ] **SEO robots.txt:** Often missing or blocking crawlers. Verify `app/robots.ts` allows crawling of all public pages
+- [ ] **OG images:** Often generic. Verify sharing `/departments/fire-rescue` on social media shows Fire Rescue-specific preview image with budget data
+- [ ] **Department pages:** Often missing `generateStaticParams`. Verify `next build` pre-renders all 35 department pages (check build output for static page count)
+- [ ] **Mobile charts:** Often untested on real devices. Verify treemap/sunburst alternative renders and is interactive on an actual iPhone or Android phone
 
 ## Recovery Strategies
 
@@ -282,13 +351,13 @@ When pitfalls occur despite prevention, how to recover.
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| BigInt serialization errors in production | LOW | Add Prisma client extension (30 min fix), redeploy. No data loss. |
-| Wrong budget numbers from PDF extraction | MEDIUM | Manually verify all extracted data against PDF, correct in seed script, re-seed database. Audit all derived calculations. |
-| Hydration mismatch cascade | MEDIUM | Wrap all chart components in dynamic imports with ssr:false. Create ClientChart wrapper utility. Test each page in production build mode (not dev). |
-| D3/React DOM conflict causing memory leaks | HIGH | Requires rewriting visualization approach. Migrate to D3-for-math pattern. Add cleanup functions to all useEffect hooks. Profile memory before/after. |
-| Treemap library switch mid-project | HIGH | If caught early (Phase 2 prototype), 2-3 day rewrite. If caught late (Phase 4+), 1-2 week rewrite plus regression testing of all interactions. |
-| Accessibility complaints / ADA inquiry | HIGH | Retrofit data tables for all charts, add ARIA labels, fix keyboard navigation, add skip links. Could take 2-4 weeks if not built in from the start. |
-| Information overload user feedback | MEDIUM | Simplify landing page, add progressive disclosure layers, write plain-English descriptions. Easier to remove complexity than add clarity. |
+| Nivo drill-down state doesn't work at 4 levels | MEDIUM | Simplify to 2-level drill-down (Strategic Area -> Department). Show expenditure categories as a simple bar chart within department detail page instead of a 4th treemap level. 2-3 day rework. |
+| BigInt values crash Nivo charts | LOW | Add `toChartValue()` utility, update all chart data preparation functions. 2-4 hour fix. No data loss. |
+| force-dynamic on all pages tanks SEO | MEDIUM | Replace with `generateStaticParams` + ISR. Requires touching every page file but is mechanical. 1 day. Google re-crawl takes 1-2 weeks. |
+| tsvector column dropped by Prisma migration | MEDIUM | Re-run the raw SQL migration to recreate column and GIN index. Add migration guard to CI. 1-2 hours for fix, but search data must be re-indexed. |
+| Claude API costs spiral from runtime calls | LOW | Move API calls to pipeline script, populate `budget_descriptions` table, remove API key from Next.js env. 4-6 hours. Existing table schema supports this. |
+| Tax calculator shows wrong amounts | LOW | Switch to Decimal arithmetic, add rounding. Validate against official estimator. 2-4 hour fix. |
+| Charts unusable on mobile | HIGH | Requires designing and building alternative mobile visualizations. 3-5 days if done as afterthought. Much harder to retrofit than to plan upfront. |
 
 ## Pitfall-to-Phase Mapping
 
@@ -296,43 +365,44 @@ How roadmap phases should address these pitfalls.
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| PDF parsing errors | Phase 0: Data Pipeline | Sum of extracted departments equals $13,233,238,000 |
-| BigInt serialization | Phase 1: Database + Data Layer | API routes return valid JSON with monetary values as formatted strings |
-| Information overload | Phase 1: Design + Content Hierarchy | User test: non-technical person can explain the landing page in 30 seconds |
-| Hydration mismatches | Phase 2: Visualization Components | `next build && next start` shows zero hydration warnings in console |
-| D3/React DOM conflicts | Phase 2: Visualization Components | Memory profile shows no growth after 10 navigation cycles between chart pages |
-| Recharts treemap limitations | Phase 2: Visualization Components (first sprint) | Working drill-down prototype with real data before building other charts |
-| Accessibility gaps | Phase 2: Visualization Components (parallel track) | WAVE tool reports zero errors; keyboard-only navigation works for all charts |
-| Mobile treemap unusability | Phase 2: Visualization Components | Treemap (or alternative) is usable on 375px-wide viewport with touch |
-| SEO for chart pages | Phase 3: Pages + SEO | Google Search Console shows all department pages indexed; social share previews show correct OG images |
-| AI description staleness | Phase 3: AI Descriptions | Each description includes fiscal year reference; regeneration script exists |
-| Performance with full dataset | Phase 4: Optimization | Lighthouse Performance score > 90 on mobile with all 5 fiscal years available |
+| Nivo drill-down not built-in | Phase 1: Interactive Visualizations | Working 4-level drill-down prototype with real data in first 2 days |
+| BigInt leaking into chart data | Phase 1: Interactive Visualizations | `toChartValue()` utility exists; no `string` types in Nivo data arrays |
+| Mobile chart unusability | Phase 1: Interactive Visualizations | Alternative visualization renders on 375px viewport; all tap targets >= 44x44px |
+| Millage precision errors | Phase 2: Tax Calculator | Calculator results match Miami-Dade official estimator within $1 for 3 sample property values |
+| Claude API at runtime | Phase 2: AI Descriptions | `ANTHROPIC_API_KEY` does not appear in `budget-explorer-web/.env`; all descriptions served from `budget_descriptions` table |
+| Prisma vs tsvector conflict | Phase 3: Full-Text Search | `prisma migrate dev` does not generate a migration that drops search columns; GIN index exists in production |
+| force-dynamic everywhere | Phase 4: SEO & Launch | `next build` output shows 35+ static department pages; homepage revalidates, not force-dynamic |
+| Missing SEO metadata | Phase 4: SEO & Launch | Each department page has unique `<title>`, `<meta description>`, and OG image; `sitemap.xml` includes all pages |
+| Generic OG images | Phase 4: SEO & Launch | Sharing 3 different department URLs on Twitter/LinkedIn shows 3 different preview images |
+| Search SQL injection | Phase 3: Full-Text Search | Search query uses parameterized `$queryRaw` template literal; manual test with `'; DROP TABLE departments; --` input returns no results safely |
 
 ## Sources
 
-- [Prisma BigInt serialization discussion](https://github.com/prisma/prisma/discussions/9793) -- HIGH confidence
-- [Prisma ORM 7.3.0 BigInt JSON fix](https://www.prisma.io/blog/prisma-orm-7-3-0) -- HIGH confidence
-- [Prisma special fields and types documentation](https://www.prisma.io/docs/orm/prisma-client/special-fields-and-types) -- HIGH confidence
-- [MDN: TypeError BigInt not serializable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/BigInt_not_serializable) -- HIGH confidence
-- [D3.js and React DOM struggle](https://medium.com/@ecccs_FCC/d3-js-react-and-the-struggle-for-the-dom-116dd1045f22) -- MEDIUM confidence
-- [React + D3 integration patterns (GitHub gist)](https://gist.github.com/alexcjohnson/a4b714eee8afd2123ee00cb5b3278a5f) -- MEDIUM confidence
-- [Next.js hydration error documentation](https://nextjs.org/docs/messages/react-hydration-error) -- HIGH confidence
-- [Fix hydration mismatch errors in Next.js (2026)](https://oneuptime.com/blog/post/2026-01-24-fix-hydration-mismatch-errors-nextjs/view) -- MEDIUM confidence
-- [The ssr:false trap in Next.js App Router](https://medium.com/@joshisagarm3/the-ssr-false-trap-in-next-js-app-router-and-how-i-escaped-it-74816bc7a778) -- MEDIUM confidence
-- [pdfplumber merged cells handling (Issue #84)](https://github.com/jsvine/pdfplumber/issues/84) -- HIGH confidence
-- [pdfplumber multi-line cell issue (Issue #317)](https://github.com/jsvine/pdfplumber/issues/317) -- HIGH confidence
-- [Recharts performance issues (Issue #1146)](https://github.com/recharts/recharts/issues/1146) -- HIGH confidence
-- [Recharts accessibility discussion (#4484)](https://github.com/recharts/recharts/discussions/4484) -- HIGH confidence
-- [Recharts accessibility wiki](https://github.com/recharts/recharts/wiki/Recharts-and-accessibility) -- HIGH confidence
-- [WCAG accessible data visualization guide](https://www.a11y-collective.com/blog/accessible-charts/) -- MEDIUM confidence
-- [Accessible charts with data table fallbacks (Smashing Magazine)](https://www.smashingmagazine.com/2024/02/accessibility-standards-empower-better-chart-visual-design/) -- MEDIUM confidence
-- [NNGroup treemaps and alternatives](https://www.nngroup.com/articles/treemaps/) -- HIGH confidence
-- [Storytelling with Data: treemap alternatives](https://www.storytellingwithdata.com/blog/2018/6/5/an-alternative-to-treemaps) -- MEDIUM confidence
-- [Responsive data visualization techniques](https://data.europa.eu/apps/data-visualisation-guide/responsive-data-visualisation-introduction) -- MEDIUM confidence
-- [Progressive disclosure in UX (NNGroup)](https://www.nngroup.com/articles/progressive-disclosure/) -- HIGH confidence
-- [Next.js metadata and OG images documentation](https://nextjs.org/docs/app/getting-started/metadata-and-og-images) -- HIGH confidence
-- [Dashboard design principles (UXPin)](https://www.uxpin.com/studio/blog/dashboard-design-principles/) -- MEDIUM confidence
+- [Nivo Sunburst ComputedDatum missing parent property (Issue #1936)](https://github.com/plouc/nivo/issues/1936) -- HIGH confidence
+- [Nivo sunburst drill-down demo commit](https://github.com/plouc/nivo/commit/b058f7b7a9750ce923e59b03bd6413391d6fa72f) -- HIGH confidence
+- [Nivo ResponsiveLine not interactive on mobile (Issue #445)](https://github.com/plouc/nivo/issues/445) -- HIGH confidence
+- [Nivo responsive issues with FlexBox/CSS Grid (Issue #411)](https://github.com/plouc/nivo/issues/411) -- MEDIUM confidence
+- [Nivo Treemap documentation](https://nivo.rocks/treemap/) -- HIGH confidence
+- [Nivo Sunburst documentation](https://nivo.rocks/sunburst/) -- HIGH confidence
+- [Next.js Server and Client Components serialization](https://nextjs.org/docs/app/getting-started/server-and-client-components) -- HIGH confidence
+- [Next.js props serialization discussion (#46795)](https://github.com/vercel/next.js/discussions/46795) -- HIGH confidence
+- [React Server Components performance pitfalls (LogRocket)](https://blog.logrocket.com/react-server-components-performance-mistakes) -- MEDIUM confidence
+- [Bulletproof FTS in Prisma with PostgreSQL tsvector (Medium)](https://medium.com/@chauhananubhav16/bulletproof-full-text-search-fts-in-prisma-with-postgresql-tsvector-without-migration-drift-c421f63aaab3) -- MEDIUM confidence
+- [Prisma full-text search index not used (Issue #8950)](https://github.com/prisma/prisma/issues/8950) -- HIGH confidence
+- [Prisma support tsvector columns (Issue #12343)](https://github.com/prisma/prisma/issues/12343) -- HIGH confidence
+- [Prisma full-text search documentation (Preview)](https://www.prisma.io/docs/orm/prisma-client/queries/full-text-search) -- HIGH confidence
+- [Prisma TypedSQL documentation](https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/typedsql) -- HIGH confidence
+- [Next.js generateMetadata documentation](https://nextjs.org/docs/app/api-reference/functions/generate-metadata) -- HIGH confidence
+- [Next.js SEO: Metadata, Sitemaps & Canonical Tags](https://prateeksha.com/blog/nextjs-app-router-seo-metadata-sitemaps-canonicals) -- MEDIUM confidence
+- [How to Configure SEO in Next.js 16](https://jsdevspace.substack.com/p/how-to-configure-seo-in-nextjs-16) -- MEDIUM confidence
+- [Next.js ISR Guide](https://nextjs.org/docs/app/guides/incremental-static-regeneration) -- HIGH confidence
+- [Next.js Caching and Revalidating](https://nextjs.org/docs/app/getting-started/caching-and-revalidating) -- HIGH confidence
+- [Claude API rate limits documentation](https://docs.claude.com/en/api/rate-limits) -- HIGH confidence
+- [Google's guidance on AI-generated content](https://developers.google.com/search/blog/2023/02/google-search-and-ai-content) -- HIGH confidence
+- [Miami-Dade Property Appraiser Tax Estimator](https://apps.miamidadepa.gov/PAOnlineTools/Taxes/TaxEstimator.aspx) -- HIGH confidence
+- [Next.js Package Bundling Guide](https://nextjs.org/docs/app/guides/package-bundling) -- HIGH confidence
+- [MDN BigInt reference](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) -- HIGH confidence
 
 ---
-*Pitfalls research for: Miami-Dade Budget Explorer -- Civic Budget Data Visualization*
+*Pitfalls research for: Miami-Dade Budget Explorer v1.1 -- Adding Interactive Visualizations, Tax Calculator, AI Descriptions, Search, and SEO*
 *Researched: 2026-02-28*
