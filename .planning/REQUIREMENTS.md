@@ -42,9 +42,9 @@ Requirements carried forward from v1.0 (26 remaining). Each maps to roadmap phas
 
 ### Search
 
-- [ ] **SRCH-01**: Full-text search across departments, descriptions, and line items
-- [ ] **SRCH-02**: Search results link to relevant department/area pages
-- [ ] **SRCH-03**: Empty state with helpful message when no results found
+- [x] **SRCH-01**: Full-text search across departments, descriptions, and line items
+- [x] **SRCH-02**: Search results link to relevant department/area pages
+- [x] **SRCH-03**: Empty state with helpful message when no results found
 
 ### SEO & Sharing
 
@@ -120,9 +120,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AI-02 | Phase 4 | Complete |
 | AI-03 | Phase 4 | Complete |
 | AI-04 | Phase 4 | Complete |
-| SRCH-01 | Phase 6 | Pending |
-| SRCH-02 | Phase 6 | Pending |
-| SRCH-03 | Phase 6 | Pending |
+| SRCH-01 | Phase 6 | Complete |
+| SRCH-02 | Phase 6 | Complete |
+| SRCH-03 | Phase 6 | Complete |
 | SEO-01 | Phase 6 | Pending |
 | SEO-02 | Phase 6 | Pending |
 

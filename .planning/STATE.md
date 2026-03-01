@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Feature Set
-status: unknown
-last_updated: "2026-03-01T18:33:40.960Z"
+status: in-progress
+last_updated: "2026-03-01T19:45:42.000Z"
 progress:
   total_phases: 3
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
 ---
 
 # Project State
@@ -18,23 +18,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Residents can instantly see how their specific tax dollars fund county services -- from the total $13.2 billion down to individual departments -- without reading a single PDF.
-**Current focus:** Phase 5 complete -- Tax Calculator. Ready for Phase 6.
+**Current focus:** Phase 6 in progress -- Search, SEO, Launch. Plan 1 (Full-text search) complete.
 
 ## Current Position
 
-Phase: 5 of 6 (Tax Calculator) -- COMPLETE
-Plan: 2 of 2 in current phase (2 complete)
-Status: Phase 5 complete
-Last activity: 2026-03-01 -- 05-02 Authority breakdown + county drill-down
+Phase: 6 of 6 (Search, SEO & Launch) -- IN PROGRESS
+Plan: 1 of 2 in current phase (1 complete)
+Status: 06-01 complete, ready for 06-02
+Last activity: 2026-03-01 -- 06-01 Full-text search page
 
-Progress: [████████████████████████████████████████████████░░] 80% v1.1 (8/10 plans)
+Progress: [██████████████████████████████████████████████████████░░░░░] 90% v1.1 (9/10 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: 5 min
-- Total execution time: 1.00 hours
+- Total execution time: 1.05 hours
 
 **By Phase:**
 
@@ -45,6 +45,7 @@ Progress: [███████████████████████
 | 03-budget-visualizations-explorer | 3 | 9 min | 3 min |
 | 04-department-pages-ai-year-over-year | 3/3 | 8 min | 3 min |
 | 05-tax-calculator | 2/2 | 6 min | 3 min |
+| 06-search-seo-launch | 1/2 | 3 min | 3 min |
 
 *Updated after each plan completion*
 
@@ -86,6 +87,11 @@ Key decisions carrying forward:
 - [05-02]: Cumulative offset stacked bar (simpler than d3.stack for single-row chart)
 - [05-02]: CSS-only percentage bars for strategic areas (no chart library needed)
 - [05-02]: Authority color palette: county in blues (MDC brand), non-county in distinct hues
+- [06-01]: websearch_to_tsquery over to_tsquery for natural user input (no syntax errors on special chars)
+- [06-01]: BigInt operating_budget converted to string in query layer, not component layer
+- [06-01]: Native form action=/search for progressive enhancement (works without JS)
+- [06-01]: SearchResults is server component (no hydration cost)
+- [06-01]: Materialized view pattern -- REFRESH MATERIALIZED VIEW after pipeline runs
 
 ### Pending Todos
 
@@ -98,5 +104,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 05-02-PLAN.md (authority breakdown + county drill-down). Phase 5 complete (2/2 plans). Ready for Phase 6.
+Stopped at: Completed 06-01-PLAN.md (full-text search page). Phase 6 in progress (1/2 plans). Ready for 06-02 (SEO, sitemap, launch).
 Resume file: None
