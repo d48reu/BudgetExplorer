@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Feature Set
 status: unknown
-last_updated: "2026-03-01T05:15:54.326Z"
+last_updated: "2026-03-01T06:33:34Z"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 6
+  completed_phases: 3
+  total_plans: 10
+  completed_plans: 4
 ---
 
 # Project State
@@ -18,23 +18,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Residents can instantly see how their specific tax dollars fund county services -- from the total $13.2 billion down to individual departments -- without reading a single PDF.
-**Current focus:** Phase 3 -- Budget Visualizations + Explorer
+**Current focus:** Phase 4 -- Department Pages + AI + Year-over-Year
 
 ## Current Position
 
-Phase: 3 of 6 (Budget Visualizations + Explorer) -- COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase Complete
-Last activity: 2026-03-01 -- 03-03 donut chart + waffle chart + homepage integration complete
+Phase: 4 of 6 (Department Pages + AI + Year-over-Year) -- IN PROGRESS
+Plan: 2 of 3 in current phase
+Status: Executing
+Last activity: 2026-03-01 -- 04-02 department detail pages with static generation complete
 
-Progress: [█████████████████████░░░░░░░░░] 30% v1.1 (3/10 plans)
+Progress: [████████████████████████████░░] 40% v1.1 (4/10 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: 5 min
-- Total execution time: 0.85 hours
+- Total execution time: 0.90 hours
 
 **By Phase:**
 
@@ -43,6 +43,7 @@ Progress: [█████████████████████░░
 | 01-data-pipeline | 4 | 25 min | 6 min |
 | 02-app-foundation-design-system | 4 | 18 min | 5 min |
 | 03-budget-visualizations-explorer | 3 | 9 min | 3 min |
+| 04-department-pages-ai-year-over-year | 1/3 | 3 min | 3 min |
 
 *Updated after each plan completion*
 
@@ -70,6 +71,9 @@ Key decisions carrying forward:
 - [Research]: Tax calculator is pure client-side computation (no API needed)
 - [Research]: SEO uses Next.js built-in Metadata API (no next-seo)
 - [Roadmap]: Phase 5 (Tax Calculator) can run in parallel with Phases 3-4
+- [04-02]: Department page parallel fetch: detail first (for IDs), then expenditures + YoY + related in Promise.all
+- [04-02]: Horizontal bar chart uses D3 scaleBand on Y-axis (categories) + scaleLinear on X-axis (amounts) with opacity gradient
+- [04-02]: ExpenditureBreakdown uses dynamic chart height (data.length * 44px) for varying category counts
 
 ### Pending Todos
 
@@ -82,5 +86,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 03-03-PLAN.md (donut chart + waffle chart + homepage). Phase 3 complete. Ready for Phase 4.
+Stopped at: Completed 04-02-PLAN.md (department detail pages with static generation, stat cards, AI description, expenditure chart). Plan 03 (YoY chart) remains.
 Resume file: None

@@ -14,14 +14,14 @@ Requirements carried forward from v1.0 (26 remaining). Each maps to roadmap phas
 - [x] **VIZ-03**: Revenue source donut chart showing 7 revenue categories
 - [x] **VIZ-04**: "Penny visualization" — dollar broken into colored segments by strategic area
 - [ ] **VIZ-05**: Year-over-year bar charts comparing current vs. prior 4 fiscal years
-- [ ] **VIZ-06**: Expenditure category breakdown per department (salary, fringes, etc.)
+- [x] **VIZ-06**: Expenditure category breakdown per department (salary, fringes, etc.)
 - [x] **VIZ-07**: Data table fallback for every chart (accessibility requirement)
 
 ### Pages
 
 - [x] **PAGE-02**: Explorer page with full-screen treemap/sunburst and drill-down
 - [x] **PAGE-03**: Strategic area detail pages showing departments within each area
-- [ ] **PAGE-04**: Department detail pages with budget overview, AI description, YoY comparison
+- [x] **PAGE-04**: Department detail pages with budget overview, AI description, YoY comparison
 - [ ] **PAGE-05**: Tax calculator page with property value input and visual breakdown
 - [ ] **PAGE-06**: Year-over-year comparison page
 
@@ -38,7 +38,7 @@ Requirements carried forward from v1.0 (26 remaining). Each maps to roadmap phas
 - [ ] **AI-01**: Plain-English summary (2-3 sentences) of what each department does
 - [ ] **AI-02**: "Key Changes" summary of what changed in adopted budget vs. prior year
 - [ ] **AI-03**: Descriptions generated via Claude API and stored in database
-- [ ] **AI-04**: Each description references its fiscal year and generation date
+- [x] **AI-04**: Each description references its fiscal year and generation date
 
 ### Search
 
@@ -104,11 +104,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIZ-03 | Phase 3 | Complete |
 | VIZ-04 | Phase 3 | Complete |
 | VIZ-05 | Phase 4 | Pending |
-| VIZ-06 | Phase 4 | Pending |
+| VIZ-06 | Phase 4 | Complete |
 | VIZ-07 | Phase 3 | Complete |
 | PAGE-02 | Phase 3 | Complete |
 | PAGE-03 | Phase 3 | Complete |
-| PAGE-04 | Phase 4 | Pending |
+| PAGE-04 | Phase 4 | Complete |
 | PAGE-05 | Phase 5 | Pending |
 | PAGE-06 | Phase 4 | Pending |
 | CALC-01 | Phase 5 | Pending |
@@ -119,7 +119,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AI-01 | Phase 4 | Pending |
 | AI-02 | Phase 4 | Pending |
 | AI-03 | Phase 4 | Pending |
-| AI-04 | Phase 4 | Pending |
+| AI-04 | Phase 4 | Complete |
 | SRCH-01 | Phase 6 | Pending |
 | SRCH-02 | Phase 6 | Pending |
 | SRCH-03 | Phase 6 | Pending |
