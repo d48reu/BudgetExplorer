@@ -30,7 +30,7 @@ Requirements carried forward from v1.0 (26 remaining). Each maps to roadmap phas
 - [x] **CALC-01**: User enters property assessed value and gets total tax bill
 - [x] **CALC-02**: Homestead exemption checkbox adjusts calculation
 - [x] **CALC-03**: Visual breakdown of taxes by authority (County vs. School Board vs. others)
-- [x] **CALC-04**: County portion drilled into by strategic area and department
+- [x] **CALC-04**: County portion drilled into by strategic area
 - [x] **CALC-05**: Dollar amounts displayed alongside percentages
 
 ### AI Descriptions

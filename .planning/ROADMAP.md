@@ -61,14 +61,14 @@ Plans:
 - [ ] 04-03-PLAN.md -- Year-over-year bar chart component and department page integration
 
 ### Phase 5: Tax Calculator
-**Goal**: Users can enter their property assessed value and get a personalized breakdown of exactly how their tax dollars are allocated across county services, authorities, strategic areas, and departments
+**Goal**: Users can enter their property assessed value and get a personalized breakdown of exactly how their tax dollars are allocated across county services, authorities, and strategic areas
 **Depends on**: Phase 2 (data layer); can run in parallel with Phases 3-4
 **Requirements**: CALC-01, CALC-02, CALC-03, CALC-04, CALC-05, PAGE-05
 **Success Criteria** (what must be TRUE):
   1. User can enter a property assessed value on /calculator and see their total estimated annual tax bill calculated from real millage rates
   2. User can toggle a homestead exemption checkbox and see the tax bill recalculate immediately
   3. User can see a visual breakdown of their taxes by taxing authority (County vs. School Board vs. others) with both dollar amounts and percentages
-  4. User can drill their county tax portion into strategic areas and departments to see exactly how much of their personal taxes fund each service
+  4. User can drill their county tax portion into strategic areas to see exactly how much of their personal taxes fund each service
   5. All calculations match Miami-Dade's official tax estimator for sample property values (no floating-point rounding errors)
 **Plans:** 2 plans
 
