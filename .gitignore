@@ -38,3 +38,9 @@ extracted_data.json
 budget-explorer-web/node_modules/
 budget-explorer-web/.next/
 budget-explorer-web/.env.local
+
+# Local tooling
+.agents/
+.claude/
+Knowledge Base/
+skills-lock.json
