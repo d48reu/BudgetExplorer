@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma'
 import type {
   SerializedFiscalYear,
   SerializedStrategicArea,
+  SerializedMillageRate,
   SerializedDepartment,
   SerializedDepartmentDetail,
   SerializedExpenditure,
@@ -29,6 +30,31 @@ export async function getCurrentFiscalYear(): Promise<SerializedFiscalYear | nul
     totalBudget: fy.total_budget?.toString() ?? '0',
     totalEmployees: fy.total_employees,
   }
+}
+
+/**
+ * Get millage rates for FY 2025-26.
+ * Converts Prisma Decimal to JavaScript number and nullable boolean to definite boolean.
+ */
+export async function getMillageRates(): Promise<SerializedMillageRate[]> {
+  const fy = await prisma.fiscal_years.findFirst({
+    where: { label: 'FY 2025-26' },
+  })
+
+  if (!fy) return []
+
+  const rates = await prisma.millage_rates.findMany({
+    where: { fiscal_year_id: fy.id },
+    orderBy: { display_order: 'asc' },
+  })
+
+  return rates.map((rate) => ({
+    id: rate.id,
+    authority: rate.authority,
+    millageRate: Number(rate.millage_rate),
+    isCounty: rate.is_county ?? true,
+    displayOrder: rate.display_order ?? 0,
+  }))
 }
 
 /**

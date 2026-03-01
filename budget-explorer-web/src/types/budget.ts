@@ -89,6 +89,14 @@ export type SerializedYoYData = {
   isCurrent: boolean
 }
 
+export type SerializedMillageRate = {
+  id: number
+  authority: string
+  millageRate: number    // Prisma Decimal converted to JS number
+  isCounty: boolean
+  displayOrder: number
+}
+
 /** Column definition for DataTableToggle */
 export type TableColumn<T> = {
   key: keyof T & string
