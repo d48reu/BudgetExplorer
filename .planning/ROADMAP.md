@@ -19,7 +19,7 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 ### v1.1 Full Feature Set
 
-- [ ] **Phase 3: Budget Visualizations + Explorer** - Users can visually explore the $13.2B budget through interactive charts with drill-down navigation
+- [x] **Phase 3: Budget Visualizations + Explorer** - Users can visually explore the $13.2B budget through interactive charts with drill-down navigation
 - [ ] **Phase 4: Department Pages + AI + Year-over-Year** - Users can read what each department does in plain English and see how budgets changed over 5 years
 - [ ] **Phase 5: Tax Calculator** - Users can enter their property value and see exactly how their tax dollars are allocated
 - [ ] **Phase 6: Search + SEO + Launch** - Users can search across all budget data, and every page is optimized for sharing and discovery
@@ -40,8 +40,8 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 Plans:
 - [x] 03-01-PLAN.md -- Shared chart infrastructure (D3 install, ChartContainer, DataTableToggle, ChartTooltip, chart-utils, queries)
-- [ ] 03-02-PLAN.md -- Treemap explorer with drill-down, mobile card fallback, area detail pages, department stub
-- [ ] 03-03-PLAN.md -- Revenue donut chart, penny waffle visualization, homepage integration
+- [x] 03-02-PLAN.md -- Treemap explorer with drill-down, mobile card fallback, area detail pages, department stub
+- [x] 03-03-PLAN.md -- Revenue donut chart, penny waffle visualization, homepage integration
 
 ### Phase 4: Department Pages + AI + Year-over-Year
 **Goal**: Users can visit any of the 35 department pages and read a plain-English AI-generated description of what the department does, see how its budget changed over 5 fiscal years, and view expenditure category breakdowns -- all statically generated for fast loading
@@ -100,7 +100,7 @@ Phases 3-4-6 are sequential. Phase 5 can run in parallel with Phases 3-4 (depend
 |-------|-----------|----------------|--------|-----------|
 | 1. Data Pipeline | v1.0 | 4/4 | Complete | 2026-02-28 |
 | 2. App Foundation + Design System | v1.0 | 4/4 | Complete | 2026-02-28 |
-| 3. Budget Visualizations + Explorer | v1.1 | 1/3 | In Progress | - |
+| 3. Budget Visualizations + Explorer | v1.1 | 3/3 | Complete | 2026-03-01 |
 | 4. Department Pages + AI + YoY | v1.1 | 0/3 | Not started | - |
 | 5. Tax Calculator | v1.1 | 0/2 | Not started | - |
 | 6. Search + SEO + Launch | v1.1 | 0/2 | Not started | - |
