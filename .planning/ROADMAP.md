@@ -36,12 +36,12 @@ Full details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
   3. User can see a penny visualization on the homepage showing how each dollar is split by strategic area with colored segments
   4. User on a mobile device (below 768px) sees a usable list/accordion fallback instead of the treemap, with all the same data accessible
   5. User using a screen reader can toggle any chart to a data table showing the same information in accessible tabular format
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 03-01: Shared chart infrastructure (ChartContainer, DataTableToggle, toChartValue utility, chart query layer)
-- [ ] 03-02: Treemap/sunburst drill-down with explorer page and mobile fallback
-- [ ] 03-03: Revenue donut, penny visualization, and strategic area detail pages
+- [ ] 03-01-PLAN.md -- Shared chart infrastructure (D3 install, ChartContainer, DataTableToggle, ChartTooltip, chart-utils, queries)
+- [ ] 03-02-PLAN.md -- Treemap explorer with drill-down, mobile card fallback, area detail pages, department stub
+- [ ] 03-03-PLAN.md -- Revenue donut chart, penny waffle visualization, homepage integration
 
 ### Phase 4: Department Pages + AI + Year-over-Year
 **Goal**: Users can visit any of the 35 department pages and read a plain-English AI-generated description of what the department does, see how its budget changed over 5 fiscal years, and view expenditure category breakdowns -- all statically generated for fast loading
@@ -100,7 +100,7 @@ Phases 3-4-6 are sequential. Phase 5 can run in parallel with Phases 3-4 (depend
 |-------|-----------|----------------|--------|-----------|
 | 1. Data Pipeline | v1.0 | 4/4 | Complete | 2026-02-28 |
 | 2. App Foundation + Design System | v1.0 | 4/4 | Complete | 2026-02-28 |
-| 3. Budget Visualizations + Explorer | v1.1 | 0/3 | Not started | - |
+| 3. Budget Visualizations + Explorer | v1.1 | 0/3 | Planning complete | - |
 | 4. Department Pages + AI + YoY | v1.1 | 0/3 | Not started | - |
 | 5. Tax Calculator | v1.1 | 0/2 | Not started | - |
 | 6. Search + SEO + Launch | v1.1 | 0/2 | Not started | - |
