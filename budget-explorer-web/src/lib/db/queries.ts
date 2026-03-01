@@ -92,13 +92,6 @@ export async function getStrategicAreas(): Promise<SerializedStrategicArea[]> {
 }
 
 /**
- * Get the count of departments.
- */
-export async function getDepartmentCount(): Promise<number> {
-  return prisma.departments.count()
-}
-
-/**
  * Get aggregated quick stats for the homepage.
  */
 export async function getQuickStats(): Promise<QuickStats> {

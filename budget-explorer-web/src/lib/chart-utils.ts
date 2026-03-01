@@ -19,14 +19,6 @@ export function toChartValue(centsString: string): number {
 }
 
 /**
- * Convert cents string to dollar amount for display in chart labels.
- * Example: "857560600000" -> 8575606000
- */
-export function centsToDollars(centsString: string): number {
-  return Number(centsString) / 100
-}
-
-/**
  * Format a decimal value as a percentage string.
  * Example: formatPercentage(42.3456, 1) -> "42.3%"
  */
