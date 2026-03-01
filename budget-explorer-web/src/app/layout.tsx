@@ -2,6 +2,7 @@ import { Inter } from 'next/font/google'
 import { Navbar } from '@/components/layout/Navbar'
 import { MobileTabBar } from '@/components/layout/MobileTabBar'
 import { Footer } from '@/components/layout/Footer'
+import { CANONICAL_DOMAIN } from '@/lib/constants'
 import './globals.css'
 
 import type { Metadata } from 'next'
@@ -13,6 +14,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(CANONICAL_DOMAIN),
   title: {
     default: 'Miami-Dade Budget Explorer',
     template: '%s | Miami-Dade Budget Explorer',
@@ -42,6 +44,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <MobileTabBar />
+        {/* TODO: Add Umami analytics before public launch - self-hosted on Vercel, free tier */}
       </body>
     </html>
   )
