@@ -69,7 +69,7 @@ def fetch_department_data(conn) -> list[dict]:
     # Get department id, name, slug, and strategic area from departments table
     # Join with v_department_yoy for budget and YoY data
     cur.execute("""
-        SELECT
+        SELECT DISTINCT ON (d.id)
             d.id AS department_id,
             yoy.department,
             yoy.slug,
@@ -83,7 +83,7 @@ def fetch_department_data(conn) -> list[dict]:
         FROM v_department_yoy yoy
         JOIN departments d ON d.slug = yoy.slug
         WHERE yoy.fiscal_year = %s
-        ORDER BY yoy.department
+        ORDER BY d.id, yoy.operating_budget DESC
     """, (CURRENT_FISCAL_YEAR,))
 
     columns = [
@@ -223,11 +223,11 @@ def generate_description(
             max_tokens=1024,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_prompt}],
-            output_type=DepartmentDescription,
+            response_model=DepartmentDescription,
         )
         return response.parsed
-    except AttributeError:
-        # Older SDK version without messages.parse() -- fall back to create()
+    except (AttributeError, TypeError):
+        # SDK version doesn't support parse() or response_model -- fall back to create()
         pass
 
     # Fallback: messages.create() with manual JSON extraction
