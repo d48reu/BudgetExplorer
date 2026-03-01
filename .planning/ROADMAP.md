@@ -53,12 +53,12 @@ Plans:
   3. User can see an expenditure category breakdown (salary, fringes, operating, capital) for each department
   4. Every AI description displays its fiscal year and generation date, and no description is generated at runtime (all pre-seeded via Python pipeline)
   5. User visiting /department/[slug] for any of the 35 departments gets a fast page load (statically generated at build time)
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 04-01: AI description pipeline (Python batch generation, human review, database seeding)
-- [ ] 04-02: Department detail pages with AI descriptions, expenditure breakdown chart, and static generation
-- [ ] 04-03: Year-over-year comparison page and department-level YoY bar charts
+- [ ] 04-01-PLAN.md -- AI description pipeline (Python batch generation with Claude API, human review gate, database seeding)
+- [ ] 04-02-PLAN.md -- Department detail pages with stat cards, AI descriptions, expenditure breakdown chart, and static generation
+- [ ] 04-03-PLAN.md -- Year-over-year bar chart component and department page integration
 
 ### Phase 5: Tax Calculator
 **Goal**: Users can enter their property assessed value and get a personalized breakdown of exactly how their tax dollars are allocated across county services, authorities, strategic areas, and departments
@@ -101,6 +101,6 @@ Phases 3-4-6 are sequential. Phase 5 can run in parallel with Phases 3-4 (depend
 | 1. Data Pipeline | v1.0 | 4/4 | Complete | 2026-02-28 |
 | 2. App Foundation + Design System | v1.0 | 4/4 | Complete | 2026-02-28 |
 | 3. Budget Visualizations + Explorer | v1.1 | 3/3 | Complete | 2026-03-01 |
-| 4. Department Pages + AI + YoY | v1.1 | 0/3 | Not started | - |
+| 4. Department Pages + AI + YoY | v1.1 | 0/3 | Planned | - |
 | 5. Tax Calculator | v1.1 | 0/2 | Not started | - |
 | 6. Search + SEO + Launch | v1.1 | 0/2 | Not started | - |
