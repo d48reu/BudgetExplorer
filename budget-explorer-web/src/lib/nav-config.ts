@@ -13,5 +13,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/', icon: '\u2302' },          // House symbol
   { label: 'Explorer', href: '/explorer', icon: '\u25A6' }, // Chart/grid symbol
   { label: 'Calculator', href: '/calculator', icon: '\u2261' }, // Calculator-like symbol
+  { label: 'Search', href: '/search', icon: '\uD83D\uDD0D' },  // Magnifying glass
   { label: 'Glossary', href: '/glossary', icon: '\u2139' },  // Info symbol
 ]

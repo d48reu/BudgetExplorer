@@ -408,3 +408,77 @@ export async function getDepartmentYoY(deptId: number): Promise<SerializedYoYDat
     isCurrent: b.fiscal_years.label === currentFyLabel,
   }))
 }
+
+// --- Search ---
+
+export type SearchResult = {
+  entity_type: 'department' | 'strategic_area' | 'glossary'
+  entity_id: number
+  title: string
+  slug: string
+  snippet: string
+  area_name: string | null
+  area_color: string | null
+  area_slug: string | null
+  operating_budget: string | null
+  cents_per_dollar: number | null
+  rank: number
+}
+
+/**
+ * Full-text search across departments, strategic areas, and glossary terms.
+ * Uses the search_index materialized view with weighted tsvector ranking.
+ * Returns results ordered by relevance, limited to 50.
+ */
+export async function searchBudget(query: string): Promise<SearchResult[]> {
+  const trimmed = query.trim()
+  if (!trimmed) return []
+
+  const rawResults = await prisma.$queryRaw<
+    Array<{
+      entity_type: string
+      entity_id: number
+      title: string
+      slug: string
+      snippet: string
+      area_name: string | null
+      area_color: string | null
+      area_slug: string | null
+      operating_budget: bigint | null
+      cents_per_dollar: number | null
+      rank: number
+    }>
+  >`
+    SELECT
+      entity_type,
+      entity_id,
+      title,
+      slug,
+      snippet,
+      area_name,
+      area_color,
+      area_slug,
+      operating_budget,
+      cents_per_dollar,
+      ts_rank(search_vector, websearch_to_tsquery('english', ${trimmed})) AS rank
+    FROM search_index
+    WHERE search_vector @@ websearch_to_tsquery('english', ${trimmed})
+    ORDER BY rank DESC
+    LIMIT 50
+  `
+
+  // Convert BigInt operating_budget to string for safe JSON serialization
+  return rawResults.map(r => ({
+    entity_type: r.entity_type as SearchResult['entity_type'],
+    entity_id: r.entity_id,
+    title: r.title,
+    slug: r.slug,
+    snippet: r.snippet,
+    area_name: r.area_name,
+    area_color: r.area_color,
+    area_slug: r.area_slug,
+    operating_budget: r.operating_budget?.toString() ?? null,
+    cents_per_dollar: r.cents_per_dollar,
+    rank: Number(r.rank),
+  }))
+}
