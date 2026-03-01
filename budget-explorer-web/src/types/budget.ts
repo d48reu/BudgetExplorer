@@ -63,6 +63,7 @@ export type SerializedDepartmentDetail = {
   name: string
   slug: string
   area: {
+    id: number
     name: string
     slug: string
     color: string | null

@@ -1,10 +1,27 @@
 import { notFound } from 'next/navigation'
 import prisma from '@/lib/prisma'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
-import { Skeleton } from '@/components/ui/Skeleton'
+import { StatCards } from '@/components/department/StatCards'
+import { AiDescription } from '@/components/department/AiDescription'
+import { KeyChangesCallout } from '@/components/department/KeyChangesCallout'
+import { RelatedDepartments } from '@/components/department/RelatedDepartments'
+import { ExpenditureBreakdown } from '@/components/charts/ExpenditureBreakdown'
+import {
+  getDepartmentDetail,
+  getDepartmentExpenditures,
+  getDepartmentYoY,
+  getRelatedDepartments,
+} from '@/lib/db/queries'
+import { formatYoYChange } from '@/lib/format'
 import type { Metadata } from 'next'
 
-export const dynamic = 'force-dynamic'
+/** Pre-render all 35 department pages at build time. */
+export async function generateStaticParams() {
+  const departments = await prisma.departments.findMany({
+    select: { slug: true },
+  })
+  return departments.map((dept) => ({ slug: dept.slug }))
+}
 
 type PageProps = {
   params: Promise<{ slug: string }>
@@ -12,87 +29,132 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const dept = await prisma.departments.findFirst({
-    where: { slug },
-    select: { name: true },
-  })
+  const detail = await getDepartmentDetail(slug)
 
-  if (!dept) {
+  if (!detail) {
     return { title: 'Department Not Found' }
   }
 
   return {
-    title: `${dept.name} | Budget Explorer`,
-    description: `Budget details for ${dept.name}, Miami-Dade County.`,
+    title: `${detail.name} - ${detail.area.name} | Budget Explorer`,
+    description: `Budget details for ${detail.name}, Miami-Dade County.`,
   }
 }
 
 export default async function DepartmentPage({ params }: PageProps) {
   const { slug } = await params
-  const dept = await prisma.departments.findFirst({
-    where: { slug },
-    include: { strategic_areas: true },
-  })
+  const detail = await getDepartmentDetail(slug)
 
-  if (!dept) {
+  if (!detail) {
     notFound()
   }
 
-  const area = dept.strategic_areas
+  // Fetch remaining data in parallel now that we have dept id and area id
+  const [expenditures, yoyData, relatedDepts] = await Promise.all([
+    getDepartmentExpenditures(detail.id),
+    getDepartmentYoY(detail.id),
+    getRelatedDepartments(detail.area.id, detail.id),
+  ])
+
+  // Compute YoY change for stat card
+  let yoyChange: { value: string; direction: 'increase' | 'decrease' | 'unchanged' } | null = null
+  if (yoyData.length >= 2) {
+    const currentYear = yoyData.find(d => d.isCurrent)
+    const currentIndex = yoyData.findIndex(d => d.isCurrent)
+    const priorYear = currentIndex > 0 ? yoyData[currentIndex - 1] : null
+    if (currentYear && priorYear) {
+      yoyChange = formatYoYChange(currentYear.totalBudget, priorYear.totalBudget)
+    }
+  }
 
   return (
     <div className="px-(--spacing-page) py-6">
+      {/* Section 1: Breadcrumbs + department name + area badge */}
       <Breadcrumbs
         items={[
           { label: 'Home', href: '/' },
           { label: 'Explorer', href: '/explorer' },
-          { label: area.name, href: `/explorer/${area.slug}` },
-          { label: dept.name },
+          { label: detail.area.name, href: `/explorer/${detail.area.slug}` },
+          { label: detail.name },
         ]}
       />
 
       <div className="mt-6 mb-8">
-        {/* Department name + area badge */}
-        <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-3 mb-6">
           <h1 className="text-2xl font-heading font-bold text-text-primary">
-            {dept.name}
+            {detail.name}
           </h1>
           <span
             className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
-            style={{ backgroundColor: area.color ?? '#6B7280' }}
+            style={{ backgroundColor: detail.area.color ?? '#6B7280' }}
           >
-            {area.name}
+            {detail.area.name}
           </span>
         </div>
 
-        {/* Placeholder content for Phase 4 */}
-        <p className="text-text-secondary mb-6">
-          Department details coming in a future update.
-        </p>
+        {/* Section 2: Stat cards */}
+        <StatCards
+          operatingBudget={detail.operatingBudget}
+          capitalBudget={detail.capitalBudget}
+          employeeCount={detail.employeeCount}
+          yoyChange={yoyChange}
+        />
 
-        {/* Skeleton placeholders suggesting future content layout */}
-        <div className="space-y-6">
-          {/* Budget overview skeleton */}
-          <div>
-            <h2 className="text-lg font-heading font-semibold text-text-primary mb-3">
-              Budget Overview
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Skeleton className="w-full" height="80px" />
-              <Skeleton className="w-full" height="80px" />
-              <Skeleton className="w-full" height="80px" />
-            </div>
-          </div>
-
-          {/* Description skeleton */}
-          <div>
-            <h2 className="text-lg font-heading font-semibold text-text-primary mb-3">
-              About This Department
-            </h2>
-            <Skeleton className="w-full" height="60px" />
-            <Skeleton className="w-3/4 mt-2" height="20px" />
-          </div>
+        {/* Section 3: AI description */}
+        <div className="mt-8">
+          <h2 className="text-lg font-heading font-semibold text-text-primary mb-3">
+            About This Department
+          </h2>
+          {detail.description ? (
+            <AiDescription
+              summary={detail.description.summary}
+              detailedDescription={detail.description.detailedDescription}
+              fiscalYear={detail.description.fiscalYear}
+              generatedAt={detail.description.generatedAt}
+            />
+          ) : (
+            <p className="text-text-secondary text-sm italic">
+              Description coming soon.
+            </p>
+          )}
         </div>
+
+        {/* Section 4: Key changes callout */}
+        {detail.description?.keyChanges && (
+          <div className="mt-6">
+            <KeyChangesCallout
+              keyChanges={detail.description.keyChanges}
+              areaColor={detail.area.color}
+            />
+          </div>
+        )}
+
+        {/* Section 5: Expenditure category breakdown */}
+        {expenditures.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-lg font-heading font-semibold text-text-primary mb-3">
+              Expenditure Breakdown
+            </h2>
+            <ExpenditureBreakdown
+              data={expenditures}
+              areaColor={detail.area.color ?? '#0057B8'}
+            />
+          </div>
+        )}
+
+        {/* Section 6: YoY chart placeholder (added by Plan 03) */}
+        {/* YoY chart added by Plan 03 */}
+
+        {/* Section 7: Related departments */}
+        {relatedDepts.length > 0 && (
+          <div className="mt-8">
+            <RelatedDepartments
+              departments={relatedDepts}
+              areaName={detail.area.name}
+              areaSlug={detail.area.slug}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

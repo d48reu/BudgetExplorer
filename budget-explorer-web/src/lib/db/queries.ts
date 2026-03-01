@@ -264,6 +264,7 @@ export async function getDepartmentDetail(slug: string): Promise<SerializedDepar
     name: dept.name,
     slug: dept.slug,
     area: {
+      id: dept.strategic_areas.id,
       name: dept.strategic_areas.name,
       slug: dept.strategic_areas.slug,
       color: dept.strategic_areas.color,
