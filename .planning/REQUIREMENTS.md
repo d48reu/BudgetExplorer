@@ -29,9 +29,9 @@ Requirements carried forward from v1.0 (26 remaining). Each maps to roadmap phas
 
 - [x] **CALC-01**: User enters property assessed value and gets total tax bill
 - [x] **CALC-02**: Homestead exemption checkbox adjusts calculation
-- [ ] **CALC-03**: Visual breakdown of taxes by authority (County vs. School Board vs. others)
-- [ ] **CALC-04**: County portion drilled into by strategic area and department
-- [ ] **CALC-05**: Dollar amounts displayed alongside percentages
+- [x] **CALC-03**: Visual breakdown of taxes by authority (County vs. School Board vs. others)
+- [x] **CALC-04**: County portion drilled into by strategic area and department
+- [x] **CALC-05**: Dollar amounts displayed alongside percentages
 
 ### AI Descriptions
 
@@ -113,9 +113,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PAGE-06 | Phase 4 | Complete |
 | CALC-01 | Phase 5 | Complete |
 | CALC-02 | Phase 5 | Complete |
-| CALC-03 | Phase 5 | Pending |
-| CALC-04 | Phase 5 | Pending |
-| CALC-05 | Phase 5 | Pending |
+| CALC-03 | Phase 5 | Complete |
+| CALC-04 | Phase 5 | Complete |
+| CALC-05 | Phase 5 | Complete |
 | AI-01 | Phase 4 | Complete |
 | AI-02 | Phase 4 | Complete |
 | AI-03 | Phase 4 | Complete |

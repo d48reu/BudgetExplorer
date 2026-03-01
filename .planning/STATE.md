@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Feature Set
 status: in-progress
-last_updated: "2026-03-01T18:22:58Z"
+last_updated: "2026-03-01T18:27:32Z"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,23 +18,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Residents can instantly see how their specific tax dollars fund county services -- from the total $13.2 billion down to individual departments -- without reading a single PDF.
-**Current focus:** Phase 5 in progress -- Tax Calculator
+**Current focus:** Phase 5 complete -- Tax Calculator. Ready for Phase 6.
 
 ## Current Position
 
-Phase: 5 of 6 (Tax Calculator) -- IN PROGRESS
-Plan: 1 of 2 in current phase (1 complete)
-Status: Executing plan 05-02
-Last activity: 2026-03-01 -- 05-01 Tax calculator core (math engine, data layer, page UI)
+Phase: 5 of 6 (Tax Calculator) -- COMPLETE
+Plan: 2 of 2 in current phase (2 complete)
+Status: Phase 5 complete
+Last activity: 2026-03-01 -- 05-02 Authority breakdown + county drill-down
 
-Progress: [██████████████████████████████████████████████░░░░] 70% v1.1 (7/10 plans)
+Progress: [████████████████████████████████████████████████░░] 80% v1.1 (8/10 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: 5 min
-- Total execution time: 0.97 hours
+- Total execution time: 1.00 hours
 
 **By Phase:**
 
@@ -44,7 +44,7 @@ Progress: [███████████████████████
 | 02-app-foundation-design-system | 4 | 18 min | 5 min |
 | 03-budget-visualizations-explorer | 3 | 9 min | 3 min |
 | 04-department-pages-ai-year-over-year | 3/3 | 8 min | 3 min |
-| 05-tax-calculator | 1/2 | 4 min | 4 min |
+| 05-tax-calculator | 2/2 | 6 min | 3 min |
 
 *Updated after each plan completion*
 
@@ -83,6 +83,9 @@ Key decisions carrying forward:
 - [05-01]: Vitest installed as first test framework; pure tax-math module with zero React deps for testability
 - [05-01]: Format-on-blur pattern for dollar input avoids cursor-jumping (per research pitfall 3)
 - [05-01]: Sticky sidebar grid layout (lg:grid-cols-[360px_1fr]) for calculator page
+- [05-02]: Cumulative offset stacked bar (simpler than d3.stack for single-row chart)
+- [05-02]: CSS-only percentage bars for strategic areas (no chart library needed)
+- [05-02]: Authority color palette: county in blues (MDC brand), non-county in distinct hues
 
 ### Pending Todos
 
@@ -95,5 +98,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 05-01-PLAN.md (tax calculator core). Phase 5 plan 1/2 done. Ready for 05-02 (authority breakdown + county drill-down).
+Stopped at: Completed 05-02-PLAN.md (authority breakdown + county drill-down). Phase 5 complete (2/2 plans). Ready for Phase 6.
 Resume file: None
