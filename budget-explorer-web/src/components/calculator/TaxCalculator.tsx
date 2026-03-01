@@ -10,6 +10,8 @@ import {
 } from '@/lib/tax-math'
 import { PropertyValueInput } from '@/components/calculator/PropertyValueInput'
 import { TaxSummaryHero } from '@/components/calculator/TaxSummaryHero'
+import { AuthorityBreakdown } from '@/components/calculator/AuthorityBreakdown'
+import { CountyDrillDown } from '@/components/calculator/CountyDrillDown'
 
 type TaxCalculatorProps = {
   rates: SerializedMillageRate[]
@@ -61,9 +63,6 @@ export function TaxCalculator({ rates, areas }: TaxCalculatorProps) {
     [countyTotal, areas]
   )
 
-  // Keep countyAllocation available for Plan 05-02
-  void countyAllocation
-
   const hasValue = assessedValue > 0
 
   return (
@@ -102,11 +101,21 @@ export function TaxCalculator({ rates, areas }: TaxCalculatorProps) {
               monthlyEquivalent={monthlyEquivalent}
             />
 
-            {/* Authority breakdown -- Plan 05-02 */}
-            <div className="mt-6" />
+            {/* Authority breakdown */}
+            <section className="mt-6">
+              <h2 className="text-xl font-semibold text-text-primary mb-4">
+                Tax Breakdown by Authority
+              </h2>
+              <AuthorityBreakdown breakdown={breakdown} totalTax={totalTax} />
+            </section>
 
-            {/* County drill-down -- Plan 05-02 */}
-            <div className="mt-6" />
+            {/* County drill-down */}
+            <section className="mt-6">
+              <CountyDrillDown
+                allocations={countyAllocation}
+                countyTotal={countyTotal}
+              />
+            </section>
 
             <p className="text-text-muted text-xs mt-8">
               This is an estimate based on FY 2025-26 millage rates. Actual
