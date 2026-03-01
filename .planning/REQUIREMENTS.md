@@ -22,13 +22,13 @@ Requirements carried forward from v1.0 (26 remaining). Each maps to roadmap phas
 - [x] **PAGE-02**: Explorer page with full-screen treemap/sunburst and drill-down
 - [x] **PAGE-03**: Strategic area detail pages showing departments within each area
 - [x] **PAGE-04**: Department detail pages with budget overview, AI description, YoY comparison
-- [ ] **PAGE-05**: Tax calculator page with property value input and visual breakdown
+- [x] **PAGE-05**: Tax calculator page with property value input and visual breakdown
 - [x] **PAGE-06**: Year-over-year comparison page
 
 ### Calculator
 
-- [ ] **CALC-01**: User enters property assessed value and gets total tax bill
-- [ ] **CALC-02**: Homestead exemption checkbox adjusts calculation
+- [x] **CALC-01**: User enters property assessed value and gets total tax bill
+- [x] **CALC-02**: Homestead exemption checkbox adjusts calculation
 - [ ] **CALC-03**: Visual breakdown of taxes by authority (County vs. School Board vs. others)
 - [ ] **CALC-04**: County portion drilled into by strategic area and department
 - [ ] **CALC-05**: Dollar amounts displayed alongside percentages
@@ -109,10 +109,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PAGE-02 | Phase 3 | Complete |
 | PAGE-03 | Phase 3 | Complete |
 | PAGE-04 | Phase 4 | Complete |
-| PAGE-05 | Phase 5 | Pending |
+| PAGE-05 | Phase 5 | Complete |
 | PAGE-06 | Phase 4 | Complete |
-| CALC-01 | Phase 5 | Pending |
-| CALC-02 | Phase 5 | Pending |
+| CALC-01 | Phase 5 | Complete |
+| CALC-02 | Phase 5 | Complete |
 | CALC-03 | Phase 5 | Pending |
 | CALC-04 | Phase 5 | Pending |
 | CALC-05 | Phase 5 | Pending |

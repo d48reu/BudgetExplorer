@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Feature Set
-status: unknown
-last_updated: "2026-03-01T17:21:41.342Z"
+status: in-progress
+last_updated: "2026-03-01T18:22:58Z"
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
 ---
 
 # Project State
@@ -18,23 +18,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Residents can instantly see how their specific tax dollars fund county services -- from the total $13.2 billion down to individual departments -- without reading a single PDF.
-**Current focus:** Phase 4 complete -- Department Pages + AI + Year-over-Year
+**Current focus:** Phase 5 in progress -- Tax Calculator
 
 ## Current Position
 
-Phase: 4 of 6 (Department Pages + AI + Year-over-Year) -- COMPLETE
-Plan: 3 of 3 in current phase (all complete)
-Status: Phase complete
-Last activity: 2026-03-01 -- 04-03 YoY chart component created and wired into department pages
+Phase: 5 of 6 (Tax Calculator) -- IN PROGRESS
+Plan: 1 of 2 in current phase (1 complete)
+Status: Executing plan 05-02
+Last activity: 2026-03-01 -- 05-01 Tax calculator core (math engine, data layer, page UI)
 
-Progress: [████████████████████████████████████████░░] 60% v1.1 (6/10 plans)
+Progress: [██████████████████████████████████████████████░░░░] 70% v1.1 (7/10 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 13
 - Average duration: 5 min
-- Total execution time: 0.90 hours
+- Total execution time: 0.97 hours
 
 **By Phase:**
 
@@ -44,6 +44,7 @@ Progress: [███████████████████████
 | 02-app-foundation-design-system | 4 | 18 min | 5 min |
 | 03-budget-visualizations-explorer | 3 | 9 min | 3 min |
 | 04-department-pages-ai-year-over-year | 3/3 | 8 min | 3 min |
+| 05-tax-calculator | 1/2 | 4 min | 4 min |
 
 *Updated after each plan completion*
 
@@ -79,6 +80,9 @@ Key decisions carrying forward:
 - [04-01]: Human review gate between AI generation and DB seeding ensures description quality
 - [04-03]: YoY vertical bar chart uses D3 scaleBand on X-axis (fiscal years) + scaleLinear on Y-axis (budget amounts)
 - [04-03]: SVG percentage badge dynamically sized from text length, positioned above current year value label
+- [05-01]: Vitest installed as first test framework; pure tax-math module with zero React deps for testability
+- [05-01]: Format-on-blur pattern for dollar input avoids cursor-jumping (per research pitfall 3)
+- [05-01]: Sticky sidebar grid layout (lg:grid-cols-[360px_1fr]) for calculator page
 
 ### Pending Todos
 
@@ -91,5 +95,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 04-03-PLAN.md (YoY chart). Phase 4 fully complete (3/3 plans). Ready for Phase 5 or 6.
+Stopped at: Completed 05-01-PLAN.md (tax calculator core). Phase 5 plan 1/2 done. Ready for 05-02 (authority breakdown + county drill-down).
 Resume file: None
