@@ -29,3 +29,30 @@ export type QuickStats = {
   totalEmployees: number
   fiscalYear: string
 }
+
+export type SerializedDepartment = {
+  id: number
+  name: string
+  slug: string
+  description: string | null
+  strategicAreaId: number
+  operatingBudget: string   // cents as string
+  capitalBudget: string     // cents as string
+  employeeCount: number | null
+}
+
+export type SerializedRevenueSource = {
+  id: number
+  name: string
+  slug: string
+  amount: string           // cents as string
+  percentage: number | null
+}
+
+/** Column definition for DataTableToggle */
+export type TableColumn<T> = {
+  key: keyof T & string
+  label: string
+  format?: (value: unknown) => string
+  align?: 'left' | 'right'
+}
