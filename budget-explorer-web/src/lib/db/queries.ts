@@ -3,6 +3,9 @@ import type {
   SerializedFiscalYear,
   SerializedStrategicArea,
   SerializedDepartment,
+  SerializedDepartmentDetail,
+  SerializedExpenditure,
+  SerializedYoYData,
   SerializedRevenueSource,
   QuickStats,
 } from '@/types/budget'
@@ -223,4 +226,158 @@ export async function getStrategicAreasWithDetails(): Promise<
       departmentCount: area._count.departments,
     }
   })
+}
+
+/**
+ * Get a single department with its budget, AI description, and strategic area
+ * for the current fiscal year. Returns null if not found.
+ */
+export async function getDepartmentDetail(slug: string): Promise<SerializedDepartmentDetail | null> {
+  const fy = await prisma.fiscal_years.findFirst({
+    where: { label: 'FY 2025-26' },
+  })
+  if (!fy) return null
+
+  const dept = await prisma.departments.findFirst({
+    where: { slug },
+    include: {
+      strategic_areas: true,
+      department_budgets: {
+        where: { fiscal_year_id: fy.id },
+      },
+    },
+  })
+  if (!dept) return null
+
+  const description = await prisma.budget_descriptions.findFirst({
+    where: {
+      fiscal_year_id: fy.id,
+      entity_type: 'department',
+      entity_id: dept.id,
+    },
+  })
+
+  const budget = dept.department_budgets[0]
+
+  return {
+    id: dept.id,
+    name: dept.name,
+    slug: dept.slug,
+    area: {
+      name: dept.strategic_areas.name,
+      slug: dept.strategic_areas.slug,
+      color: dept.strategic_areas.color,
+    },
+    operatingBudget: budget?.operating_budget?.toString() ?? '0',
+    capitalBudget: budget?.capital_budget?.toString() ?? '0',
+    totalBudget: budget?.total_budget?.toString() ?? '0',
+    employeeCount: budget?.employee_count ?? null,
+    description: description ? {
+      summary: description.summary,
+      detailedDescription: description.detailed_description,
+      keyChanges: description.key_changes,
+      generatedAt: description.generated_at?.toISOString() ?? null,
+      fiscalYear: fy.label,
+      modelVersion: description.model_version,
+    } : null,
+  }
+}
+
+/**
+ * Get expenditure category breakdown for a department in FY 2025-26.
+ * Returns categories sorted by amount descending, with $0 categories excluded.
+ */
+export async function getDepartmentExpenditures(deptId: number): Promise<SerializedExpenditure[]> {
+  const fy = await prisma.fiscal_years.findFirst({
+    where: { label: 'FY 2025-26' },
+  })
+  if (!fy) return []
+
+  const expenditures = await prisma.department_expenditures.findMany({
+    where: {
+      fiscal_year_id: fy.id,
+      department_id: deptId,
+    },
+    include: { expenditure_categories: true },
+    orderBy: { amount: 'desc' },
+  })
+
+  const total = expenditures.reduce((sum, e) => sum + Number(e.amount), 0)
+
+  return expenditures
+    .filter(e => Number(e.amount) > 0)
+    .map(e => ({
+      categoryName: e.expenditure_categories.name,
+      amount: e.amount.toString(),
+      percentage: total > 0 ? (Number(e.amount) / total) * 100 : 0,
+    }))
+}
+
+/**
+ * Get sibling departments in the same strategic area, excluding the current department.
+ * Sorted by operating budget descending, limited to 6 results.
+ */
+export async function getRelatedDepartments(
+  areaId: number,
+  excludeDeptId: number
+): Promise<SerializedDepartment[]> {
+  const fy = await prisma.fiscal_years.findFirst({
+    where: { label: 'FY 2025-26' },
+  })
+  if (!fy) return []
+
+  const departments = await prisma.departments.findMany({
+    where: {
+      strategic_area_id: areaId,
+      id: { not: excludeDeptId },
+    },
+    include: {
+      department_budgets: {
+        where: { fiscal_year_id: fy.id },
+      },
+    },
+  })
+
+  return departments
+    .map(dept => {
+      const deptBudget = dept.department_budgets[0]
+      return {
+        id: dept.id,
+        name: dept.name,
+        slug: dept.slug,
+        description: dept.description,
+        strategicAreaId: dept.strategic_area_id,
+        operatingBudget: deptBudget?.operating_budget?.toString() ?? '0',
+        capitalBudget: deptBudget?.capital_budget?.toString() ?? '0',
+        employeeCount: deptBudget?.employee_count ?? null,
+      }
+    })
+    .sort((a, b) => Number(b.operatingBudget) - Number(a.operatingBudget))
+    .slice(0, 6)
+}
+
+/**
+ * Get year-over-year budget history for a department.
+ * Returns up to 5 fiscal years of adopted budget data, sorted by date ascending.
+ */
+export async function getDepartmentYoY(deptId: number): Promise<SerializedYoYData[]> {
+  const budgets = await prisma.department_budgets.findMany({
+    where: {
+      department_id: deptId,
+      is_actual: false,
+    },
+    include: { fiscal_years: true },
+    orderBy: { fiscal_years: { start_date: 'asc' } },
+    take: 5,
+  })
+
+  const currentFyLabel = 'FY 2025-26'
+
+  return budgets.map(b => ({
+    fiscalYear: b.fiscal_years.label,
+    totalBudget: b.total_budget?.toString() ?? '0',
+    operatingBudget: b.operating_budget?.toString() ?? '0',
+    capitalBudget: b.capital_budget?.toString() ?? '0',
+    isCurrent: b.fiscal_years.label === currentFyLabel,
+  }))
 }
