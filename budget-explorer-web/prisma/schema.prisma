@@ -215,3 +215,10 @@ model strategic_areas {
   departments            departments[]
   strategic_area_budgets strategic_area_budgets[]
 }
+
+model glossary_terms {
+  id         Int    @id @default(autoincrement())
+  term       String @unique @db.VarChar(100)
+  slug       String @unique @db.VarChar(100)
+  definition String
+}
