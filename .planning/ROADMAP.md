@@ -70,11 +70,11 @@ Plans:
   3. User can see a visual breakdown of their taxes by taxing authority (County vs. School Board vs. others) with both dollar amounts and percentages
   4. User can drill their county tax portion into strategic areas and departments to see exactly how much of their personal taxes fund each service
   5. All calculations match Miami-Dade's official tax estimator for sample property values (no floating-point rounding errors)
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 05-01: Tax calculator computation engine and calculator page UI
-- [ ] 05-02: Tax breakdown visualizations (authority donut, strategic area allocation, department drill-down)
+- [ ] 05-01-PLAN.md -- Tax calculation engine (tax-math pure functions, millage rate query, SerializedMillageRate type) + calculator page UI (input with presets, homestead toggle, hero number, sticky sidebar layout)
+- [ ] 05-02-PLAN.md -- Tax breakdown visualizations (authority stacked bar chart + detail table, county strategic area percentage bars, final wiring)
 
 ### Phase 6: Search + SEO + Launch
 **Goal**: Users can search across all budget data by keyword and find relevant departments, and every page has unique SEO metadata and Open Graph images optimized for social sharing and search engine discovery
