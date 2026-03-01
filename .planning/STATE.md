@@ -107,5 +107,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 06-02-PLAN.md (SEO, OG images, sitemap, robots, 404). v1.1 milestone complete (10/10 plans). App ready for public launch.
+Stopped at: Completed quick task 1: removed orphaned exports (ChartTooltip, centsToDollars, getDepartmentCount). 96 lines of dead code deleted.
 Resume file: None
