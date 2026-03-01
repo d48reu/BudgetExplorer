@@ -6,6 +6,7 @@ import { AiDescription } from '@/components/department/AiDescription'
 import { KeyChangesCallout } from '@/components/department/KeyChangesCallout'
 import { RelatedDepartments } from '@/components/department/RelatedDepartments'
 import { ExpenditureBreakdown } from '@/components/charts/ExpenditureBreakdown'
+import { YearOverYearChart } from '@/components/charts/YearOverYearChart'
 import {
   getDepartmentDetail,
   getDepartmentExpenditures,
@@ -142,8 +143,18 @@ export default async function DepartmentPage({ params }: PageProps) {
           </div>
         )}
 
-        {/* Section 6: YoY chart placeholder (added by Plan 03) */}
-        {/* YoY chart added by Plan 03 */}
+        {/* Section 6: Year-over-year budget chart */}
+        {yoyData.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-lg font-heading font-semibold text-text-primary mb-4">
+              Budget History
+            </h2>
+            <YearOverYearChart
+              data={yoyData}
+              areaColor={detail.area.color ?? '#6B7280'}
+            />
+          </section>
+        )}
 
         {/* Section 7: Related departments */}
         {relatedDepts.length > 0 && (
