@@ -1,5 +1,19 @@
 # Milestones
 
+## v1.1 Full Feature Set (Shipped: 2026-03-01)
+
+**Phases completed:** 4 phases, 10 plans, 0 tasks
+
+**Key accomplishments:**
+- Interactive treemap explorer with drill-down from $13.2B total to 9 strategic areas to 35 departments, plus revenue donut and penny waffle charts
+- AI-generated plain-English descriptions for all 35 departments via Claude API batch pipeline with human review gate
+- Department detail pages with 7 sections: stat cards, AI summary, key changes, expenditure breakdown, year-over-year comparison, related departments
+- "What Does My Tax Dollar Buy?" calculator with homestead exemption toggle, authority breakdown, and county strategic area drill-down
+- Full-text search across departments, descriptions, and glossary terms using PostgreSQL materialized views and tsvector
+- SEO optimization with dynamic Open Graph images, database-driven sitemap (49 URLs), and static generation for all pages
+
+---
+
 ## v1.0 MVP Foundation (Shipped: 2026-02-28)
 
 **Phases completed:** 2 phases, 8 plans, 0 tasks
