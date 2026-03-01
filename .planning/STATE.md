@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Feature Set
-status: in-progress
-last_updated: "2026-03-01T19:45:42.000Z"
+status: complete
+last_updated: "2026-03-01T19:50:05.000Z"
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -18,23 +18,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** Residents can instantly see how their specific tax dollars fund county services -- from the total $13.2 billion down to individual departments -- without reading a single PDF.
-**Current focus:** Phase 6 in progress -- Search, SEO, Launch. Plan 1 (Full-text search) complete.
+**Current focus:** v1.1 milestone COMPLETE -- all 6 phases, 10 plans executed. App ready for launch.
 
 ## Current Position
 
-Phase: 6 of 6 (Search, SEO & Launch) -- IN PROGRESS
-Plan: 1 of 2 in current phase (1 complete)
-Status: 06-01 complete, ready for 06-02
-Last activity: 2026-03-01 -- 06-01 Full-text search page
+Phase: 6 of 6 (Search, SEO & Launch) -- COMPLETE
+Plan: 2 of 2 in current phase (2 complete)
+Status: v1.1 milestone complete -- all plans executed
+Last activity: 2026-03-01 -- 06-02 SEO, OG images, sitemap, robots, 404
 
-Progress: [██████████████████████████████████████████████████████░░░░░] 90% v1.1 (9/10 plans)
+Progress: [████████████████████████████████████████████████████████████] 100% v1.1 (10/10 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
-- Average duration: 5 min
-- Total execution time: 1.05 hours
+- Total plans completed: 16
+- Average duration: 4 min
+- Total execution time: 1.08 hours
 
 **By Phase:**
 
@@ -45,7 +45,7 @@ Progress: [███████████████████████
 | 03-budget-visualizations-explorer | 3 | 9 min | 3 min |
 | 04-department-pages-ai-year-over-year | 3/3 | 8 min | 3 min |
 | 05-tax-calculator | 2/2 | 6 min | 3 min |
-| 06-search-seo-launch | 1/2 | 3 min | 3 min |
+| 06-search-seo-launch | 2/2 | 5 min | 3 min |
 
 *Updated after each plan completion*
 
@@ -92,6 +92,9 @@ Key decisions carrying forward:
 - [06-01]: Native form action=/search for progressive enhancement (works without JS)
 - [06-01]: SearchResults is server component (no hydration cost)
 - [06-01]: Materialized view pattern -- REFRESH MATERIALIZED VIEW after pipeline runs
+- [06-02]: Minimal text card OG images (white bg, centered text, domain branding at bottom)
+- [06-02]: CANONICAL_DOMAIN constant used for metadataBase, sitemap, and robots (not derived from request headers)
+- [06-02]: OG image pattern: opengraph-image.tsx in route directory with exported size/alt/contentType constants
 
 ### Pending Todos
 
@@ -104,5 +107,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 06-01-PLAN.md (full-text search page). Phase 6 in progress (1/2 plans). Ready for 06-02 (SEO, sitemap, launch).
+Stopped at: Completed 06-02-PLAN.md (SEO, OG images, sitemap, robots, 404). v1.1 milestone complete (10/10 plans). App ready for public launch.
 Resume file: None

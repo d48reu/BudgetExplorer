@@ -48,8 +48,8 @@ Requirements carried forward from v1.0 (26 remaining). Each maps to roadmap phas
 
 ### SEO & Sharing
 
-- [ ] **SEO-01**: Unique title/description/OG image per page type
-- [ ] **SEO-02**: Department pages statically generated for SEO
+- [x] **SEO-01**: Unique title/description/OG image per page type
+- [x] **SEO-02**: Department pages statically generated for SEO
 
 ## v2 Requirements
 
@@ -123,8 +123,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRCH-01 | Phase 6 | Complete |
 | SRCH-02 | Phase 6 | Complete |
 | SRCH-03 | Phase 6 | Complete |
-| SEO-01 | Phase 6 | Pending |
-| SEO-02 | Phase 6 | Pending |
+| SEO-01 | Phase 6 | Complete |
+| SEO-02 | Phase 6 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 26 total
