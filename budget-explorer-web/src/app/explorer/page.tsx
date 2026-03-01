@@ -1,13 +1,10 @@
 import { getStrategicAreasWithDetails, getCurrentFiscalYear } from '@/lib/db/queries'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
-import { ChartContainer } from '@/components/charts/ChartContainer'
-import { DataTableToggle } from '@/components/charts/DataTableToggle'
-import { Treemap } from '@/components/charts/Treemap'
 import { AreaCard } from '@/components/explorer/AreaCard'
-import { formatDollarsAbbreviated, formatDollarsFull } from '@/lib/format'
-import { toChartValue, formatPercentage } from '@/lib/chart-utils'
+import { ExplorerTreemap } from '@/components/explorer/ExplorerCharts'
+import { formatDollarsFull } from '@/lib/format'
+import { toChartValue } from '@/lib/chart-utils'
 import type { Metadata } from 'next'
-import type { TableColumn, SerializedStrategicArea } from '@/types/budget'
 
 export const metadata: Metadata = {
   title: 'Budget Explorer',
@@ -16,31 +13,6 @@ export const metadata: Metadata = {
 }
 
 export const dynamic = 'force-dynamic'
-
-type AreaWithDetails = SerializedStrategicArea & {
-  description: string | null
-  departmentCount: number
-}
-
-const tableColumns: TableColumn<AreaWithDetails>[] = [
-  {
-    key: 'name',
-    label: 'Strategic Area',
-    align: 'left',
-  },
-  {
-    key: 'operatingBudget',
-    label: 'Operating Budget',
-    align: 'right',
-    format: (value) => formatDollarsAbbreviated(value as string),
-  },
-  {
-    key: 'centsPerDollar',
-    label: 'Cents per Dollar',
-    align: 'right',
-    format: (value) => (value != null ? `${value}` : 'N/A'),
-  },
-]
 
 export default async function ExplorerPage() {
   const [areas, fiscalYear] = await Promise.all([
@@ -65,23 +37,6 @@ export default async function ExplorerPage() {
     value: area.operatingBudget,
   }))
 
-  // Table data with percentage column added
-  const tableData = areas.map((area) => ({
-    ...area,
-    percentOfTotal: Number(totalBudget) > 0
-      ? formatPercentage((toChartValue(area.operatingBudget) / toChartValue(totalBudget)) * 100)
-      : '0.0%',
-  }))
-
-  const tableColumnsWithPercent: TableColumn<typeof tableData[0]>[] = [
-    ...tableColumns as TableColumn<typeof tableData[0]>[],
-    {
-      key: 'percentOfTotal' as keyof typeof tableData[0] & string,
-      label: '% of Total',
-      align: 'right' as const,
-    },
-  ]
-
   return (
     <div className="px-(--spacing-page) py-6">
       <Breadcrumbs
@@ -103,23 +58,11 @@ export default async function ExplorerPage() {
 
       {/* Desktop: treemap with data table toggle */}
       <div className="hidden md:block">
-        <DataTableToggle
-          chartLabel="Strategic area budget treemap"
-          data={tableData}
-          columns={tableColumnsWithPercent}
-        >
-          <ChartContainer minHeight={400}>
-            {({ width, height }) => (
-              <Treemap
-                items={treemapItems}
-                width={width}
-                height={height}
-                linkPrefix="/explorer/"
-                ariaLabel="Strategic area budget treemap. Click any area to explore its departments."
-              />
-            )}
-          </ChartContainer>
-        </DataTableToggle>
+        <ExplorerTreemap
+          areas={areas}
+          treemapItems={treemapItems}
+          totalBudget={totalBudget}
+        />
       </div>
 
       {/* Mobile: stacked cards sorted by budget */}

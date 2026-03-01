@@ -2,13 +2,9 @@ import { notFound } from 'next/navigation'
 import { getAreaWithDepartments } from '@/lib/db/queries'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
 import { AreaHeader } from '@/components/explorer/AreaHeader'
-import { ChartContainer } from '@/components/charts/ChartContainer'
-import { DataTableToggle } from '@/components/charts/DataTableToggle'
-import { Treemap } from '@/components/charts/Treemap'
+import { AreaDeptTreemap } from '@/components/explorer/ExplorerCharts'
 import { DepartmentList } from '@/components/explorer/DepartmentList'
-import { formatDollarsAbbreviated } from '@/lib/format'
 import type { Metadata } from 'next'
-import type { TableColumn, SerializedDepartment } from '@/types/budget'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,26 +25,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: `Explore departments and budgets within ${data.area.name}. ${data.area.departmentCount} departments in this strategic area.`,
   }
 }
-
-const deptTableColumns: TableColumn<SerializedDepartment>[] = [
-  {
-    key: 'name',
-    label: 'Department',
-    align: 'left',
-  },
-  {
-    key: 'operatingBudget',
-    label: 'Operating Budget',
-    align: 'right',
-    format: (value) => formatDollarsAbbreviated(value as string),
-  },
-  {
-    key: 'employeeCount',
-    label: 'Employees',
-    align: 'right',
-    format: (value) => (value != null ? Number(value).toLocaleString() : 'N/A'),
-  },
-]
 
 export default async function AreaDetailPage({ params }: PageProps) {
   const { 'area-slug': areaSlug } = await params
@@ -84,23 +60,11 @@ export default async function AreaDetailPage({ params }: PageProps) {
 
       {/* Desktop: department treemap with data table toggle */}
       <div className="hidden md:block mb-8">
-        <DataTableToggle
-          chartLabel={`${area.name} department budget treemap`}
-          data={departments}
-          columns={deptTableColumns}
-        >
-          <ChartContainer minHeight={350}>
-            {({ width, height }) => (
-              <Treemap
-                items={treemapItems}
-                width={width}
-                height={height}
-                linkPrefix="/department/"
-                ariaLabel={`Department budget treemap for ${area.name}. Click any department to view details.`}
-              />
-            )}
-          </ChartContainer>
-        </DataTableToggle>
+        <AreaDeptTreemap
+          areaName={area.name}
+          departments={departments}
+          treemapItems={treemapItems}
+        />
       </div>
 
       {/* Department list (visible on all screen sizes) */}
