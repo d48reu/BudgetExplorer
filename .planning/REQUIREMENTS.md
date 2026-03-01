@@ -35,9 +35,9 @@ Requirements carried forward from v1.0 (26 remaining). Each maps to roadmap phas
 
 ### AI Descriptions
 
-- [ ] **AI-01**: Plain-English summary (2-3 sentences) of what each department does
-- [ ] **AI-02**: "Key Changes" summary of what changed in adopted budget vs. prior year
-- [ ] **AI-03**: Descriptions generated via Claude API and stored in database
+- [x] **AI-01**: Plain-English summary (2-3 sentences) of what each department does
+- [x] **AI-02**: "Key Changes" summary of what changed in adopted budget vs. prior year
+- [x] **AI-03**: Descriptions generated via Claude API and stored in database
 - [x] **AI-04**: Each description references its fiscal year and generation date
 
 ### Search
@@ -116,9 +116,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CALC-03 | Phase 5 | Pending |
 | CALC-04 | Phase 5 | Pending |
 | CALC-05 | Phase 5 | Pending |
-| AI-01 | Phase 4 | Pending |
-| AI-02 | Phase 4 | Pending |
-| AI-03 | Phase 4 | Pending |
+| AI-01 | Phase 4 | Complete |
+| AI-02 | Phase 4 | Complete |
+| AI-03 | Phase 4 | Complete |
 | AI-04 | Phase 4 | Complete |
 | SRCH-01 | Phase 6 | Pending |
 | SRCH-02 | Phase 6 | Pending |

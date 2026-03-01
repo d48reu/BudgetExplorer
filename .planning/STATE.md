@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Full Feature Set
 status: unknown
-last_updated: "2026-03-01T06:33:34Z"
+last_updated: "2026-03-01T17:30:00Z"
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 10
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 4 of 6 (Department Pages + AI + Year-over-Year) -- IN PROGRESS
-Plan: 2 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-01 -- 04-02 department detail pages with static generation complete
+Last activity: 2026-03-01 -- 04-01 AI description pipeline complete (53 descriptions seeded)
 
-Progress: [████████████████████████████░░] 40% v1.1 (4/10 plans)
+Progress: [███████████████████████████████████░░░░░░] 50% v1.1 (5/10 plans)
 
 ## Performance Metrics
 
@@ -43,7 +43,7 @@ Progress: [███████████████████████
 | 01-data-pipeline | 4 | 25 min | 6 min |
 | 02-app-foundation-design-system | 4 | 18 min | 5 min |
 | 03-budget-visualizations-explorer | 3 | 9 min | 3 min |
-| 04-department-pages-ai-year-over-year | 1/3 | 3 min | 3 min |
+| 04-department-pages-ai-year-over-year | 2/3 | 6 min | 3 min |
 
 *Updated after each plan completion*
 
@@ -74,6 +74,9 @@ Key decisions carrying forward:
 - [04-02]: Department page parallel fetch: detail first (for IDs), then expenditures + YoY + related in Promise.all
 - [04-02]: Horizontal bar chart uses D3 scaleBand on Y-axis (categories) + scaleLinear on X-axis (amounts) with opacity gradient
 - [04-02]: ExpenditureBreakdown uses dynamic chart height (data.length * 44px) for varying category counts
+- [04-01]: SDK structured output uses messages.parse() with response_model param, fallback to messages.create() + manual JSON for older SDKs
+- [04-01]: DISTINCT ON (d.id) in department fetch query prevents duplicates from v_department_yoy join
+- [04-01]: Human review gate between AI generation and DB seeding ensures description quality
 
 ### Pending Todos
 
@@ -86,5 +89,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 04-02-PLAN.md (department detail pages with static generation, stat cards, AI description, expenditure chart). Plan 03 (YoY chart) remains.
+Stopped at: Completed 04-01-PLAN.md (AI description pipeline -- 53 descriptions generated and seeded). Plans 01 and 02 done; Plan 03 (YoY chart) remains.
 Resume file: None

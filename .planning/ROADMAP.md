@@ -56,8 +56,8 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- AI description pipeline (Python batch generation with Claude API, human review gate, database seeding)
-- [ ] 04-02-PLAN.md -- Department detail pages with stat cards, AI descriptions, expenditure breakdown chart, and static generation
+- [x] 04-01-PLAN.md -- AI description pipeline (Python batch generation with Claude API, human review gate, database seeding)
+- [x] 04-02-PLAN.md -- Department detail pages with stat cards, AI descriptions, expenditure breakdown chart, and static generation
 - [ ] 04-03-PLAN.md -- Year-over-year bar chart component and department page integration
 
 ### Phase 5: Tax Calculator
@@ -101,6 +101,6 @@ Phases 3-4-6 are sequential. Phase 5 can run in parallel with Phases 3-4 (depend
 | 1. Data Pipeline | v1.0 | 4/4 | Complete | 2026-02-28 |
 | 2. App Foundation + Design System | v1.0 | 4/4 | Complete | 2026-02-28 |
 | 3. Budget Visualizations + Explorer | v1.1 | 3/3 | Complete | 2026-03-01 |
-| 4. Department Pages + AI + YoY | v1.1 | 0/3 | Planned | - |
+| 4. Department Pages + AI + YoY | v1.1 | 2/3 | In Progress | - |
 | 5. Tax Calculator | v1.1 | 0/2 | Not started | - |
 | 6. Search + SEO + Launch | v1.1 | 0/2 | Not started | - |
