@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 3 of 6 (Budget Visualizations + Explorer)
-Plan: 1 of 3 in current phase
-Status: Executing
-Last activity: 2026-03-01 -- 03-01 shared chart infrastructure complete
+Phase: 3 of 6 (Budget Visualizations + Explorer) -- COMPLETE
+Plan: 3 of 3 in current phase
+Status: Phase Complete
+Last activity: 2026-03-01 -- 03-03 donut chart + waffle chart + homepage integration complete
 
-Progress: [███████████░░░░░░░░░░░░░░░░░░░] 10% v1.1 (1/10 plans)
+Progress: [█████████████████████░░░░░░░░░] 30% v1.1 (3/10 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 11
 - Average duration: 5 min
-- Total execution time: 0.73 hours
+- Total execution time: 0.85 hours
 
 **By Phase:**
 
@@ -29,7 +29,7 @@ Progress: [███████████░░░░░░░░░░░░
 |-------|-------|-------|----------|
 | 01-data-pipeline | 4 | 25 min | 6 min |
 | 02-app-foundation-design-system | 4 | 18 min | 5 min |
-| 03-budget-visualizations-explorer | 1 | 2 min | 2 min |
+| 03-budget-visualizations-explorer | 3 | 9 min | 3 min |
 
 *Updated after each plan completion*
 
@@ -45,6 +45,12 @@ Key decisions carrying forward:
 - [03-01]: ChartContainer uses render prop pattern for responsive sizing via ResizeObserver
 - [03-01]: DataTableToggle always renders sr-only table for screen reader accessibility (VIZ-07)
 - [03-01]: ChartTooltip is controlled -- parent chart manages open/close state
+- [03-02]: Treemap component is generic (items with name/slug/color/value + linkPrefix) -- reused for areas and departments
+- [03-02]: DepartmentList uses client-side sorting (small dataset, no table library needed)
+- [03-02]: Mobile card fallback replaces treemap below 768px (addressed treemap mobile usability concern)
+- [03-03]: Revenue donut uses distinct color palette separate from strategic area colors
+- [03-03]: WaffleChart uses simple positioned tooltip div instead of ChartTooltip (simpler for 100 button elements)
+- [03-03]: Rounding correction adjusts largest area so waffle always has exactly 100 squares
 - [Research]: BigInt cents must convert to Number via toChartValue() before any D3/Recharts data prop
 - [Research]: AI descriptions pre-generated via Python pipeline, never at runtime
 - [Research]: Full-text search uses PostgreSQL tsvector + $queryRaw (Prisma FTS is Preview-only)
@@ -58,11 +64,10 @@ None.
 
 ### Blockers/Concerns
 
-- [Research]: Treemap unusable on mobile below 768px -- accordion/list fallback required (addressed in 03-02)
 - [Research]: Vercel vs Render deployment decision deferred to Phase 6
 
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 03-01-PLAN.md (shared chart infrastructure). Ready for 03-02.
+Stopped at: Completed 03-03-PLAN.md (donut chart + waffle chart + homepage). Phase 3 complete. Ready for Phase 4.
 Resume file: None

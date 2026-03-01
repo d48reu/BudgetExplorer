@@ -9,18 +9,18 @@ Requirements carried forward from v1.0 (26 remaining). Each maps to roadmap phas
 
 ### Visualization
 
-- [ ] **VIZ-01**: Interactive treemap showing 9 strategic areas sized by operating budget
-- [ ] **VIZ-02**: Drill-down from strategic area to departments within that area
-- [ ] **VIZ-03**: Revenue source donut chart showing 7 revenue categories
-- [ ] **VIZ-04**: "Penny visualization" — dollar broken into colored segments by strategic area
+- [x] **VIZ-01**: Interactive treemap showing 9 strategic areas sized by operating budget
+- [x] **VIZ-02**: Drill-down from strategic area to departments within that area
+- [x] **VIZ-03**: Revenue source donut chart showing 7 revenue categories
+- [x] **VIZ-04**: "Penny visualization" — dollar broken into colored segments by strategic area
 - [ ] **VIZ-05**: Year-over-year bar charts comparing current vs. prior 4 fiscal years
 - [ ] **VIZ-06**: Expenditure category breakdown per department (salary, fringes, etc.)
 - [x] **VIZ-07**: Data table fallback for every chart (accessibility requirement)
 
 ### Pages
 
-- [ ] **PAGE-02**: Explorer page with full-screen treemap/sunburst and drill-down
-- [ ] **PAGE-03**: Strategic area detail pages showing departments within each area
+- [x] **PAGE-02**: Explorer page with full-screen treemap/sunburst and drill-down
+- [x] **PAGE-03**: Strategic area detail pages showing departments within each area
 - [ ] **PAGE-04**: Department detail pages with budget overview, AI description, YoY comparison
 - [ ] **PAGE-05**: Tax calculator page with property value input and visual breakdown
 - [ ] **PAGE-06**: Year-over-year comparison page
@@ -99,15 +99,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIZ-01 | Phase 3 | Pending |
-| VIZ-02 | Phase 3 | Pending |
-| VIZ-03 | Phase 3 | Pending |
-| VIZ-04 | Phase 3 | Pending |
+| VIZ-01 | Phase 3 | Complete |
+| VIZ-02 | Phase 3 | Complete |
+| VIZ-03 | Phase 3 | Complete |
+| VIZ-04 | Phase 3 | Complete |
 | VIZ-05 | Phase 4 | Pending |
 | VIZ-06 | Phase 4 | Pending |
 | VIZ-07 | Phase 3 | Complete |
-| PAGE-02 | Phase 3 | Pending |
-| PAGE-03 | Phase 3 | Pending |
+| PAGE-02 | Phase 3 | Complete |
+| PAGE-03 | Phase 3 | Complete |
 | PAGE-04 | Phase 4 | Pending |
 | PAGE-05 | Phase 5 | Pending |
 | PAGE-06 | Phase 4 | Pending |
