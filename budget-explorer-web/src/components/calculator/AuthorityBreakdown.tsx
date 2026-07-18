@@ -200,7 +200,9 @@ export function AuthorityBreakdown({ breakdown, totalTax }: AuthorityBreakdownPr
               <td className="py-2 px-3 text-right tabular-nums">
                 {formatDollarAmount(totalTax)}
               </td>
-              <td className="py-2 px-3 text-right tabular-nums">100.0%</td>
+              <td className="py-2 px-3 text-right tabular-nums">
+                {totalTax > 0 ? '100.0%' : '0.0%'}
+              </td>
             </tr>
           </tbody>
         </table>

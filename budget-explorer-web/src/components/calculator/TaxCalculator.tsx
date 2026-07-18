@@ -84,8 +84,8 @@ export function TaxCalculator({ rates, areas }: TaxCalculatorProps) {
                 Homestead Exemption
               </span>
               <p className="text-text-muted text-xs mt-0.5">
-                Florida homestead exemption reduces taxable value by $50,000
-                for primary residences
+                Florida homestead exemption reduces taxable value by up to
+                $50,000 for primary residences ($25,000 for school taxes)
               </p>
             </div>
           </label>

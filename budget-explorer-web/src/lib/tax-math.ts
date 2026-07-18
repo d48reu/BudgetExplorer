@@ -29,33 +29,52 @@ export type StrategicAreaAllocation = {
 }
 
 /**
- * Apply Florida homestead exemption (simplified flat $50K reduction).
- * Per user decision: single flat reduction, NOT the two-tier Florida approach.
+ * A school district levy is excluded from the second homestead exemption tier.
  */
-export function applyHomesteadExemption(assessedValue: number): number {
-  return Math.max(0, assessedValue - 50_000)
+export function isSchoolLevy(authority: string): boolean {
+  return /school/i.test(authority)
+}
+
+/**
+ * Taxable value under the Florida homestead exemption (Fla. Stat. 196.031).
+ * The first $25,000 applies to all taxing authorities. The second $25,000
+ * applies only to non-school levies and phases in on the portion of assessed
+ * value between $50,000 and $75,000.
+ */
+export function homesteadTaxableValue(
+  assessedValue: number,
+  schoolLevy: boolean,
+): number {
+  const firstExemption = Math.min(25_000, assessedValue)
+  const secondExemption = schoolLevy
+    ? 0
+    : Math.min(25_000, Math.max(0, assessedValue - 50_000))
+  return Math.max(0, assessedValue - firstExemption - secondExemption)
 }
 
 /**
  * Calculate tax breakdown by authority.
  * Formula: taxAmount = taxableValue * millageRate / 1000, rounded to nearest cent.
+ * With homestead, each authority taxes its own taxable value because school
+ * levies are exempt from the second exemption tier.
  */
 export function calculateTaxBreakdown(
   assessedValue: number,
   homesteadExempt: boolean,
   rates: MillageRate[],
 ): TaxByAuthority[] {
-  const taxableValue = homesteadExempt
-    ? applyHomesteadExemption(assessedValue)
-    : assessedValue
-
-  const results = rates.map(rate => ({
-    authority: rate.authority,
-    millageRate: rate.millageRate,
-    taxAmount: Math.round(taxableValue * rate.millageRate / 1000 * 100) / 100,
-    percentage: 0,
-    isCounty: rate.isCounty,
-  }))
+  const results = rates.map(rate => {
+    const taxableValue = homesteadExempt
+      ? homesteadTaxableValue(assessedValue, isSchoolLevy(rate.authority))
+      : assessedValue
+    return {
+      authority: rate.authority,
+      millageRate: rate.millageRate,
+      taxAmount: Math.round(taxableValue * rate.millageRate / 1000 * 100) / 100,
+      percentage: 0,
+      isCounty: rate.isCounty,
+    }
+  })
 
   const total = results.reduce((sum, r) => sum + r.taxAmount, 0)
 

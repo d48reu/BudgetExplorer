@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
-  applyHomesteadExemption,
+  homesteadTaxableValue,
+  isSchoolLevy,
   calculateTaxBreakdown,
   calculateCountyAllocation,
   getTotalTax,
@@ -19,21 +20,38 @@ const sampleAreas = [
   { name: 'Health Care', slug: 'health-care', color: '#F7941D', centsPerDollar: 10 },
 ]
 
-describe('applyHomesteadExemption', () => {
-  it('reduces assessed value by $50,000', () => {
-    expect(applyHomesteadExemption(300000)).toBe(250000)
+describe('isSchoolLevy', () => {
+  it('identifies school authorities', () => {
+    expect(isSchoolLevy('School Board')).toBe(true)
+    expect(isSchoolLevy('County General')).toBe(false)
+    expect(isSchoolLevy("Children's Trust")).toBe(false)
+  })
+})
+
+describe('homesteadTaxableValue', () => {
+  it('applies both $25K tiers to non-school levies above $75K', () => {
+    expect(homesteadTaxableValue(300000, false)).toBe(250000)
   })
 
-  it('returns 0 when assessed value is below $50,000', () => {
-    expect(applyHomesteadExemption(40000)).toBe(0)
+  it('applies only the first $25K tier to school levies', () => {
+    expect(homesteadTaxableValue(300000, true)).toBe(275000)
   })
 
-  it('returns 0 for exactly $50,000', () => {
-    expect(applyHomesteadExemption(50000)).toBe(0)
+  it('phases the second tier in between $50K and $75K assessed', () => {
+    // $60K home: first tier $25K, second tier only $10K (value above $50K)
+    expect(homesteadTaxableValue(60000, false)).toBe(25000)
+    expect(homesteadTaxableValue(60000, true)).toBe(35000)
   })
 
-  it('handles 0 assessed value', () => {
-    expect(applyHomesteadExemption(0)).toBe(0)
+  it('grants no second tier below $50K assessed', () => {
+    expect(homesteadTaxableValue(40000, false)).toBe(15000)
+    expect(homesteadTaxableValue(40000, true)).toBe(15000)
+  })
+
+  it('never returns a negative taxable value', () => {
+    expect(homesteadTaxableValue(20000, false)).toBe(0)
+    expect(homesteadTaxableValue(0, false)).toBe(0)
+    expect(homesteadTaxableValue(0, true)).toBe(0)
   })
 })
 
@@ -50,13 +68,13 @@ describe('calculateTaxBreakdown', () => {
     expect(result[2].taxAmount).toBeCloseTo(139.80, 2)
   })
 
-  it('applies homestead exemption reducing taxable value by $50K', () => {
+  it('applies the two-tier homestead exemption per authority', () => {
     const result = calculateTaxBreakdown(300000, true, sampleRates)
-    // Taxable value: 250000
+    // Non-school taxable value: 250000; school taxable value: 275000
     // County General: 250000 * 4.574 / 1000 = 1143.50
     expect(result[0].taxAmount).toBeCloseTo(1143.50, 2)
-    // School Board: 250000 * 3.302 / 1000 = 825.50
-    expect(result[1].taxAmount).toBeCloseTo(825.50, 2)
+    // School Board (first tier only): 275000 * 3.302 / 1000 = 908.05
+    expect(result[1].taxAmount).toBeCloseTo(908.05, 2)
     // Children's Trust: 250000 * 0.466 / 1000 = 116.50
     expect(result[2].taxAmount).toBeCloseTo(116.50, 2)
   })
