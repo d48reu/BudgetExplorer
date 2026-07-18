@@ -12,6 +12,47 @@ import type {
 } from '@/types/budget'
 
 /**
+ * A department can have several department_budgets rows per fiscal year:
+ * one per strategic area it operates in, plus capital-only rows from
+ * Appendix J. Any query that shows "the department's budget" must sum
+ * these slices — taking a single row shows an arbitrary partial amount.
+ */
+type BudgetRowAmounts = {
+  operating_budget: bigint | null
+  capital_budget: bigint | null
+  total_budget: bigint | null
+  employee_count: number | null
+}
+
+function sumBudgetRows(rows: BudgetRowAmounts[]) {
+  let operating = BigInt(0)
+  let capital = BigInt(0)
+  let total = BigInt(0)
+  let employees: number | null = null
+  for (const row of rows) {
+    operating += row.operating_budget ?? BigInt(0)
+    capital += row.capital_budget ?? BigInt(0)
+    total += row.total_budget ?? BigInt(0)
+    if (row.employee_count != null) {
+      employees = (employees ?? 0) + row.employee_count
+    }
+  }
+  return { operating, capital, total, employees }
+}
+
+/**
+ * A budget row belongs to a strategic area via its own strategic_area_id,
+ * falling back to the department's home area when the row has none.
+ * This matches the pipeline's verification model (checker.py / migration 003).
+ */
+function areaMembershipFilter(areaId: number) {
+  return [
+    { strategic_area_id: areaId },
+    { strategic_area_id: null, departments: { strategic_area_id: areaId } },
+  ]
+}
+
+/**
  * Get the current fiscal year (FY 2025-26) with all BigInt fields
  * converted to strings for safe JSON serialization.
  */
@@ -129,13 +170,6 @@ export async function getAreaWithDepartments(areaSlug: string): Promise<{
       strategic_area_budgets: {
         where: { fiscal_year_id: fy.id },
       },
-      departments: {
-        include: {
-          department_budgets: {
-            where: { fiscal_year_id: fy.id },
-          },
-        },
-      },
     },
   })
 
@@ -143,19 +177,42 @@ export async function getAreaWithDepartments(areaSlug: string): Promise<{
 
   const budget = area.strategic_area_budgets[0]
 
+  // Pull the budget rows that belong to THIS area (not the departments whose
+  // home area this is), so multi-area departments show their slice within
+  // this area and the list sums to the area subtotal.
+  const rows = await prisma.department_budgets.findMany({
+    where: {
+      fiscal_year_id: fy.id,
+      is_actual: false,
+      OR: areaMembershipFilter(area.id),
+    },
+    include: { departments: true },
+  })
+
+  const rowsByDept = new Map<number, typeof rows>()
+  for (const row of rows) {
+    const list = rowsByDept.get(row.department_id)
+    if (list) {
+      list.push(row)
+    } else {
+      rowsByDept.set(row.department_id, [row])
+    }
+  }
+
   // Sort departments by operating budget descending
-  const departments: SerializedDepartment[] = area.departments
-    .map((dept) => {
-      const deptBudget = dept.department_budgets[0]
+  const departments: SerializedDepartment[] = Array.from(rowsByDept.values())
+    .map((deptRows) => {
+      const dept = deptRows[0].departments
+      const sums = sumBudgetRows(deptRows)
       return {
         id: dept.id,
         name: dept.name,
         slug: dept.slug,
         description: dept.description,
         strategicAreaId: dept.strategic_area_id,
-        operatingBudget: deptBudget?.operating_budget?.toString() ?? '0',
-        capitalBudget: deptBudget?.capital_budget?.toString() ?? '0',
-        employeeCount: deptBudget?.employee_count ?? null,
+        operatingBudget: sums.operating.toString(),
+        capitalBudget: sums.capital.toString(),
+        employeeCount: sums.employees,
       }
     })
     .sort((a, b) => Number(b.operatingBudget) - Number(a.operatingBudget))
@@ -170,7 +227,7 @@ export async function getAreaWithDepartments(areaSlug: string): Promise<{
       operatingBudget: budget?.operating_budget?.toString() ?? '0',
       capitalBudget: budget?.capital_budget?.toString() ?? '0',
       centsPerDollar: budget?.cents_per_dollar ?? null,
-      departmentCount: area.departments.length,
+      departmentCount: departments.length,
     },
     departments,
   }
@@ -262,7 +319,7 @@ export async function getDepartmentDetail(slug: string): Promise<SerializedDepar
     include: {
       strategic_areas: true,
       department_budgets: {
-        where: { fiscal_year_id: fy.id },
+        where: { fiscal_year_id: fy.id, is_actual: false },
       },
     },
   })
@@ -276,7 +333,7 @@ export async function getDepartmentDetail(slug: string): Promise<SerializedDepar
     },
   })
 
-  const budget = dept.department_budgets[0]
+  const sums = sumBudgetRows(dept.department_budgets)
 
   return {
     id: dept.id,
@@ -288,10 +345,10 @@ export async function getDepartmentDetail(slug: string): Promise<SerializedDepar
       slug: dept.strategic_areas.slug,
       color: dept.strategic_areas.color,
     },
-    operatingBudget: budget?.operating_budget?.toString() ?? '0',
-    capitalBudget: budget?.capital_budget?.toString() ?? '0',
-    totalBudget: budget?.total_budget?.toString() ?? '0',
-    employeeCount: budget?.employee_count ?? null,
+    operatingBudget: sums.operating.toString(),
+    capitalBudget: sums.capital.toString(),
+    totalBudget: sums.total.toString(),
+    employeeCount: sums.employees,
     description: description ? {
       summary: description.summary,
       detailedDescription: description.detailed_description,
@@ -346,30 +403,39 @@ export async function getRelatedDepartments(
   })
   if (!fy) return []
 
-  const departments = await prisma.departments.findMany({
+  const rows = await prisma.department_budgets.findMany({
     where: {
-      strategic_area_id: areaId,
-      id: { not: excludeDeptId },
+      fiscal_year_id: fy.id,
+      is_actual: false,
+      department_id: { not: excludeDeptId },
+      OR: areaMembershipFilter(areaId),
     },
-    include: {
-      department_budgets: {
-        where: { fiscal_year_id: fy.id },
-      },
-    },
+    include: { departments: true },
   })
 
-  return departments
-    .map(dept => {
-      const deptBudget = dept.department_budgets[0]
+  const rowsByDept = new Map<number, typeof rows>()
+  for (const row of rows) {
+    const list = rowsByDept.get(row.department_id)
+    if (list) {
+      list.push(row)
+    } else {
+      rowsByDept.set(row.department_id, [row])
+    }
+  }
+
+  return Array.from(rowsByDept.values())
+    .map(deptRows => {
+      const dept = deptRows[0].departments
+      const sums = sumBudgetRows(deptRows)
       return {
         id: dept.id,
         name: dept.name,
         slug: dept.slug,
         description: dept.description,
         strategicAreaId: dept.strategic_area_id,
-        operatingBudget: deptBudget?.operating_budget?.toString() ?? '0',
-        capitalBudget: deptBudget?.capital_budget?.toString() ?? '0',
-        employeeCount: deptBudget?.employee_count ?? null,
+        operatingBudget: sums.operating.toString(),
+        capitalBudget: sums.capital.toString(),
+        employeeCount: sums.employees,
       }
     })
     .sort((a, b) => Number(b.operatingBudget) - Number(a.operatingBudget))
@@ -388,18 +454,35 @@ export async function getDepartmentYoY(deptId: number): Promise<SerializedYoYDat
     },
     include: { fiscal_years: true },
     orderBy: { fiscal_years: { start_date: 'asc' } },
-    take: 5,
   })
+
+  // Collapse per-area rows into one point per fiscal year, then keep the
+  // 5 most recent years (rows are sorted ascending, so slice from the end).
+  const byYear = new Map<string, { total: bigint; operating: bigint; capital: bigint }>()
+  for (const b of budgets) {
+    const label = b.fiscal_years.label
+    const entry = byYear.get(label) ?? {
+      total: BigInt(0),
+      operating: BigInt(0),
+      capital: BigInt(0),
+    }
+    entry.total += b.total_budget ?? BigInt(0)
+    entry.operating += b.operating_budget ?? BigInt(0)
+    entry.capital += b.capital_budget ?? BigInt(0)
+    byYear.set(label, entry)
+  }
 
   const currentFyLabel = 'FY 2025-26'
 
-  return budgets.map(b => ({
-    fiscalYear: b.fiscal_years.label,
-    totalBudget: b.total_budget?.toString() ?? '0',
-    operatingBudget: b.operating_budget?.toString() ?? '0',
-    capitalBudget: b.capital_budget?.toString() ?? '0',
-    isCurrent: b.fiscal_years.label === currentFyLabel,
-  }))
+  return Array.from(byYear.entries())
+    .slice(-5)
+    .map(([label, sums]) => ({
+      fiscalYear: label,
+      totalBudget: sums.total.toString(),
+      operatingBudget: sums.operating.toString(),
+      capitalBudget: sums.capital.toString(),
+      isCurrent: label === currentFyLabel,
+    }))
 }
 
 // --- Search ---
