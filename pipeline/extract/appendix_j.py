@@ -169,29 +169,48 @@ def extract_appendix_j(pdf_path: str) -> dict:
         if stripped.startswith("Grand Total"):
             numbers = _extract_numbers(stripped)
             # 9 columns: Prior Years, Bonds, State, Federal, Gas Tax, Other, Total, Future, Total Cost
-            if len(numbers) >= 7:
+            # Require all 9: a blank or dash column would shift the indexes
+            # and silently read the wrong column as the total.
+            if len(numbers) == 9:
                 grand_total = numbers[6]
+            else:
+                logger.warning(
+                    "Appendix J: unexpected column count (%d of 9) in Grand "
+                    "Total -- skipped: %r", len(numbers), stripped,
+                )
             continue
 
         # Check for Strategic Area Total
         if stripped.startswith("Strategic Area Total"):
             numbers = _extract_numbers(stripped)
-            if len(numbers) >= 7 and current_area:
+            if len(numbers) == 9 and current_area:
                 area_totals.append({
                     "strategic_area": current_area,
                     "total_25_26": numbers[6],
                 })
+            elif current_area:
+                logger.warning(
+                    "Appendix J: unexpected column count (%d of 9) in "
+                    "Strategic Area Total for %r -- skipped: %r",
+                    len(numbers), current_area, stripped,
+                )
             continue
 
         # Check for Department Total (no colon in Appendix J)
         if stripped.startswith("Department Total"):
             numbers = _extract_numbers(stripped)
-            if len(numbers) >= 7 and current_dept and current_area:
+            if len(numbers) == 9 and current_dept and current_area:
                 departments.append({
                     "strategic_area": current_area,
                     "department": current_dept,
                     "total_25_26": numbers[6],
                 })
+            elif current_dept and current_area:
+                logger.warning(
+                    "Appendix J: unexpected column count (%d of 9) in "
+                    "Department Total for %r -- skipped: %r",
+                    len(numbers), current_dept, stripped,
+                )
             elif current_dept is None:
                 logger.warning(
                     "Appendix J: Department Total with no open department "

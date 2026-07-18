@@ -174,6 +174,7 @@ def seed_historical_year(
 
     seeded = 0
     skipped = 0
+    seen_keys: set = set()
 
     for record in data:
         dept_name = record["department_name"]
@@ -197,6 +198,18 @@ def seed_historical_year(
                 conn, strategic_area_name
             )
 
+        # Aliases can resolve several historical names to one current
+        # department; conflicting rows must SUM, not overwrite, or one
+        # predecessor's budget silently disappears.
+        key = (department_id, strategic_area_id, record.get("is_actual", False))
+        if key in seen_keys:
+            logger.warning(
+                "%s: multiple rows resolve to the same department in one "
+                "strategic area ('%s') -- summing budgets",
+                fiscal_year_label, dept_name,
+            )
+        seen_keys.add(key)
+
         cur.execute(
             """
             INSERT INTO department_budgets
@@ -206,10 +219,18 @@ def seed_historical_year(
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (fiscal_year_id, department_id, strategic_area_id, is_actual)
             DO UPDATE SET
-                operating_budget = EXCLUDED.operating_budget,
-                capital_budget = EXCLUDED.capital_budget,
-                total_budget = EXCLUDED.total_budget,
-                employee_count = EXCLUDED.employee_count
+                operating_budget = COALESCE(department_budgets.operating_budget, 0)
+                    + COALESCE(EXCLUDED.operating_budget, 0),
+                capital_budget = COALESCE(department_budgets.capital_budget, 0)
+                    + COALESCE(EXCLUDED.capital_budget, 0),
+                total_budget = COALESCE(department_budgets.total_budget, 0)
+                    + COALESCE(EXCLUDED.total_budget, 0),
+                employee_count = CASE
+                    WHEN department_budgets.employee_count IS NULL
+                         AND EXCLUDED.employee_count IS NULL THEN NULL
+                    ELSE COALESCE(department_budgets.employee_count, 0)
+                         + COALESCE(EXCLUDED.employee_count, 0)
+                END
             """,
             (
                 fiscal_year_id,

@@ -7,8 +7,11 @@ Returns department-level operating budgets across 5 fiscal years,
 strategic area totals, grand total, and interagency transfers.
 """
 
+import logging
 import re
 import pdfplumber
+
+logger = logging.getLogger(__name__)
 
 
 # Area names as they appear in Appendix C total lines, mapped to DB names.
@@ -172,7 +175,12 @@ def extract_appendix_c(pdf_path: str) -> dict:
         # Check for Department Total:
         if stripped.startswith("Department Total:"):
             numbers = _extract_numbers(stripped)
-            if len(numbers) >= 5 and current_dept:
+            # After the grand total section, "Department Total:" is the
+            # employee grand total, not a department budget row.
+            if area_index >= len(AREA_ORDER):
+                if len(numbers) >= 5:
+                    total_employees = numbers[4]
+            elif len(numbers) >= 5 and current_dept:
                 departments.append({
                     "strategic_area": current_area,
                     "department": current_dept,
@@ -182,9 +190,15 @@ def extract_appendix_c(pdf_path: str) -> dict:
                     "budget_24_25": numbers[3],
                     "adopted_25_26": numbers[4],
                 })
-            # After grand total section, "Department Total:" is employee grand total
-            if area_index >= len(AREA_ORDER) and len(numbers) >= 5:
-                total_employees = numbers[4]
+            elif current_dept:
+                # A dash or blank in any year column yields fewer than 5
+                # values; make the dropped department visible instead of
+                # silently losing it.
+                logger.warning(
+                    "Appendix C: could not parse Department Total for %r "
+                    "(%d of 5 values found) -- department dropped: %r",
+                    current_dept, len(numbers), stripped,
+                )
             continue
 
         # Check for Department Position Total:
