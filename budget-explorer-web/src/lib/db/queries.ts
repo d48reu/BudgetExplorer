@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import prisma from '@/lib/prisma'
 import type {
   SerializedFiscalYear,
@@ -10,6 +11,18 @@ import type {
   SerializedRevenueSource,
   QuickStats,
 } from '@/types/budget'
+
+const CURRENT_FY_LABEL = 'FY 2025-26'
+
+/**
+ * The current fiscal_years row, deduped per request with React cache() so
+ * the query functions share one lookup instead of each issuing their own.
+ */
+const getCurrentFiscalYearRow = cache(async () => {
+  return prisma.fiscal_years.findFirst({
+    where: { label: CURRENT_FY_LABEL },
+  })
+})
 
 /**
  * A department can have several department_budgets rows per fiscal year:
@@ -57,9 +70,7 @@ function areaMembershipFilter(areaId: number) {
  * converted to strings for safe JSON serialization.
  */
 export async function getCurrentFiscalYear(): Promise<SerializedFiscalYear | null> {
-  const fy = await prisma.fiscal_years.findFirst({
-    where: { label: 'FY 2025-26' },
-  })
+  const fy = await getCurrentFiscalYearRow()
 
   if (!fy) return null
 
@@ -78,9 +89,7 @@ export async function getCurrentFiscalYear(): Promise<SerializedFiscalYear | nul
  * Converts Prisma Decimal to JavaScript number and nullable boolean to definite boolean.
  */
 export async function getMillageRates(): Promise<SerializedMillageRate[]> {
-  const fy = await prisma.fiscal_years.findFirst({
-    where: { label: 'FY 2025-26' },
-  })
+  const fy = await getCurrentFiscalYearRow()
 
   if (!fy) return []
 
@@ -103,9 +112,7 @@ export async function getMillageRates(): Promise<SerializedMillageRate[]> {
  * Joins strategic_area_budgets to get operating budget and cents_per_dollar.
  */
 export async function getStrategicAreas(): Promise<SerializedStrategicArea[]> {
-  const fy = await prisma.fiscal_years.findFirst({
-    where: { label: 'FY 2025-26' },
-  })
+  const fy = await getCurrentFiscalYearRow()
 
   if (!fy) return []
 
@@ -154,13 +161,11 @@ export async function getQuickStats(): Promise<QuickStats> {
  * Get a strategic area by slug with its departments and their FY 2025-26 budgets.
  * Returns area details plus a list of departments sorted by operating budget descending.
  */
-export async function getAreaWithDepartments(areaSlug: string): Promise<{
+export const getAreaWithDepartments = cache(async (areaSlug: string): Promise<{
   area: SerializedStrategicArea & { description: string | null; departmentCount: number }
   departments: SerializedDepartment[]
-} | null> {
-  const fy = await prisma.fiscal_years.findFirst({
-    where: { label: 'FY 2025-26' },
-  })
+} | null> => {
+  const fy = await getCurrentFiscalYearRow()
 
   if (!fy) return null
 
@@ -231,16 +236,14 @@ export async function getAreaWithDepartments(areaSlug: string): Promise<{
     },
     departments,
   }
-}
+})
 
 /**
  * Get all revenue sources for FY 2025-26.
  * Joins revenue_by_source with revenue_sources, sorted by display_order.
  */
 export async function getRevenueSources(): Promise<SerializedRevenueSource[]> {
-  const fy = await prisma.fiscal_years.findFirst({
-    where: { label: 'FY 2025-26' },
-  })
+  const fy = await getCurrentFiscalYearRow()
 
   if (!fy) return []
 
@@ -270,9 +273,7 @@ export async function getRevenueSources(): Promise<SerializedRevenueSource[]> {
 export async function getStrategicAreasWithDetails(): Promise<
   (SerializedStrategicArea & { description: string | null; departmentCount: number })[]
 > {
-  const fy = await prisma.fiscal_years.findFirst({
-    where: { label: 'FY 2025-26' },
-  })
+  const fy = await getCurrentFiscalYearRow()
 
   if (!fy) return []
 
@@ -308,10 +309,8 @@ export async function getStrategicAreasWithDetails(): Promise<
  * Get a single department with its budget, AI description, and strategic area
  * for the current fiscal year. Returns null if not found.
  */
-export async function getDepartmentDetail(slug: string): Promise<SerializedDepartmentDetail | null> {
-  const fy = await prisma.fiscal_years.findFirst({
-    where: { label: 'FY 2025-26' },
-  })
+export const getDepartmentDetail = cache(async (slug: string): Promise<SerializedDepartmentDetail | null> => {
+  const fy = await getCurrentFiscalYearRow()
   if (!fy) return null
 
   const dept = await prisma.departments.findFirst({
@@ -358,16 +357,14 @@ export async function getDepartmentDetail(slug: string): Promise<SerializedDepar
       modelVersion: description.model_version,
     } : null,
   }
-}
+})
 
 /**
  * Get expenditure category breakdown for a department in FY 2025-26.
  * Returns categories sorted by amount descending, with $0 categories excluded.
  */
 export async function getDepartmentExpenditures(deptId: number): Promise<SerializedExpenditure[]> {
-  const fy = await prisma.fiscal_years.findFirst({
-    where: { label: 'FY 2025-26' },
-  })
+  const fy = await getCurrentFiscalYearRow()
   if (!fy) return []
 
   const expenditures = await prisma.department_expenditures.findMany({
@@ -398,9 +395,7 @@ export async function getRelatedDepartments(
   areaId: number,
   excludeDeptId: number
 ): Promise<SerializedDepartment[]> {
-  const fy = await prisma.fiscal_years.findFirst({
-    where: { label: 'FY 2025-26' },
-  })
+  const fy = await getCurrentFiscalYearRow()
   if (!fy) return []
 
   const rows = await prisma.department_budgets.findMany({
@@ -448,19 +443,25 @@ export async function getRelatedDepartments(
  */
 export async function getDepartmentYoY(deptId: number): Promise<SerializedYoYData[]> {
   const budgets = await prisma.department_budgets.findMany({
-    where: {
-      department_id: deptId,
-      is_actual: false,
-    },
+    where: { department_id: deptId },
     include: { fiscal_years: true },
     orderBy: { fiscal_years: { start_date: 'asc' } },
   })
 
-  // Collapse per-area rows into one point per fiscal year, then keep the
-  // 5 most recent years (rows are sorted ascending, so slice from the end).
-  const byYear = new Map<string, { total: bigint; operating: bigint; capital: bigint }>()
+  // Collapse per-area rows into one point per fiscal year. Early fiscal years
+  // are seeded as actual spending (is_actual=true) while recent years carry
+  // adopted budgets (is_actual=false); when a year has both, prefer adopted.
+  type YearSums = { total: bigint; operating: bigint; capital: bigint }
+  const adopted = new Map<string, YearSums>()
+  const actual = new Map<string, YearSums>()
+  const yearLabels: string[] = []
+
   for (const b of budgets) {
     const label = b.fiscal_years.label
+    if (!adopted.has(label) && !actual.has(label)) {
+      yearLabels.push(label)
+    }
+    const byYear = b.is_actual ? actual : adopted
     const entry = byYear.get(label) ?? {
       total: BigInt(0),
       operating: BigInt(0),
@@ -472,17 +473,20 @@ export async function getDepartmentYoY(deptId: number): Promise<SerializedYoYDat
     byYear.set(label, entry)
   }
 
-  const currentFyLabel = 'FY 2025-26'
-
-  return Array.from(byYear.entries())
+  // Rows are sorted ascending by start_date, so the last 5 labels are the
+  // 5 most recent fiscal years.
+  return yearLabels
     .slice(-5)
-    .map(([label, sums]) => ({
-      fiscalYear: label,
-      totalBudget: sums.total.toString(),
-      operatingBudget: sums.operating.toString(),
-      capitalBudget: sums.capital.toString(),
-      isCurrent: label === currentFyLabel,
-    }))
+    .map((label) => {
+      const sums = adopted.get(label) ?? actual.get(label)!
+      return {
+        fiscalYear: label,
+        totalBudget: sums.total.toString(),
+        operatingBudget: sums.operating.toString(),
+        capitalBudget: sums.capital.toString(),
+        isCurrent: label === CURRENT_FY_LABEL,
+      }
+    })
 }
 
 // --- Search ---
