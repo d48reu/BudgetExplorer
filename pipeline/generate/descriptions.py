@@ -66,25 +66,56 @@ def fetch_department_data(conn) -> list[dict]:
     """
     cur = conn.cursor()
 
-    # Get department id, name, slug, and strategic area from departments table
-    # Join with v_department_yoy for budget and YoY data
+    # A department can hold several budget rows per fiscal year (one per
+    # strategic area, plus capital-only rows), so SUM the slices per
+    # department -- picking a single row would describe a partial budget.
+    # Prior-year figures come from the fiscal year immediately before the
+    # current one, summed the same way.
     cur.execute("""
-        SELECT DISTINCT ON (d.id)
+        WITH current_rows AS (
+            SELECT db.department_id,
+                   SUM(db.operating_budget) AS operating_budget,
+                   SUM(db.capital_budget) AS capital_budget,
+                   SUM(db.employee_count) AS employee_count
+            FROM department_budgets db
+            JOIN fiscal_years fy ON fy.id = db.fiscal_year_id
+            WHERE fy.label = %s AND db.is_actual = FALSE
+            GROUP BY db.department_id
+        ),
+        prior_fy AS (
+            SELECT id FROM fiscal_years
+            WHERE start_date < (
+                SELECT start_date FROM fiscal_years WHERE label = %s
+            )
+            ORDER BY start_date DESC
+            LIMIT 1
+        ),
+        prior_rows AS (
+            SELECT db.department_id,
+                   SUM(db.operating_budget) AS prior_operating,
+                   SUM(db.employee_count) AS prior_employees
+            FROM department_budgets db
+            WHERE db.fiscal_year_id = (SELECT id FROM prior_fy)
+              AND db.is_actual = FALSE
+            GROUP BY db.department_id
+        )
+        SELECT
             d.id AS department_id,
-            yoy.department,
-            yoy.slug,
-            yoy.strategic_area,
-            yoy.fiscal_year,
-            yoy.operating_budget,
-            yoy.capital_budget,
-            yoy.employee_count,
-            yoy.prior_operating,
-            yoy.prior_employees
-        FROM v_department_yoy yoy
-        JOIN departments d ON d.slug = yoy.slug
-        WHERE yoy.fiscal_year = %s
-        ORDER BY d.id, yoy.operating_budget DESC
-    """, (CURRENT_FISCAL_YEAR,))
+            d.name AS department,
+            d.slug,
+            sa.name AS strategic_area,
+            %s AS fiscal_year,
+            c.operating_budget,
+            c.capital_budget,
+            c.employee_count,
+            p.prior_operating,
+            p.prior_employees
+        FROM current_rows c
+        JOIN departments d ON d.id = c.department_id
+        JOIN strategic_areas sa ON sa.id = d.strategic_area_id
+        LEFT JOIN prior_rows p ON p.department_id = c.department_id
+        ORDER BY d.id
+    """, (CURRENT_FISCAL_YEAR, CURRENT_FISCAL_YEAR, CURRENT_FISCAL_YEAR))
 
     columns = [
         "department_id", "department", "slug", "strategic_area",
