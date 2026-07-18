@@ -110,7 +110,7 @@ function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
             dominantBaseline="central"
             className="fill-text-secondary text-xs"
           >
-            {formatDollarsAbbreviated(tick * 100)}
+            {formatDollarsAbbreviated(tick)}
           </text>
         ))}
 
