@@ -12,12 +12,13 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 type PageProps = {
-  searchParams: Promise<{ q?: string }>
+  // Repeated query params (?q=a&q=b) arrive as string[] at runtime.
+  searchParams: Promise<{ q?: string | string[] }>
 }
 
 export default async function SearchPage({ searchParams }: PageProps) {
   const { q } = await searchParams
-  const query = q ?? ''
+  const query = (Array.isArray(q) ? q[0] : q) ?? ''
   const results = query ? await searchBudget(query) : []
 
   return (
