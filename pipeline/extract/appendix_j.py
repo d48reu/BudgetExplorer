@@ -7,8 +7,11 @@ Returns department-level capital totals for FY 25-26, strategic area
 totals, and the grand capital total.
 """
 
+import logging
 import re
 import pdfplumber
+
+logger = logging.getLogger(__name__)
 
 
 # Known strategic area names as they appear in Appendix J headers
@@ -189,6 +192,14 @@ def extract_appendix_j(pdf_path: str) -> dict:
                     "department": current_dept,
                     "total_25_26": numbers[6],
                 })
+            elif current_dept is None:
+                logger.warning(
+                    "Appendix J: Department Total with no open department "
+                    "(unrecognized header above?) -- dropped: %r", stripped
+                )
+            # Close the block so a later unrecognized header can't cause
+            # this department to absorb another department's total.
+            current_dept = None
             continue
 
         # Check for strategic area header (mixed case, no numbers)
@@ -197,14 +208,28 @@ def extract_appendix_j(pdf_path: str) -> dict:
                 current_area = normalized
                 break
 
-        # Check for department header (ALL CAPS, no numbers on line)
-        numbers_in_line = _extract_numbers(stripped)
-        if len(numbers_in_line) == 0:
+        # Check for department header (ALL CAPS, no digits on line).
+        # Test for digits, not _extract_numbers: its [\d,]+ pattern matches
+        # the bare comma in names like "PARKS, RECREATION AND OPEN SPACES",
+        # which made comma-named departments unrecognizable as headers.
+        if not re.search(r"\d", stripped):
             upper = stripped.upper()
-            if upper == stripped and len(stripped) > 2:
+            if upper == stripped and len(stripped) > 2 and re.search(r"[A-Z]", stripped):
                 # ALL CAPS line with no numbers -- check if known department
                 if stripped in KNOWN_DEPARTMENTS:
                     current_dept = _normalize_dept_name(stripped)
+                elif current_dept is None:
+                    # No department block is open, so this should be the next
+                    # department's header. Unknown means a new or renamed
+                    # department in this PDF: warn instead of silently letting
+                    # its total vanish. (ALL-CAPS lines inside an open block
+                    # are wrapped project names and stay ignored.)
+                    logger.warning(
+                        "Appendix J: unrecognized possible department header %r "
+                        "-- if this is a department, add it to KNOWN_DEPARTMENTS; "
+                        "its capital total will be dropped until then",
+                        stripped,
+                    )
 
     return {
         "departments": departments,
