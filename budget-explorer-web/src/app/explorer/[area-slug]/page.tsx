@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import prisma from '@/lib/prisma'
 import { getAreaWithDepartments } from '@/lib/db/queries'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
 import { AreaHeader } from '@/components/explorer/AreaHeader'
@@ -6,7 +7,16 @@ import { AreaDeptTreemap } from '@/components/explorer/ExplorerCharts'
 import { DepartmentList } from '@/components/explorer/DepartmentList'
 import type { Metadata } from 'next'
 
-export const dynamic = 'force-dynamic'
+// Static with daily revalidation, matching the department pages.
+export const revalidate = 86400
+
+/** Pre-render all 9 strategic area pages at build time. */
+export async function generateStaticParams() {
+  const areas = await prisma.strategic_areas.findMany({
+    select: { slug: true },
+  })
+  return areas.map((area) => ({ 'area-slug': area.slug }))
+}
 
 type PageProps = {
   params: Promise<{ 'area-slug': string }>

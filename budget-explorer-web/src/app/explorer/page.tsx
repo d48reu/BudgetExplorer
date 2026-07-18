@@ -12,7 +12,9 @@ export const metadata: Metadata = {
     "Explore Miami-Dade County's budget with an interactive treemap showing how $13.2 billion is allocated across 9 strategic areas.",
 }
 
-export const dynamic = 'force-dynamic'
+// Static with daily revalidation; the underlying data changes only when
+// the pipeline reseeds.
+export const revalidate = 86400
 
 export default async function ExplorerPage() {
   const [areas, fiscalYear] = await Promise.all([

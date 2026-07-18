@@ -8,7 +8,8 @@ export const metadata: Metadata = {
     'See how your property taxes fund Miami-Dade County services.',
 }
 
-export const dynamic = 'force-dynamic'
+// Millage rates change once a year; the calculator itself is client-side.
+export const revalidate = 86400
 
 export default async function CalculatorPage() {
   const [rates, areas] = await Promise.all([

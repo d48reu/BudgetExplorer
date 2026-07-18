@@ -17,8 +17,9 @@ export const metadata: Metadata = {
     "Explore Miami-Dade County's $13.2 billion FY 2025-26 budget with interactive visualizations. See how your tax dollars fund county services, from public safety to infrastructure.",
 }
 
-// This page queries the database at request time
-export const dynamic = 'force-dynamic'
+// Budget data changes a few times a year via the offline pipeline, so
+// render statically and revalidate daily instead of querying per request.
+export const revalidate = 86400
 
 export default async function HomePage() {
   const [fiscalYear, stats, strategicAreas, revenueSources] = await Promise.all([
