@@ -56,7 +56,15 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   1. Every existing page (homepage, explorer, area, department, calculator, search) renders byte-identical after the migration, verified by before/after snapshot comparison
   2. The `budget_stage` enum replaces `is_actual` in the schema and unique keys of all six affected tables (`department_budgets`, `strategic_area_budgets`, `millage_rates`, `revenue_by_source`, `department_expenditures`, `budget_descriptions`), with zero remaining `is_actual` references in queries, views, or the materialized search index
   3. Inserting a test FY 2026-27 proposed row into a scratch database changes nothing on any existing page — proving stage filters are explicit everywhere before real data loads
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Snapshot regression gate + pre-migration baseline + pre-flight audits (wave 1)
+- [ ] 07-02-PLAN.md — Migration A (expand): budget_stage enum + backfilled stage columns, proven invisible (wave 2)
+- [ ] 07-03-PLAN.md — Deploy 1 web code: final-state schema.prisma + 10 stage-filtered reader queries (wave 3)
+- [ ] 07-04-PLAN.md — Stage-native pipeline: seeders, checker, descriptions generator (wave 3)
+- [ ] 07-05-PLAN.md — Migration B (contract) + convergence gates + proposed-row probe (wave 4)
+- [ ] 07-06-PLAN.md — Production rollout: A -> Deploy 1 -> B same day, byte-identity proven (wave 5)
 
 ### Phase 8: Proposed Budget Pipeline & Reference Data
 **Goal**: Verified FY 2026-27 proposed budget data — operating, capital, millage, priorities, crosswalk — exists in the database and is trusted to the cent
@@ -134,7 +142,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 | 4. Department Pages + AI + YoY | v1.1 | 3/3 | Complete | 2026-03-01 |
 | 5. Tax Calculator | v1.1 | 2/2 | Complete | 2026-03-01 |
 | 6. Search + SEO + Launch | v1.1 | 2/2 | Complete | 2026-03-01 |
-| 7. Stage-Aware Schema Foundation | v1.2 | 0/? | Not started | - |
+| 7. Stage-Aware Schema Foundation | v1.2 | 0/6 | Planned | - |
 | 8. Proposed Budget Pipeline & Reference Data | v1.2 | 0/? | Not started | - |
 | 9. Diff Computation Engine | v1.2 | 0/? | Not started | - |
 | 10. /proposed Section | v1.2 | 0/? | Not started | - |
