@@ -24,6 +24,7 @@ model budget_descriptions {
   key_changes          String?
   generated_at         DateTime?    @default(now()) @db.Timestamptz(6)
   model_version        String?      @db.VarChar(50)
+  stage                budget_stage
   fiscal_years         fiscal_years @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([entity_type, entity_id], map: "idx_budget_descriptions_entity")
@@ -65,13 +66,13 @@ model department_budgets {
   capital_budget    BigInt?
   total_budget      BigInt?
   employee_count    Int?
-  is_actual         Boolean?         @default(false)
   strategic_area_id Int?
+  stage             budget_stage
   departments       departments      @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   fiscal_years      fiscal_years     @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   strategic_areas   strategic_areas? @relation(fields: [strategic_area_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([fiscal_year_id, department_id, strategic_area_id, is_actual], map: "department_budgets_fy_dept_area_actual_key")
+  @@unique([fiscal_year_id, department_id, strategic_area_id, stage], map: "department_budgets_fy_dept_area_stage_key")
   @@index([strategic_area_id], map: "idx_dept_budgets_area")
   @@index([department_id], map: "idx_dept_budgets_dept")
   @@index([fiscal_year_id], map: "idx_dept_budgets_fy")
@@ -83,12 +84,12 @@ model department_expenditures {
   department_id           Int
   expenditure_category_id Int
   amount                  BigInt
-  is_actual               Boolean?               @default(false)
+  stage                   budget_stage
   departments             departments            @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   expenditure_categories  expenditure_categories @relation(fields: [expenditure_category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   fiscal_years            fiscal_years           @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([fiscal_year_id, department_id, expenditure_category_id, is_actual])
+  @@unique([fiscal_year_id, department_id, expenditure_category_id, stage], map: "department_expenditures_fy_dept_cat_stage_key")
   @@index([fiscal_year_id], map: "idx_dept_expenditures_fy")
 }
 
@@ -162,9 +163,10 @@ model millage_rates {
   millage_rate   Decimal      @db.Decimal(8, 4)
   is_county      Boolean?     @default(true)
   display_order  Int?
+  stage          budget_stage
   fiscal_years   fiscal_years @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([fiscal_year_id, authority])
+  @@unique([fiscal_year_id, authority, stage], map: "millage_rates_fy_authority_stage_key")
 }
 
 model revenue_by_source {
@@ -173,11 +175,11 @@ model revenue_by_source {
   revenue_source_id Int
   amount            BigInt
   percentage        Decimal?        @db.Decimal(5, 2)
-  is_actual         Boolean?        @default(false)
+  stage             budget_stage
   fiscal_years      fiscal_years    @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   revenue_sources   revenue_sources @relation(fields: [revenue_source_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([fiscal_year_id, revenue_source_id, is_actual])
+  @@unique([fiscal_year_id, revenue_source_id, stage], map: "revenue_by_source_fy_source_stage_key")
   @@index([fiscal_year_id], map: "idx_revenue_by_source_fy")
 }
 
@@ -197,10 +199,11 @@ model strategic_area_budgets {
   operating_budget  BigInt?
   capital_budget    BigInt?
   cents_per_dollar  Int?
+  stage             budget_stage
   fiscal_years      fiscal_years    @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   strategic_areas   strategic_areas @relation(fields: [strategic_area_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([fiscal_year_id, strategic_area_id])
+  @@unique([fiscal_year_id, strategic_area_id, stage], map: "strategic_area_budgets_fy_area_stage_key")
 }
 
 model strategic_areas {
@@ -221,4 +224,10 @@ model glossary_terms {
   term       String @unique @db.VarChar(100)
   slug       String @unique @db.VarChar(100)
   definition String
+}
+
+enum budget_stage {
+  proposed
+  adopted
+  actual
 }
