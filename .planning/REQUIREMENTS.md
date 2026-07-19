@@ -8,7 +8,7 @@
 
 ### Stage-Aware Data Model
 
-- [ ] **DATA-01**: Budget stage (proposed/adopted/actual) is a first-class dimension replacing the `is_actual` boolean across `department_budgets`, `strategic_area_budgets`, `millage_rates`, `revenue_by_source`, `department_expenditures`, and `budget_descriptions` — with every existing page rendering byte-identical after the migration
+- [x] **DATA-01**: Budget stage (proposed/adopted/actual) is a first-class dimension replacing the `is_actual` boolean across `department_budgets`, `strategic_area_budgets`, `millage_rates`, `revenue_by_source`, `department_expenditures`, and `budget_descriptions` — with every existing page rendering byte-identical after the migration
 - [ ] **DATA-02**: The seven FY 2026-27 Strategic Priorities exist in `strategic_areas` (5 new rows + reuse of Policy Formulation and Constitutional Offices), and area navigation is scoped by (fiscal year, stage) so old areas and new priorities never mix
 - [ ] **DATA-03**: FY 2026-27 exists as a fiscal year with stage-scoped countywide totals (proposed totals retained when adopted totals land)
 - [ ] **DATA-04**: Loading the adopted FY 2026-27 budget in September coexists with the proposed rows (stage-scoped deletes, verified by a dress-rehearsal load before the hearings)
@@ -83,7 +83,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 7 | Pending |
+| DATA-01 | Phase 7 | Complete |
 | DATA-02 | Phase 8 | Pending |
 | DATA-03 | Phase 8 | Pending |
 | DATA-04 | Phase 13 | Pending |

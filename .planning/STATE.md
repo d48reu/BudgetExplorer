@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: FY 2026-27 Proposed Budget
 status: planning
-stopped_at: Phase 7 context gathered
-last_updated: "2026-07-19T03:39:46.705Z"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-07-19T04:15:51.114Z"
 last_activity: 2026-07-18 -- v1.2 roadmap created (Phases 7-13, 25 requirements mapped)
 progress:
   total_phases: 7
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 6
+  completed_plans: 1
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-18)
 
 ## Current Position
 
-Phase: 7 of 13 (Stage-Aware Schema Foundation) -- not started
-Plan: — (run /gsd:plan-phase 7)
-Status: Roadmap created, ready for phase planning
-Last activity: 2026-07-18 -- v1.2 roadmap created (Phases 7-13, 25 requirements mapped)
+Phase: 7 of 13 (Stage-Aware Schema Foundation) -- in progress
+Plan: 1 of 6 complete (next: 07-02)
+Status: Executing phase 7 plans
+Last activity: 2026-07-19 -- 07-01 complete (snapshot regression gate + pre-migration baseline + pre-flight audits)
 
 Progress: [------------------------------] 0/7 v1.2 phases
 
@@ -53,6 +53,8 @@ v1.2 roadmap decisions:
 - Sankey (Phase 11) sequenced after core diff data verification; blocks nothing, can run parallel with Phases 10/12
 - DATA-04 dress rehearsal placed in Phase 13 alongside AI narratives as the September-readiness gate
 - REQUIREMENTS.md "24 total" count corrected to 25 (actual REQ-ID count)
+- [Phase 07]: Snapshot manifest keyed by URL path (origin-independent) so local and prod captures diff directly
+- [Phase 07]: Pre-flight audits clean: no stray actual-era rows (simple Migration A backfill suffices); Migration B constraint names verified identical on local and prod
 
 ### Pending Todos
 
@@ -71,9 +73,10 @@ v1.2 roadmap decisions:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 1 | Clean up orphaned exports: remove unused ChartTooltip, centsToDollars, getDepartmentCount | 2026-03-01 | 59054e5 | [1-clean-up-orphaned-exports-remove-unused-](./quick/1-clean-up-orphaned-exports-remove-unused-/) |
+| Phase 07 P01 | 15min | 3 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-07-19T03:39:46.703Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-stage-aware-schema-foundation/07-CONTEXT.md
+Last session: 2026-07-19T04:15:51.112Z
+Stopped at: Completed 07-01-PLAN.md
+Resume file: None
