@@ -94,7 +94,7 @@ export async function getMillageRates(): Promise<SerializedMillageRate[]> {
   if (!fy) return []
 
   const rates = await prisma.millage_rates.findMany({
-    where: { fiscal_year_id: fy.id },
+    where: { fiscal_year_id: fy.id, stage: 'adopted' },
     orderBy: { display_order: 'asc' },
   })
 
@@ -119,7 +119,7 @@ export async function getStrategicAreas(): Promise<SerializedStrategicArea[]> {
   const areas = await prisma.strategic_areas.findMany({
     include: {
       strategic_area_budgets: {
-        where: { fiscal_year_id: fy.id },
+        where: { fiscal_year_id: fy.id, stage: 'adopted' },
       },
     },
     orderBy: { display_order: 'asc' },
@@ -173,7 +173,7 @@ export const getAreaWithDepartments = cache(async (areaSlug: string): Promise<{
     where: { slug: areaSlug },
     include: {
       strategic_area_budgets: {
-        where: { fiscal_year_id: fy.id },
+        where: { fiscal_year_id: fy.id, stage: 'adopted' },
       },
     },
   })
@@ -188,7 +188,7 @@ export const getAreaWithDepartments = cache(async (areaSlug: string): Promise<{
   const rows = await prisma.department_budgets.findMany({
     where: {
       fiscal_year_id: fy.id,
-      is_actual: false,
+      stage: 'adopted',
       OR: areaMembershipFilter(area.id),
     },
     include: { departments: true },
@@ -248,7 +248,7 @@ export async function getRevenueSources(): Promise<SerializedRevenueSource[]> {
   if (!fy) return []
 
   const revenues = await prisma.revenue_by_source.findMany({
-    where: { fiscal_year_id: fy.id },
+    where: { fiscal_year_id: fy.id, stage: 'adopted' },
     include: {
       revenue_sources: true,
     },
@@ -280,7 +280,7 @@ export async function getStrategicAreasWithDetails(): Promise<
   const areas = await prisma.strategic_areas.findMany({
     include: {
       strategic_area_budgets: {
-        where: { fiscal_year_id: fy.id },
+        where: { fiscal_year_id: fy.id, stage: 'adopted' },
       },
       _count: {
         select: { departments: true },
@@ -318,7 +318,7 @@ export const getDepartmentDetail = cache(async (slug: string): Promise<Serialize
     include: {
       strategic_areas: true,
       department_budgets: {
-        where: { fiscal_year_id: fy.id, is_actual: false },
+        where: { fiscal_year_id: fy.id, stage: 'adopted' },
       },
     },
   })
@@ -329,6 +329,7 @@ export const getDepartmentDetail = cache(async (slug: string): Promise<Serialize
       fiscal_year_id: fy.id,
       entity_type: 'department',
       entity_id: dept.id,
+      stage: 'adopted',
     },
   })
 
@@ -371,6 +372,7 @@ export async function getDepartmentExpenditures(deptId: number): Promise<Seriali
     where: {
       fiscal_year_id: fy.id,
       department_id: deptId,
+      stage: 'adopted',
     },
     include: { expenditure_categories: true },
     orderBy: { amount: 'desc' },
@@ -401,7 +403,7 @@ export async function getRelatedDepartments(
   const rows = await prisma.department_budgets.findMany({
     where: {
       fiscal_year_id: fy.id,
-      is_actual: false,
+      stage: 'adopted',
       department_id: { not: excludeDeptId },
       OR: areaMembershipFilter(areaId),
     },
@@ -449,8 +451,9 @@ export async function getDepartmentYoY(deptId: number): Promise<SerializedYoYDat
   })
 
   // Collapse per-area rows into one point per fiscal year. Early fiscal years
-  // are seeded as actual spending (is_actual=true) while recent years carry
-  // adopted budgets (is_actual=false); when a year has both, prefer adopted.
+  // are seeded as actual spending (stage='actual') while recent years carry
+  // adopted budgets (stage='adopted'); when a year has both, prefer adopted.
+  // Proposed-stage rows are draft figures and never appear in history charts.
   type YearSums = { total: bigint; operating: bigint; capital: bigint }
   const adopted = new Map<string, YearSums>()
   const actual = new Map<string, YearSums>()
@@ -458,10 +461,11 @@ export async function getDepartmentYoY(deptId: number): Promise<SerializedYoYDat
 
   for (const b of budgets) {
     const label = b.fiscal_years.label
+    if (b.stage === 'proposed') continue
     if (!adopted.has(label) && !actual.has(label)) {
       yearLabels.push(label)
     }
-    const byYear = b.is_actual ? actual : adopted
+    const byYear = b.stage === 'actual' ? actual : adopted
     const entry = byYear.get(label) ?? {
       total: BigInt(0),
       operating: BigInt(0),
