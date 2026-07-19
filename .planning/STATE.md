@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: FY 2026-27 Proposed Budget
-status: planning
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-07-19T04:15:51.114Z"
-last_activity: 2026-07-18 -- v1.2 roadmap created (Phases 7-13, 25 requirements mapped)
+status: executing
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-07-19T04:22:05.222Z"
+last_activity: 2026-07-19 -- 07-02 complete (Migration A applied locally, exact backfill, render-invisible)
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-07-18)
 ## Current Position
 
 Phase: 7 of 13 (Stage-Aware Schema Foundation) -- in progress
-Plan: 1 of 6 complete (next: 07-02)
+Plan: 2 of 6 complete (next: 07-03)
 Status: Executing phase 7 plans
-Last activity: 2026-07-19 -- 07-01 complete (snapshot regression gate + pre-migration baseline + pre-flight audits)
+Last activity: 2026-07-19 -- 07-02 complete (Migration A applied locally: budget_stage enum + backfilled stage columns, render-invisible)
 
 Progress: [------------------------------] 0/7 v1.2 phases
 
@@ -55,6 +55,7 @@ v1.2 roadmap decisions:
 - REQUIREMENTS.md "24 total" count corrected to 25 (actual REQ-ID count)
 - [Phase 07]: Snapshot manifest keyed by URL path (origin-independent) so local and prod captures diff directly
 - [Phase 07]: Pre-flight audits clean: no stray actual-era rows (simple Migration A backfill suffices); Migration B constraint names verified identical on local and prod
+- [Phase 07]: Migration A shipped verbatim (clean audit); Tier 1 snapshot normalization extended to collapse Next build-id doctype comment only
 
 ### Pending Todos
 
@@ -74,9 +75,10 @@ v1.2 roadmap decisions:
 |---|-------------|------|--------|-----------|
 | 1 | Clean up orphaned exports: remove unused ChartTooltip, centsToDollars, getDepartmentCount | 2026-03-01 | 59054e5 | [1-clean-up-orphaned-exports-remove-unused-](./quick/1-clean-up-orphaned-exports-remove-unused-/) |
 | Phase 07 P01 | 15min | 3 tasks | 3 files |
+| Phase 07 P02 | 4min | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-07-19T04:15:51.112Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-07-19T04:22:05.220Z
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None

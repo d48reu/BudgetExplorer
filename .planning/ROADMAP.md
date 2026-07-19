@@ -59,8 +59,8 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 **Plans**: 6 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Snapshot regression gate + pre-migration baseline + pre-flight audits (wave 1)
-- [ ] 07-02-PLAN.md — Migration A (expand): budget_stage enum + backfilled stage columns, proven invisible (wave 2)
+- [x] 07-01-PLAN.md — Snapshot regression gate + pre-migration baseline + pre-flight audits (wave 1)
+- [x] 07-02-PLAN.md — Migration A (expand): budget_stage enum + backfilled stage columns, proven invisible (wave 2)
 - [ ] 07-03-PLAN.md — Deploy 1 web code: final-state schema.prisma + 10 stage-filtered reader queries (wave 3)
 - [ ] 07-04-PLAN.md — Stage-native pipeline: seeders, checker, descriptions generator (wave 3)
 - [ ] 07-05-PLAN.md — Migration B (contract) + convergence gates + proposed-row probe (wave 4)
@@ -142,7 +142,7 @@ Plans:
 | 4. Department Pages + AI + YoY | v1.1 | 3/3 | Complete | 2026-03-01 |
 | 5. Tax Calculator | v1.1 | 2/2 | Complete | 2026-03-01 |
 | 6. Search + SEO + Launch | v1.1 | 2/2 | Complete | 2026-03-01 |
-| 7. Stage-Aware Schema Foundation | v1.2 | 0/6 | Planned | - |
+| 7. Stage-Aware Schema Foundation | v1.2 | 2/6 | In Progress | - |
 | 8. Proposed Budget Pipeline & Reference Data | v1.2 | 0/? | Not started | - |
 | 9. Diff Computation Engine | v1.2 | 0/? | Not started | - |
 | 10. /proposed Section | v1.2 | 0/? | Not started | - |
