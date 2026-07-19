@@ -1,231 +1,188 @@
 # Project Research Summary
 
-**Project:** Miami-Dade Budget Explorer v1.1
-**Domain:** Civic budget visualization — interactive charts, tax calculator, AI descriptions, search, SEO
-**Researched:** 2026-02-28
+**Project:** Miami-Dade Budget Explorer v1.2 (FY 2026-27 Proposed Budget)
+**Domain:** Civic budget transparency site adding a proposed-vs-adopted budget cycle, cross-taxonomy (9-area → 7-priority) reorg diffs, and stage-aware data modeling to a live Next.js/Prisma/Neon application
+**Researched:** 2026-07-18
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Miami-Dade Budget Explorer v1.1 extends a fully functional v1.0 foundation (homepage, design system, data pipeline, PostgreSQL schema) into a complete interactive budget transparency tool. The research confirms a critical insight: the database schema is already complete and seeded. Every v1.1 feature has its data waiting in PostgreSQL. This milestone is 90% frontend work — building the visualization, calculator, and content surfaces that expose data that already exists — plus one Python pipeline run to generate AI descriptions. The core technical decisions are resolved: Nivo (@nivo/treemap, @nivo/sunburst, @nivo/pie at 0.99.0) is the only viable charting library for this feature set, PostgreSQL native full-text search via raw SQL replaces any external search service, and all AI descriptions are pre-generated offline, never at runtime.
+This milestone adds Miami-Dade's FY 2026-27 **proposed** budget ($14.26B, up from $13.23B adopted) to a site that has, until now, only ever modeled one budget stage per year. That single fact — stage was previously implicit in an `is_actual` boolean — is the crux of the entire milestone. Every other decision (schema, routing, diff math, Sankey, calculator, AI narratives) cascades from making "proposed / adopted / actual" an explicit, first-class dimension *before* any FY 2026-27 data is loaded. Civic-budget precedent (Seattle, Bakersfield, NYC Council, OpenGov, ClearGov) is unanimous that proposed and adopted must be visually and structurally separated, never toggled in place — a pattern this project should implement as a dedicated `/proposed` route namespace with its own layout-level banner, never a query parameter on existing pages.
 
-The recommended build approach follows a dependency-driven sequence: establish shared infrastructure first (DataTableToggle component, toChartValue() utility, chart query layer), then build the primary visualization experience (treemap drill-down + explorer page + department detail pages), then add the differentiating features (tax calculator, AI descriptions), and finally complete search and SEO as a launch-readiness phase. This ordering prevents the two highest-risk rework scenarios: building chart UI before validating the drill-down state machine works at all four hierarchy levels, and building department detail pages before AI descriptions are seeded into the database.
+The recommended approach requires exactly one new npm dependency (`d3-sankey`, for the reorg crosswalk visualization) — everything else is code against the existing stack (Next.js, Prisma 7, Neon, D3-module charts, pdfplumber, Vitest). Architecturally, `is_actual` should be replaced (not supplemented) by a Postgres `budget_stage` enum across all tables that carry it, a new `fiscal_year_stages` table should hold stage-scoped countywide totals so proposed totals survive September's adopted load, and the 7 new Strategic Priorities should be added as new rows in the existing `strategic_areas` table (reusing two rows that carry over by name) rather than a parallel taxonomy table — this avoids a costly schema fork while keeping every existing FK and view intact.
 
-The single greatest technical risk is the Nivo treemap/sunburst drill-down, which has no built-in state management and requires a custom breadcrumb history pattern to be architected before any chart UI is built. The second risk is BigInt leaking into Nivo data props, causing silent rendering failures. The third risk is mobile usability: treemaps are unusable below 500px without a purpose-built accordion/list alternative. These three risks must be addressed in Phase 1. They cannot be retrofitted without significant rework.
-
----
+The dominant risk is not technical difficulty but credibility and correctness under a hard, public deadline (Sept 3 and 17 hearings). Research surfaced twelve concrete pitfalls, several severe: proposed rows silently leaking into "current fiscal year" queries and appearing on adopted pages; two legitimately-different-but-same-named "FY 2025-26" baselines getting diffed against each other; multi-row department budgets being double-counted in cross-year diffs (the same bug class as the 2026-07 audit, now doubled in exposure); division-by-zero/BigInt crashes on new departments; and AI narratives hallucinating political causality for a document published by a commissioner's-office employee. Each has a documented, low-cost prevention (explicit stage filters, a single tested diff module, human-reviewed narratives with banned-word lint, a September "dress rehearsal" load) — the risk is real but fully mitigated if the schema and diff-computation phases are done first and rigorously, before any UI or visualization work begins.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The v1.0 stack (Next.js 16, React 19, Prisma 7, PostgreSQL 16, Tailwind v4) is validated and locked. Only three new npm packages are needed for v1.1: `@nivo/treemap@0.99.0`, `@nivo/sunburst@0.99.0`, and `@nivo/pie@0.99.0`. React 19 compatibility is confirmed for all three. Every other v1.1 feature — SEO, search, AI descriptions, tax calculator, penny visualization, year-over-year comparison — uses either existing dependencies or built-in Next.js/PostgreSQL capabilities.
+The validated v1.0/v1.1 stack (Next.js 16, TypeScript 5, Tailwind v4, Prisma 7.4.2, Neon Postgres, hand-rolled D3-module charts via `ChartContainer`/`DataTableToggle`, pdfplumber 0.11.9, Vitest 4, pnpm) is unchanged and not re-litigated. The only stack addition for v1.2 is `d3-sankey` for the reorg crosswalk visualization.
 
-Recharts, Victory, and D3 were evaluated and rejected: Recharts has no sunburst or treemap (GitHub issue open since 2017), Victory has no treemap, and raw D3 conflicts with React's DOM ownership. Nivo is the only library that provides treemap + sunburst + pie in one ecosystem with shared theming.
-
-**Core technologies:**
-- `@nivo/treemap@0.99.0`: Budget drill-down hierarchy (Total -> Strategic Areas -> Departments) — only library with treemap + sunburst in one ecosystem
-- `@nivo/sunburst@0.99.0`: Alternate radial hierarchy view using same data format as treemap — zero additional cost to offer as a toggle
-- `@nivo/pie@0.99.0`: Revenue source donut chart and expenditure breakdown — covers multiple use cases with one package
-- PostgreSQL tsvector + GIN index via `$queryRaw`: Full-text search for ~350 rows — native, zero-cost, single-digit millisecond queries; Prisma's preview FTS feature does not support tsvector
-- Next.js `generateMetadata()` + `opengraph-image.tsx`: SEO and OG images — built-in to Next.js 16, no external library needed; `next-seo` is deprecated for App Router
-- Python `anthropic 0.83.0` (existing): AI description generation — offline batch only, never at runtime; SDK already installed in pipeline
-
-**Critical version note:** All Nivo charts require `'use client'` directive on wrapper components. Nivo uses React Context internally. Data fetching stays in Server Components; chart rendering stays in Client Components.
+**Core technologies (additions):**
+- `d3-sankey` 0.12.3 + `@types/d3-sankey` 0.12.5 — Sankey layout algorithm for the 9-area → 7-priority crosswalk; fits the existing "layout math in, custom SVG render out" pattern already used by the treemap's `d3-hierarchy` usage.
+- Everything else (waterfall, diverging bars, millage comparison, PDF extraction, stage schema) is covered by existing dependencies (`d3-scale`, pdfplumber, Prisma, the existing tax-math module) — no new libraries needed.
+- Explicitly rejected: Recharts for new charts (project already migrated off it), Nivo (rejected in v1.1), plotly/ECharts (bundle-weight overkill for one diagram).
 
 ### Expected Features
 
-**Must have (table stakes) — v1.1 P1:**
-- Interactive treemap drill-down with breadcrumb navigation — the primary product experience; every major civic budget tool has hierarchical drill-down; without it the product is a homepage with no depth
-- Revenue source donut chart — "where money comes from" completes the story; every major competitor shows revenue alongside expenditures
-- Department detail pages (35 pages, statically generated) — drill-down must land somewhere; dead-end navigation destroys the product
-- Year-over-year comparison (sparklines on detail pages, 5 fiscal years) — static budget snapshot misleads; context of growth or decline is required
-- Full-text search — users expect to type "fire" and find Fire Rescue; without search, the hierarchy is the only discovery mechanism
-- SEO + Open Graph metadata per page — journalists share budget links; generic OG tags kill shareability on social media
-- Mobile fallbacks for all charts — Miami-Dade's audience is primarily mobile; treemap is untappable below 500px without a purpose-built alternative
-- Data table toggle for all charts — WCAG AA requires chart data available programmatically; screen readers cannot interpret SVG treemaps
+Verified against Seattle, Bakersfield, NYC Council, OpenGov/ClearGov, and Florida TRIM statutory process. The consensus pattern is three reinforcing layers: label every number's stage, physically separate proposed/adopted surfaces, and disclaim with an as-of date.
 
-**Should have (differentiators) — v1.1 P1:**
-- "What does my tax dollar buy?" calculator — no civic budget tool combines property value input with strategic area allocation breakdown; this is the viral hook
-- AI-generated plain-English department descriptions — no competitor uses AI to explain what departments do; transforms opaque acronyms into resident understanding
-- Penny visualization (dollar broken into colored strategic area segments) — memorable, shareable graphic using `cents_per_dollar` column already seeded; Political Math's penny videos drove 1.7M views on this concept
-- Contextual change annotations — AI-generated `key_changes` displayed as callout cards when YoY budget change exceeds 5%
+**Must have (table stakes):**
+- Stage badge + persistent status banner on every proposed figure, with hearing dates and an "as of" date stamp
+- Dedicated `/proposed` route/section with distinct visual identity — never a toggle on existing pages
+- Stage-aware data model (proposed/adopted/actual as a first-class dimension)
+- Department-level diffs ($ and %) vs FY 2025-26 adopted, computed via `sumBudgetRows()` semantics
+- Countywide topline comparison ($13.23B → $14.26B), verified against Budget in Brief
+- Sortable biggest-increases/biggest-cuts table
+- Calculator: current-vs-proposed millage comparison, matching the TRIM notice mental model
+- Source PDF links to the proposed release appendices
+- Cross-links from existing adopted pages to proposed diffs (never inline number substitution)
 
-**Defer to v1.2:**
-- Sunburst as standalone view (offer only as treemap toggle for v1.1)
-- Embeddable widgets
-- CSV data export
-- Side-by-side department comparison mode
-- Spanish language support (build i18n-ready architecture now, ship content later)
+**Should have (differentiators):**
+- Dollar-weighted Sankey (9 areas → 7 priorities) — no competitor portal does this; the milestone's signature asset
+- AI "what's changing" narratives per department, extending the site's existing plain-English description pipeline
+- Countywide waterfall chart (adopted → per-priority deltas → proposed)
+- Diverging bar chart of department changes
+- Hearing-season context module (Sept 3 & 17 dates, TRIM explainer)
 
-**Defer to v2+:**
-- Online checkbook / disbursements (different data source, requires county systems integration)
-- Capital project map (requires geocoding, out of scope)
-- Participatory "build your own budget" tool (tripling of scope, different product type)
-- Runtime AI chatbot (unpredictable cost, hallucination risk at runtime)
+**Defer (v2+ / post-adoption):**
+- Live amendment tracking during hearings (too error-prone for a two-evening event; do the diff after adoption instead)
+- Public comment/testimony collection (out of scope, county runs official channels)
+- Predicting what the Commission will adopt (politically exposed, explicitly out of scope)
+- Full parallel v1.1 site clone for proposed data (treemap/penny-viz/revenue-donut parity) — diff-centric section only, full parity happens after adoption
+- Line-item/appendix-level proposed detail beyond department level
 
 ### Architecture Approach
 
-The architecture extends the Server Component / Client Component island pattern established in v1.0. Server Component pages fetch data via Prisma and pass serialized (string, not BigInt) props to Client Component chart wrappers. All Nivo charts are Client Components (Nivo's internal React Context use requires this). The data pipeline remains a separate Python process that generates and seeds data offline; the web app only reads from PostgreSQL, never calls external APIs at runtime. Full-text search is implemented via a new `/api/search` Route Handler using PostgreSQL tsvector and GIN indexes managed entirely outside Prisma's schema system.
+The stage dimension must replace, not supplement, the existing `is_actual` boolean — adding `stage` alongside `is_actual` was explicitly rejected because proposed rows would satisfy `is_actual = false` and silently contaminate every existing "adopted" query. A new `budget_stage` Postgres enum (`proposed`/`adopted`/`actual`) goes on `department_budgets`, `department_expenditures`, `revenue_by_source`, `millage_rates`, `strategic_area_budgets`, and `budget_descriptions`, replacing `is_actual` in each table's unique key. A new `fiscal_year_stages` table holds stage-scoped countywide totals so FY 2026-27 proposed totals persist after September's adopted load overwrites nothing. The 7 new Strategic Priorities are new rows in the existing `strategic_areas` table (two rows reused by name for carry-over priorities); which areas "exist" for a given (FY, stage) is derived from `strategic_area_budgets` rows, requiring no new taxonomy table.
 
 **Major components:**
-1. Query layer (`lib/db/explorer-queries.ts`, `department-queries.ts`, `calculator-queries.ts`, `search-queries.ts`) — Server-only Prisma queries returning Nivo-ready data shapes with `number` values (never BigInt or strings for chart data)
-2. Chart components (`components/charts/`) — Client Component islands: BudgetTreemap, BudgetSunburst, RevenueDonut, PennyViz, YoYBarChart, ExpenditureBreakdown — each wraps a Nivo component with drill-down state or tooltip logic
-3. ChartContainer (`components/charts/ChartContainer.tsx`) — shared wrapper providing loading skeleton, error boundary, and DataTableToggle for every chart; built once in Phase 1, reused everywhere
-4. Feature pages (`app/explorer/`, `app/department/[slug]/`, `app/calculator/`, `app/search/`) — Server Component pages that orchestrate data fetching and pass pre-shaped data to chart islands
-5. Python pipeline extension (`pipeline/describe.py`) — offline Claude API batch script generating and seeding `budget_descriptions` table (44 entities: 35 departments + 9 strategic areas) before department pages are built
-6. SEO layer — `generateMetadata()` per page, `app/sitemap.ts`, `app/robots.ts`, `opengraph-image.tsx` per dynamic route
-
-**Key architectural constraint:** Department pages use `generateStaticParams()` for static generation at build time (35 department + 9 area pages). The homepage transitions from `force-dynamic` to ISR with `revalidate = 86400`. The tax calculator page is the only page that remains dynamic (user input). This caching strategy must be established in Phase 2 when department pages are first created, not retrofitted in a later SEO phase.
+1. **Migration 006 (stage) + 007 (priorities)** — schema foundation; must ship alone first, verified byte-identical against existing pages before any new feature code lands.
+2. **Extraction pipeline (Appendix A/H extractors + verification + identity gate)** — new state-machine extractors for the proposed release's format, with loud-warning-on-unrecognized-header discipline and a department-name reconciliation gate.
+3. **Diff computation module** — one shared, unit-tested `computeDiff()` function (department-total level only, BigInt-safe, handles new/eliminated cases) used by every page, chart, and narrative.
+4. **`/proposed` route namespace** — layout-level banner/identity, landing page, priority pages, department diff pages, all following existing static-generation + ISR conventions.
+5. **AI narrative generation** — same offline, human-reviewed batch pattern as v1.1, extended with numbers-only-grounding prompts and banned-word lint.
 
 ### Critical Pitfalls
 
-1. **Nivo drill-down has no built-in state management** — Build a `DrillState` machine (`path: string[]`, `currentData: TreemapNode`, zoom-in/zoom-out handlers) before touching any Nivo UI. Prototype all 4 hierarchy levels with real budget data in the first 2 days of Phase 1. If the interaction feels wrong at prototype stage, fall back to a simpler accordion pattern rather than forcing Nivo. Recovery cost if deferred: 2-3 day rewrite mid-phase.
-
-2. **BigInt cents leak into Nivo chart data causing silent rendering failures** — Create `toChartValue(cents: bigint | string | null): number` utility that converts cents to dollars as `number` before any chart data preparation. Never pass Prisma results directly to Nivo data arrays. Warning signs: treemap renders as a single block, all segments appear equal size. Recovery cost: 2-4 hours, but finding the silent failure wastes more time than the fix.
-
-3. **Treemap is unusable on mobile without an explicit alternative** — Design the mobile accordion/list fallback before building desktop chart UI. Use `useMediaQuery('(max-width: 767px)')` to swap between chart and list components (not CSS hiding). Ensure all tappable chart areas are 44x44px minimum (WCAG 2.5.5). Nivo has documented iOS touch event bugs (Issue #445). Recovery cost if retrofitted as afterthought: 3-5 days.
-
-4. **Prisma drops tsvector columns during `migrate dev`** — Manage `search_vector` tsvector columns and GIN indexes entirely in raw SQL files outside Prisma's schema management. Never add tsvector to `schema.prisma`. Use Prisma `$queryRaw` with tagged template literals for all search queries (Prisma auto-parameterizes, preventing SQL injection). Add a `prisma migrate diff` check in CI to prevent accidental drops.
-
-5. **Millage math floating-point errors destroy trust in the tax calculator** — Use `Prisma.Decimal` arithmetic or integer cents throughout all tax calculations. Never call `.toNumber()` on millage `Decimal` fields and multiply. Round to exactly 2 decimal places at display time only. Validate against Miami-Dade's official tax estimator for at least 3 sample property values before launch.
-
-6. **Claude API called at runtime instead of from the pipeline** — `ANTHROPIC_API_KEY` must never appear in `budget-explorer-web/.env`. All descriptions are pre-generated via `pipeline/describe.py` and stored in `budget_descriptions` table before department pages go live. Runtime AI calls create $3-15/day costs, 2-5 second latency per page load, and inconsistent outputs between users.
-
-7. **`force-dynamic` copied to every new page kills SEO and performance** — Use `generateStaticParams` for all department and area pages. Use `revalidate = 86400` for homepage (not `force-dynamic`). Only the tax calculator page should be dynamic (user input). Establish this pattern in Phase 2, not Phase 4. Google's crawler deprioritizes slow TTFB pages.
-
----
+1. **"Latest fiscal year" queries silently absorb proposed rows** — every existing page (homepage hero, treemap, YoY charts) starts showing unlabeled proposed numbers the moment FY 2026-27 loads, unless stage is an explicit filter everywhere. Prevention: stage-model first, snapshot-diff all v1.1 pages before/after load, zero changes allowed.
+2. **Two versions of "FY 2025-26" get diffed against each other** — the proposed release's restated prior-year column (new taxonomy, sometimes different scope) doesn't match the DB's adopted FY 2025-26 (old taxonomy, includes capital). Prevention: store both, diff within one release's paired columns, add a reconciliation report.
+3. **Multi-row double-counting in cross-year diffs** — the same bug family as the 2026-07 audit, now doubled by touching two years/taxonomies at once. Prevention: one shared `sumBudgetRows()`-based diff function, cent-exact roll-up test.
+4. **Proposed numbers escape context and get cited as fact** — OG images, search snippets, `<title>`, chart alt-text can all drop the PROPOSED label even when the page itself has a banner. Prevention: an explicit escape-surfaces checklist, stage-explicit formatting with no defaults.
+5. **AI narratives hallucinate causality for a live political document** — highest reputational risk item in the whole milestone. Prevention: keep the mandatory human-review gate, numbers-only-grounding prompts, banned-word lint; never relax for schedule pressure.
 
 ## Implications for Roadmap
 
-Based on the combined research, the feature dependency graph drives a clear 4-phase structure. The critical path runs through shared infrastructure -> primary visualization -> differentiating features -> launch readiness. The tax calculator and revenue donut are independent of the visualization critical path and can be built in parallel with Phase 2 on a second track.
+Based on combined research, the build order is largely dictated by dependency chains documented in ARCHITECTURE.md and confirmed by PITFALLS.md's "implied phase ordering." Suggested phase structure:
 
-### Phase 1: Visualization Foundation
+### Phase 1: Stage-Aware Schema Foundation
+**Rationale:** Every other phase depends on stage being explicit; this is also the pitfall-1 gate (proposed rows leaking into adopted queries) and must ship alone, changing zero user-visible behavior, before any new data loads.
+**Delivers:** `budget_stage` enum, `fiscal_year_stages` table, mechanical `is_actual` → `stage` rename across queries/views/MV, regenerated Prisma client.
+**Addresses:** Stage-aware data model (table stakes feature).
+**Avoids:** Pitfall 1 (latest-FY absorption) and the "add stage alongside is_actual" anti-pattern.
 
-**Rationale:** The treemap drill-down is the product's core value and its highest-risk feature. It must come first because department detail pages are the drill-down destination and cannot be built without knowing the drill-down works. The DataTableToggle component and toChartValue() utility must exist before any chart is built — retrofitting accessibility and type safety across multiple chart components is significantly harder than establishing them upfront.
+### Phase 2: Reference Data — Strategic Priorities
+**Rationale:** Priority rows and FY 2026-27's `fiscal_years` row must exist before any pipeline load can reference them; low-risk, mechanical DDL.
+**Delivers:** 5 new `strategic_areas` rows, 2 reused rows for carry-over priorities, FY 2026-27 fiscal_years row.
+**Uses:** Existing migration-runner pattern (precedent: migration 003).
+**Implements:** Architecture Decision 2 (priorities as data-driven-scoped rows, not a parallel table).
 
-**Delivers:** Interactive explorer page (`/explorer`) with treemap drill-down (Total -> Strategic Areas -> Departments), breadcrumb navigation, desktop and mobile views (accordion fallback on <768px), DataTableToggle on all charts, ChartContainer wrapper, revenue donut chart.
+### Phase 3: Extraction Pipeline (Appendix A/H)
+**Rationale:** Nothing renders without trusted, verified data; this phase also carries the identity-resolution gate (renamed/merged departments) that the Sept hearing season will re-exercise repeatedly.
+**Delivers:** New Appendix A/H extractor state machines, verification block (countywide + per-priority + sampled department lines to the cent), department-name reconciliation gate, re-extraction/idempotency support.
+**Addresses:** Proposed-release pipeline (P1 table stakes).
+**Avoids:** Pitfall 2 (mixed FY 25-26 baselines), Pitfall 5 (fake new/eliminated from renames), Pitfall 12 (unit slips), Pitfall 10 (treating July proposal as static).
 
-**Addresses:** VIZ-01, VIZ-02, VIZ-03, VIZ-07, PAGE-02, PAGE-03, mobile fallbacks (WCAG AA)
+### Phase 4: Diff Computation Module
+**Rationale:** Diffs feed the movers table, diverging bars, department pages, and AI narratives — one tested module must exist before any of those are built, or math diverges across call sites.
+**Delivers:** `computeDiff()` pure module (BigInt-safe, new/eliminated discriminated union), department-total-level diffs only, cent-exact roll-up test vs countywide.
+**Addresses:** Department-level diffs, sortable movers table (table stakes).
+**Avoids:** Pitfall 3 (multi-row double-counting), Pitfall 4 (zero-baseline/BigInt division traps).
 
-**Avoids:** Nivo drill-down state trap (Pitfall 1), BigInt chart crash (Pitfall 2), mobile unusability (Pitfall 3)
+### Phase 5: /proposed Routes and Core UI
+**Rationale:** Query layer (proposed-queries.ts, diff-queries.ts) and route namespace depend on Phases 1-4 being real; this is where the "cannot be mistaken for adopted" requirement becomes a layout-level guarantee.
+**Delivers:** `/proposed` layout + banner, landing page (topline, movers table, diverging bars), department diff pages, cross-link callouts from adopted pages.
+**Addresses:** Stage badge/banner, dedicated section, department diffs, movers table, cross-links (all table stakes).
+**Avoids:** Pitfall 6 (escape surfaces), Pitfall 8 (moralizing diff colors).
 
-**Research flag:** Prototype the drill-down state machine with real budget data before committing to 4-level hierarchy. Confirm `ComputedDatum.path` is available in Nivo 0.99.0 or use manual breadcrumb stack in React state (the architecture file shows this fallback pattern already).
+### Phase 6: Sankey Crosswalk Explainer
+**Rationale:** Depends on the diff/crosswalk data decision from Phase 4 and is explicitly the milestone's signature differentiator, but is also the highest-complexity single visualization — sequenced after core diff UI ships so it doesn't block simpler, higher-certainty features.
+**Delivers:** `SankeyCrosswalk.tsx` with `d3-sankey`, balanced one-year-dollars-both-sides weighting, data-table accessibility fallback.
+**Addresses:** Dollar-weighted Sankey differentiator.
+**Avoids:** Pitfall 7 (Sankey misread as money moving; unbalanced totals).
 
-### Phase 2: Department Detail Pages + AI Descriptions
+### Phase 7: Calculator Millage Comparison
+**Rationale:** Has a hard external checkpoint (~Aug 4 TRIM certification) independent of the rest of the build; depends only on the stage model, so it can be built any time after Phase 1 but should be verified/re-checked after certification lands.
+**Delivers:** Stage-aware millage rows, current-vs-proposed comparison UI matching the TRIM notice mental model, rolled-back-rate glossary entries.
+**Addresses:** Calculator differentiator/table-stake.
+**Avoids:** Pitfall 11 (TRIM ceiling/rolled-back-rate/"no tax increase" conflation).
 
-**Rationale:** Department detail pages are the destination of every treemap drill-down and the primary surface for AI descriptions, YoY comparisons, and expenditure breakdowns. These features are tightly coupled with the page structure and must ship together. The Python AI description pipeline must run and pass human review before department pages go live — empty description columns produce hollow pages. The static generation pattern (`generateStaticParams` + ISR) must be established here, in Phase 2, not deferred to the SEO phase.
-
-**Delivers:** 35 static department detail pages with AI descriptions, expenditure category bar chart, YoY sparklines, change annotations; 9 strategic area listing pages; homepage transitions from `force-dynamic` to ISR.
-
-**Addresses:** PAGE-04, VIZ-05, VIZ-06, AI-01 through AI-04, PAGE-06, SEO foundation
-
-**Avoids:** Runtime Claude API calls (Pitfall 6), force-dynamic on static pages (Pitfall 7)
-
-**Research flag:** AI description prompt design needs validation against 3-5 sample departments before running the full 44-entity batch. Human review is mandatory before seeding — budget figures are politically sensitive for the commissioner's office. Test on one large department, one small department, and one with significant YoY budget change.
-
-### Phase 3: Tax Calculator + Penny Visualization
-
-**Rationale:** The tax calculator is independent of the visualization critical path. It uses the `millage_rates` table and `cents_per_dollar` from `strategic_area_budgets`, both already seeded. Building it after department pages ensures the full navigation structure exists so calculator results can link to department pages. The penny visualization is a dependency of the calculator (displayed in calculator output) and trivially cheap to build alongside it. The penny viz also belongs on the homepage as a shareable graphic.
-
-**Delivers:** Tax calculator page at `/calculator` (property value input, homestead exemption checkbox, personalized county/authority tax breakdown, strategic area allocation breakdown, drill-down links to department pages), penny visualization embedded in calculator and homepage, URL state persistence (`?value=350000&homestead=true`).
-
-**Addresses:** CALC-01 through CALC-05, VIZ-04, PAGE-05
-
-**Avoids:** Millage floating-point precision errors (Pitfall 5)
-
-**Research flag:** No additional research needed. Pattern is well-documented. Required validation: test calculator output against Miami-Dade's official tax estimator at `apps.miamidadepa.gov` for 3 sample property values before launch.
-
-### Phase 4: Search, SEO, and Launch Readiness
-
-**Rationale:** Full-text search requires department pages to exist (search results link to them). SEO metadata is partially established during Phase 2 (generateStaticParams handles static generation), but the complete sitemap, robots.txt, per-page OG images, and JSON-LD structured data are launch-readiness concerns that make sense to complete together. This phase also audits and eliminates any remaining force-dynamic instances and validates Core Web Vitals.
-
-**Delivers:** Full-text search (`/search` page + `/api/search` Route Handler, PostgreSQL tsvector + GIN index via raw SQL migration, ranked results), `app/sitemap.ts` covering all 35 department + 9 area + core pages, `app/robots.ts`, per-page `opengraph-image.tsx` dynamic OG images, JSON-LD structured data for department pages, Core Web Vitals audit.
-
-**Addresses:** SRCH-01 through SRCH-03, SEO-01, SEO-02
-
-**Avoids:** Prisma dropping tsvector columns (Pitfall 4), force-dynamic remaining on static pages (Pitfall 7), generic or missing OG images
-
-**Research flag:** tsvector column management outside Prisma is non-standard. Establish the raw SQL migration file and add a CI check (`prisma migrate diff` guard) before this phase closes to prevent future Prisma migrations from silently dropping the search index.
+### Phase 8: AI Change Narratives (last content phase)
+**Rationale:** Consumes frozen diffs from Phase 4 — cannot be generated meaningfully until extraction and diff computation are verified green; also the single highest-reputational-risk artifact, so it should not compete for attention with earlier, faster-moving phases.
+**Delivers:** Pre-generated, human-reviewed "what's changing" narratives per department, banned-word lint, regeneration wired to future data reloads.
+**Addresses:** AI narrative differentiator.
+**Avoids:** Pitfall 9 (hallucinated/editorialized causality).
 
 ### Phase Ordering Rationale
 
-- Phase 1 before Phase 2: The treemap must work before department pages exist as drill-down targets. Shared infrastructure (toChartValue, DataTableToggle, ChartContainer, chart query layer) serves all subsequent phases. Building these once and reusing them saves more time than the upfront investment costs.
-- Phase 2 before Phase 3: Department pages must exist before the calculator can link into them. AI descriptions must be seeded before department pages go live or they launch with empty content holes.
-- Phase 3 after Phase 2 (not parallel): Building these together risks scope creep, but Phase 3 could begin as soon as the `/explorer` page and one sample department page are solid from Phase 2. The tax calculator itself is independent.
-- Phase 4 last: Search requires department pages (to link results). The complete sitemap cannot be generated until all routes are created. SEO audit is meaningless before all pages exist.
+- Schema-first ordering is non-negotiable: ARCHITECTURE.md and PITFALLS.md independently converge on the same conclusion — stage modeling gates everything, and it is also what makes the September adopted load "a data load, not a rebuild" (the milestone's own stated success criterion).
+- Diff computation is deliberately isolated as its own phase before any UI, because FEATURES.md shows nearly every differentiator (movers table, bars, waterfall, Sankey, narratives) consumes the same diff data — building it once avoids the "divergent math per page" anti-pattern PITFALLS.md flags explicitly.
+- The Sankey is sequenced after core diff UI (not before) despite being the "signature" feature, because it is the highest implementation cost (HIGH in STACK.md and FEATURES.md) and the most failure-prone visualization (Pitfall 7) — de-risk it with real, verified diff data already in hand rather than racing it to be first.
+- AI narratives are last by design in both ARCHITECTURE.md's build order and PITFALLS.md's phase mapping: they need frozen diffs to describe, and rushing them undermines the one artifact where review quality matters most.
+- The calculator has an external, uncontrollable checkpoint (Aug 4 certification) that doesn't block the rest of the roadmap but does require a scheduled recheck — flag this as a standing to-do independent of phase sequencing.
 
 ### Research Flags
 
-Phases needing validation during execution:
+Phases likely needing deeper research during planning:
+- **Phase 3 (Extraction Pipeline):** Appendix A/H format specifics are MEDIUM confidence (verified against one sample PDF session, not yet validated against extractor implementation) — needs a research-phase or spike pass against the actual sample PDFs before committing to column-position logic.
+- **Phase 6 (Sankey Crosswalk):** Node-ordering/crossing-minimization and mobile-responsive tactics for a 9-left/7-right diagram are MEDIUM confidence (viz-community sources, not project-verified) — worth a focused look at d3-sankey's ordering options before implementation.
 
-- **Phase 1:** Nivo drill-down state machine — prototype with real budget data before committing to UI polish. If 4-level drill-down is flaky, simplify to 2-level (Strategic Area -> Department) and show expenditure categories as a simple bar chart on the department detail page rather than a 4th treemap level.
-- **Phase 2:** AI description prompt design — validate output on 3-5 sample departments and get commissioner's office sign-off before running the full 44-entity batch and seeding to production.
-
-Phases with standard, well-documented patterns (no additional research needed):
-
-- **Phase 3:** Tax calculator — pure TypeScript arithmetic with Decimal library, millage rate math is well-documented, data is already seeded.
-- **Phase 4:** SEO — Next.js built-in Metadata API is fully documented. PostgreSQL tsvector GIN index pattern is stable. Both use verified approaches from research.
-
----
+Phases with standard patterns (skip research-phase):
+- **Phase 1 (Stage Schema):** HIGH confidence, grounded in direct reads of the actual schema/queries/migrations; the migration SQL is essentially drafted already in ARCHITECTURE.md.
+- **Phase 4 (Diff Computation):** HIGH confidence; mirrors the existing tax-math pure-module pattern already proven in this codebase.
+- **Phase 5 (/proposed Routes):** HIGH confidence; direct extension of verified v1.1 routing/ISR/query-module conventions.
+- **Phase 7 (Calculator):** HIGH confidence architecturally (extends existing pure client-side module); the TRIM statutory content itself is well-documented (Fla. Stat. 200.065).
+- **Phase 8 (AI Narratives):** HIGH confidence; reuses the proven v1.1 pre-generation + human-review pipeline unchanged in structure.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All three Nivo packages verified via `npm view` for React 19 peer dependency compatibility. Rejection of alternatives (Recharts, Victory, D3, Algolia, next-seo) documented with specific GitHub issues and official docs. Zero new packages added for SEO, search, tax calculator, or AI pipeline. |
-| Features | HIGH | Competitor analysis covers USASpending, Open Budget Oakland, USAFacts, VisGov. Feature set verified against existing data model — every P1 feature has seeded data in PostgreSQL. Anti-features documented with specific reasons, not vague concerns. |
-| Architecture | HIGH | Extends proven v1.0 patterns (Server/Client boundary, BigInt serialization, Prisma singleton). New query file structure is concrete with code examples. Static generation and ISR patterns verified against Next.js 16 official docs updated 2026-02-27. |
-| Pitfalls | HIGH | All 7 critical pitfalls have GitHub issue citations or official documentation. Recovery strategies include time estimates and recovery steps. Phase-to-pitfall mapping is explicit. |
+| Stack | HIGH | Single new dependency verified against npm registry directly; all other coverage confirmed by reading actual repo source (package.json, chart components) |
+| Features | MEDIUM-HIGH | Civic-portal patterns verified across multiple live sites and the GFOA award criteria; some figures (e.g., $14.26B breakdown) sourced from news coverage pending pipeline verification against the official Budget in Brief |
+| Architecture | HIGH | Grounded in direct reads of schema.prisma, queries.ts, seed.py, and existing migrations — not inference |
+| Pitfalls | HIGH (system/process) / MEDIUM (viz/AI) | System-specific and Florida TRIM statutory pitfalls verified against actual code and Fla. Stat. 200.065; visualization and AI-narrative pitfalls drawn from viz-community sources and domain judgment |
 
-**Overall confidence: HIGH**
+**Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Nivo `ComputedDatum.path` availability in 0.99.0:** PITFALLS.md warns the `parent` property was missing in older versions (Issue #1936). The ARCHITECTURE.md drill-down implementation uses `node.data` for the click handler, which avoids this dependency. Verify during Phase 1 prototype whether `path` is available in the installed 0.99.0 version before building breadcrumb logic that might depend on it. The manual breadcrumb stack approach in the architecture file is the safe fallback.
-
-- **Homestead exemption amount as configuration:** FEATURES.md cites $50,722 (Amendment 5, 2024). This amount changes annually. The exemption value should be stored as a database constant or application config, not hardcoded in the calculator component, so it can be updated when the exemption amount changes each tax year without a code deployment.
-
-- **AI description prompt quality before batch run:** The prompt design is described (structured JSON output, three fields: summary, detailed_description, key_changes) but the actual prompt text needs validation against 3-5 representative departments before the full 44-entity batch. Test on a large department (MDPD ~$1B), a small department (<$10M), and one with significant YoY change to verify output quality across department profiles.
-
-- **Prisma connection pool under concurrent static generation:** ARCHITECTURE.md flags that `generateStaticParams` generating 35+ pages concurrently can exhaust the Prisma connection pool. Add `connection_limit=5` to `DATABASE_URL` during CI builds, or verify the existing Prisma singleton pattern handles concurrent connections appropriately. Test with `next build` in staging before deploying to production.
-
----
+- **Exact Appendix A/H column layout:** Format facts are based on one 2026-07-18 verification session against sample PDFs, not a completed extractor. Validate column positions and wrap-handling against the actual sample PDFs during Phase 3, with fixture tests, before trusting any extracted number.
+- **$14.26B / $9.02B / $5.24B figures:** Currently sourced from news coverage (MEDIUM confidence per FEATURES.md and PITFALLS.md). Must be verified against the county's own Budget in Brief in the pipeline's verification block before any figure is displayed — treat as unverified until Phase 3's verify step passes.
+- **`fiscal_year_stages` vs. summing `strategic_area_budgets`:** ARCHITECTURE.md rates this MEDIUM-HIGH, not HIGH — the dedicated table is recommended but summing area rows per stage is a viable lighter alternative if schema surface area needs to shrink. Revisit if migration review flags simplicity concerns.
+- **Position/employee-count diffs:** FEATURES.md flags this as pending confirmation that headcount extracts cleanly from the proposed release — treat as a P2 (post-MVP) item contingent on Phase 3 findings, not a committed deliverable.
+- **September adopted-load rehearsal:** Both ARCHITECTURE.md and PITFALLS.md stress a "dress rehearsal" (loading proposed data as stage=adopted into a scratch DB) as the real verification for "September is a data load." This should be an explicit roadmap checkpoint, not just a code review item — schedule it before Sept 3, not after.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [@nivo/treemap npm](https://www.npmjs.com/package/@nivo/treemap) — v0.99.0 peer dependencies (React ^19.0 confirmed via `npm view`)
-- [@nivo/sunburst npm](https://www.npmjs.com/package/@nivo/sunburst) — v0.99.0 peer dependencies confirmed
-- [@nivo/pie npm](https://www.npmjs.com/package/@nivo/pie) — v0.99.0 peer dependencies confirmed
-- [Nivo GitHub Issue #2618](https://github.com/plouc/nivo/issues/2618) — React 19 support confirmed resolved
-- [Nivo GitHub Issue #2626](https://github.com/plouc/nivo/issues/2626) — `use client` required for all Nivo components (createContext error)
-- [Nivo GitHub Issue #1936](https://github.com/plouc/nivo/issues/1936) — ComputedDatum missing parent property (drill-down pitfall)
-- [Nivo GitHub Issue #445](https://github.com/plouc/nivo/issues/445) — mobile touch event bugs on iOS
-- [Recharts GitHub Issue #576](https://github.com/recharts/recharts/issues/576) — no sunburst/treemap; open since 2017
-- [Next.js generateMetadata docs](https://nextjs.org/docs/app/api-reference/functions/generate-metadata) — updated 2026-02-27
-- [Next.js OG images docs](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/opengraph-image) — opengraph-image.tsx convention
-- [Next.js ISR Guide](https://nextjs.org/docs/app/guides/incremental-static-regeneration) — revalidate patterns
-- [Next.js Sitemap docs](https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap) — sitemap.ts convention
-- [Next.js JSON-LD guide](https://nextjs.org/docs/app/guides/json-ld) — structured data pattern
-- [Prisma Full-Text Search docs](https://www.prisma.io/docs/orm/prisma-client/queries/full-text-search) — PostgreSQL FTS confirmed as Preview (not GA)
-- [Prisma Issue #12343](https://github.com/prisma/prisma/issues/12343) — tsvector columns not supported in Prisma schema
-- [Prisma Issue #8950](https://github.com/prisma/prisma/issues/8950) — full-text search index not used by Prisma
-- [Prisma TypedSQL docs](https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/typedsql) — type-safe raw query alternative
-- [PostgreSQL FTS documentation](https://www.postgresql.org/docs/current/textsearch-intro.html) — tsvector/GIN index official reference
-- [Miami-Dade Property Appraiser Tax Estimator](https://apps.miamidadepa.gov/PAOnlineTools/Taxes/TaxEstimator.aspx) — official validation target for calculator accuracy
-- [TPGi: Making Data Visualizations Accessible](https://www.tpgi.com/making-data-visualizations-accessible/) — WCAG AA chart requirements, data table fallback
+- Repo source directly read: `budget-explorer-web/prisma/schema.prisma`, `src/lib/db/queries.ts`, `pipeline/load/seed.py`, `pipeline/migrations/003_appendix_integration.sql`, `pipeline/migrations/004_search_index.sql`, `budget-explorer-web/package.json`, `src/components/charts/ChartContainer.tsx` + `YearOverYearChart.tsx`, `requirements.txt`
+- npm registry (`npm view d3-sankey`, `npm view @types/d3-sankey`) — versions verified 2026-07-18
+- `.planning/PROJECT.md` and `CLAUDE.md` (project) — 2026-07 audit invariants, FY 2026-27 release format verification, priority names
+- [Fla. Stat. § 200.065](https://www.leg.state.fl.us/Statutes/index.cfm?App_mode=Display_Statute&URL=0200-0299%2F0200%2FSections%2F0200.065.html) — statutory TRIM timeline and ceiling semantics
+- [Seattle Open Budget](https://openbudget.seattle.gov/) / [Council Budget Dashboard](https://www.seattle.gov/council/topics/budget-dashboard), [Bakersfield Open Budget](https://budget.bakersfieldcity.us/), [NYC Council Budget Dashboards press release](https://council.nyc.gov/press/2026/03/25/3092/), [Shelby County TN Proposed Budget Disclaimer](https://www.shelbycountytn.gov/3337/Proposed-Budget-Disclaimer), [GFOA Budget Award](https://www.gfoa.org/budget-award)
 
 ### Secondary (MEDIUM confidence)
-- [Open Budget Oakland](https://openbudgetoakland.org/) — competitor feature analysis (direct review)
-- [USAFacts Government Spending](https://usafacts.org/articles/this-chart-tells-you-everything-you-want-to-know-about-government-spending/) — competitor feature analysis
-- [VisGov Visual Budget](https://visgov.com/visual-budget/) — competitor feature analysis; basic tax calculator reference
-- [Bulletproof FTS in Prisma with PostgreSQL tsvector](https://medium.com/@chauhananubhav16/bulletproof-full-text-search-fts-in-prisma-with-postgresql-tsvector-without-migration-drift-c421f63aaab3) — tsvector outside Prisma schema migration pattern
-- [Pedro Alonso: PostgreSQL FTS with Prisma raw SQL](https://www.pedroalonso.net/blog/postgres-full-text-search/) — $queryRaw search query pattern
-- [Deque: How to Make Interactive Charts Accessible](https://www.deque.com/blog/how-to-make-interactive-charts-accessible/) — data table fallback WCAG requirement
-- [Miami-Dade Property Tax Guide](https://www.propertyexemption.com/property-tax/miami-property-tax/) — homestead exemption amounts and Amendment 5 details
-- [Political Math 10,000 Pennies](https://dataphys.org/list/federal-budget-explained-with-10000-pennies/) — penny visualization concept validation (1.7M views)
+- [OpenGov Budget Book](https://opengov.com/products/budgeting-and-planning/budget-book/) examples, [ClearGov operational budgeting](https://cleargov.com/products/operational-budgeting)
+- [Caribbean National Weekly: Miami-Dade FY2026-27 proposed budget figures](https://www.caribbeannationalweekly.com/posts/miami-dade-mayor-proposes-142-billion-fy2026-27-budget-keeps-county-tax-rate-unchanged), cross-checked against [miamidade.gov budget page](https://www.miamidade.gov/global/management/budget/home.page)
+- [Florida DOR TRIM Compliance Workbook](https://floridarevenue.com/property/Documents/trimregwb.pdf), [Manatee PAO](https://www.manateepao.gov/trim-notices/), [Collier Clerk on proposed millage as maximum](https://www.collierclerk.com/board-of-county-commissioners-adopts-proposed-millage-rates-as-maximum-property-tax-rates/)
+- Winners-and-losers journalism convention: [Axios](https://www.axios.com/2025/05/02/trumps-budget-winners-losers), [Washington Post DC 2026 budget](https://www.washingtonpost.com/dc-md-va/2025/07/30/dc-budget-winners-and-losers/)
+
+### Tertiary (LOW-MEDIUM confidence, needs validation)
+- Sankey design-mistake sources: [Datasketch](https://datasketch.blog/en/post/the-5-most-common-mistakes-in-designing-a-sankey-diagram-and-how-to-avoid-them/), [PolicyViz](https://policyviz.com/2021/02/02/the-sankey-diagram/), [Plotly Sankey deep dive](https://plotly.com/blog/sankey-diagrams/) — community best-practice, not project-verified
+- [USAFacts government spending Sankey](https://usafacts.org/articles/this-chart-tells-you-everything-you-want-to-know-about-government-spending/) — precedent reference only
 
 ---
-*Research completed: 2026-02-28*
+*Research completed: 2026-07-18*
 *Ready for roadmap: yes*
