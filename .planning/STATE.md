@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: null
-milestone_name: null
-status: between_milestones
-last_updated: "2026-03-01T20:30:00.000Z"
+milestone: v1.2
+milestone_name: FY 2026-27 Proposed Budget
+status: defining_requirements
+last_updated: "2026-07-18T23:59:00.000Z"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Residents can instantly see how their specific tax dollars fund county services -- from the total $13.2 billion down to individual departments -- without reading a single PDF.
-**Current focus:** v1.1 shipped. Planning next milestone.
+**Current focus:** v1.2 FY 2026-27 Proposed Budget
 
 ## Current Position
 
-Phase: None (between milestones)
-Plan: None
-Status: v1.1 Full Feature Set shipped 2026-03-01
-Last activity: 2026-03-01 - Completed v1.1 milestone
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-18 — Milestone v1.2 started (proposed-release format verified against real PDFs same day)
 
 Progress: v1.0 (8 plans) + v1.1 (10 plans) = 18 plans shipped
 

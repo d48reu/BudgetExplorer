@@ -40,7 +40,25 @@ Residents can instantly see how their specific tax dollars fund county services 
 
 ### Active
 
-(No active requirements -- next milestone TBD)
+- [ ] FY 2026-27 proposed budget extracted from proposed-release PDFs (Appendix A operating, Appendix H capital) and verified against published totals
+- [ ] Proposed budget presented in a clearly-separated /proposed section that cannot be mistaken for adopted figures
+- [ ] Department-level proposed-vs-adopted diffs (dollar and percent) across the site
+- [ ] Strategic Priority reorganization (9 areas → 7 priorities) modeled and visualized via dollar-weighted Sankey crosswalk
+- [ ] Tax calculator compares resident's bill under current vs proposed millage
+- [ ] AI-generated plain-English "what's changing" narratives per department
+- [ ] Budget stage modeled explicitly (proposed/adopted/actual) so September's adopted budget is a data load, not a rebuild
+
+## Current Milestone: v1.2 FY 2026-27 Proposed Budget
+
+**Goal:** Ship a clearly-separated, diff-centric view of the Mayor's FY 2026-27 proposed budget before the September 3 and 17 budget hearings.
+
+**Target features:**
+- Proposed-release pipeline: new Appendix A/H extractors, FY 2026-27 verification block, seven Strategic Priority rows
+- /proposed section with distinct visual identity and department diff pages
+- Diverging-bar department change chart and countywide waterfall
+- Dollar-weighted Sankey: 9 strategic areas → 7 strategic priorities
+- Calculator current-vs-proposed millage comparison
+- AI change narratives; stage-aware schema ready for the adopted budget in September
 
 ### Out of Scope
 
@@ -72,6 +90,8 @@ Shipped v1.1 Full Feature Set (2026-03-01) with ~34,500 LOC TypeScript/CSS (web 
 - **Millage rates**: Full breakdown for tax calculator (total county: 9.5778 mills)
 - **Tech stack**: Next.js 16.1.6, TypeScript, Tailwind CSS v4, Prisma 7 (PrismaPg adapter), PostgreSQL, D3.js + Recharts, Vitest, pnpm; Python pipeline with pdfplumber + Anthropic Claude API
 - **Known tech debt**: Umami analytics placeholder in layout.tsx (deferred to post-launch), /calculator and /search lack Breadcrumbs (top-level nav, minimal impact)
+- **FY 2026-27 proposed release (verified 2026-07-18)**: published at miamidade.gov/resources/budget/fy-26-27/proposed/ as Budget in Brief (7-page summary) + Volumes 1-3 + standalone appendices A-P. Department operating table is Appendix A (paired FY 25-26/26-27 columns, 8 revenue-source groups, 16 numbers per Department Total line, "Strategic Priority:" headers); capital is Appendix H (department + 9 numbers on one line, proposed year = column 2, long names wrap mid-line). Appendix letters do NOT match the adopted release (adopted C/J ≠ proposed C/J). County reorganized 9 Strategic Areas into 7 Strategic Priorities: Policy Formulation, Constitutional Offices ("Constitutional Office" in Appendix A — county typo), An Economy that Works for All, Healthy and Safe Communities, Investment in Infrastructure, Risk Reduction and Resilience, Fiscal Responsibility and Efficiency. Sample PDFs and format analysis preserved from 2026-07-18 session.
+- **2026-07-18 audit**: 18 confirmed findings fixed (multi-row budget aggregation, Appendix J capital misattribution, search index, TLS, ISR); production Neon reseeded and verified 13/13; data model invariants recorded in CLAUDE.md
 
 ## Constraints
 
@@ -106,4 +126,4 @@ Shipped v1.1 Full Feature Set (2026-03-01) with ~34,500 LOC TypeScript/CSS (web 
 | Vitest for testing | First test framework; pure tax-math module with zero React deps | ✓ Good -- 16 unit tests, fast |
 
 ---
-*Last updated: 2026-03-01 after v1.1 milestone*
+*Last updated: 2026-07-18 after starting milestone v1.2*
