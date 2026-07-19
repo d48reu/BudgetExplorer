@@ -72,12 +72,13 @@ def seed_fiscal_year(conn, label: str, start_date: str, end_date: str,
 
 
 def seed_department_budgets(conn, fiscal_year_id: int,
-                            departments: list[dict]):
+                            departments: list[dict],
+                            stage: str = 'adopted'):
     """Seed department budget records for a fiscal year.
 
-    Idempotent: deletes existing records for the fiscal year before inserting.
-    Uses fuzzy name matching (ILIKE) to resolve department names from the
-    PDF to database department records.
+    Idempotent: deletes existing records for the fiscal year and stage
+    before inserting. Uses fuzzy name matching (ILIKE) to resolve
+    department names from the PDF to database department records.
 
     Args:
         conn: psycopg2 connection.
@@ -85,13 +86,16 @@ def seed_department_budgets(conn, fiscal_year_id: int,
         departments: List of dicts from extraction, each with keys:
             name, operating_budget, capital_budget, total_budget,
             employee_count, strategic_area.
+        stage: Budget stage for the rows ('adopted' or 'proposed').
     """
     cur = conn.cursor()
 
-    # Delete existing records for this fiscal year
+    # Delete existing records for this fiscal year and stage only --
+    # a stage-scoped delete can never wipe another stage's rows
     cur.execute(
-        "DELETE FROM department_budgets WHERE fiscal_year_id = %s",
-        (fiscal_year_id,)
+        "DELETE FROM department_budgets "
+        "WHERE fiscal_year_id = %s AND stage = %s",
+        (fiscal_year_id, stage)
     )
 
     # Build department name -> id lookup
@@ -124,11 +128,11 @@ def seed_department_budgets(conn, fiscal_year_id: int,
         cur.execute("""
             INSERT INTO department_budgets
                 (fiscal_year_id, department_id, operating_budget,
-                 capital_budget, total_budget, employee_count, is_actual)
-            VALUES (%s, %s, %s, %s, %s, %s, FALSE)
+                 capital_budget, total_budget, employee_count, stage)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (
             fiscal_year_id, department_id, operating, capital,
-            total, employee_count,
+            total, employee_count, stage,
         ))
         seeded += 1
 
@@ -141,10 +145,12 @@ def seed_department_budgets(conn, fiscal_year_id: int,
 
 def seed_strategic_area_budgets(conn, fiscal_year_id: int,
                                 areas: list[dict],
-                                penny: list[dict] = None):
+                                penny: list[dict] = None,
+                                stage: str = 'adopted'):
     """Seed strategic area budget records for a fiscal year.
 
-    Idempotent: deletes existing records for the fiscal year before inserting.
+    Idempotent: deletes existing records for the fiscal year and stage
+    before inserting.
 
     Args:
         conn: psycopg2 connection.
@@ -153,13 +159,15 @@ def seed_strategic_area_budgets(conn, fiscal_year_id: int,
             name, operating_budget, capital_budget, total_budget.
         penny: Optional list of dicts from penny extraction, each with keys:
             area, cents. Used to populate cents_per_dollar.
+        stage: Budget stage for the rows ('adopted' or 'proposed').
     """
     cur = conn.cursor()
 
-    # Delete existing records for this fiscal year
+    # Delete existing records for this fiscal year and stage only
     cur.execute(
-        "DELETE FROM strategic_area_budgets WHERE fiscal_year_id = %s",
-        (fiscal_year_id,)
+        "DELETE FROM strategic_area_budgets "
+        "WHERE fiscal_year_id = %s AND stage = %s",
+        (fiscal_year_id, stage)
     )
 
     # Build strategic area name -> id lookup
@@ -190,10 +198,11 @@ def seed_strategic_area_budgets(conn, fiscal_year_id: int,
         cur.execute("""
             INSERT INTO strategic_area_budgets
                 (fiscal_year_id, strategic_area_id, operating_budget,
-                 capital_budget, cents_per_dollar)
-            VALUES (%s, %s, %s, %s, %s)
+                 capital_budget, cents_per_dollar, stage)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """, (
             fiscal_year_id, area_id, operating, capital, cents_per_dollar,
+            stage,
         ))
         seeded += 1
 
@@ -208,6 +217,7 @@ def seed_department_budgets_from_appendix(
     conn, fiscal_year_id: int,
     appendix_c_depts: list[dict],
     appendix_j_depts: list[dict],
+    stage: str = 'adopted',
 ):
     """Seed department budgets using Appendix C (operating) and J (capital).
 
@@ -218,13 +228,16 @@ def seed_department_budgets_from_appendix(
     Handles multi-area departments: same department can appear in multiple
     strategic areas with different budget rows.
 
-    Idempotent: deletes existing records for the fiscal year before inserting.
+    Idempotent: deletes existing records for the fiscal year and stage
+    before inserting.
     """
     cur = conn.cursor()
 
+    # Stage-scoped delete: loading one stage never wipes another stage's rows
     cur.execute(
-        "DELETE FROM department_budgets WHERE fiscal_year_id = %s",
-        (fiscal_year_id,)
+        "DELETE FROM department_budgets "
+        "WHERE fiscal_year_id = %s AND stage = %s",
+        (fiscal_year_id, stage)
     )
 
     dept_lookup = _build_department_lookup(cur)
@@ -270,11 +283,11 @@ def seed_department_budgets_from_appendix(
             INSERT INTO department_budgets
                 (fiscal_year_id, department_id, strategic_area_id,
                  operating_budget, capital_budget, total_budget,
-                 employee_count, is_actual)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, FALSE)
+                 employee_count, stage)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             fiscal_year_id, department_id, strategic_area_id,
-            operating, capital, total, employee_count,
+            operating, capital, total, employee_count, stage,
         ))
         seeded += 1
 
@@ -298,11 +311,11 @@ def seed_department_budgets_from_appendix(
             INSERT INTO department_budgets
                 (fiscal_year_id, department_id, strategic_area_id,
                  operating_budget, capital_budget, total_budget,
-                 employee_count, is_actual)
-            VALUES (%s, %s, %s, 0, %s, %s, NULL, FALSE)
+                 employee_count, stage)
+            VALUES (%s, %s, %s, 0, %s, %s, NULL, %s)
         """, (
             fiscal_year_id, department_id, strategic_area_id,
-            capital, capital,
+            capital, capital, stage,
         ))
         seeded += 1
 
@@ -319,19 +332,23 @@ def seed_strategic_area_budgets_from_appendix(
     c_area_totals: list[dict],
     j_area_totals: list[dict],
     penny: list[dict] = None,
+    stage: str = 'adopted',
 ):
     """Seed strategic area budgets using Appendix C and J area totals.
 
     Appendix C provides operating totals per area, Appendix J provides
     capital totals per area. Both in thousands.
 
-    Idempotent: deletes existing records for the fiscal year before inserting.
+    Idempotent: deletes existing records for the fiscal year and stage
+    before inserting.
     """
     cur = conn.cursor()
 
+    # Stage-scoped delete: loading one stage never wipes another stage's rows
     cur.execute(
-        "DELETE FROM strategic_area_budgets WHERE fiscal_year_id = %s",
-        (fiscal_year_id,)
+        "DELETE FROM strategic_area_budgets "
+        "WHERE fiscal_year_id = %s AND stage = %s",
+        (fiscal_year_id, stage)
     )
 
     area_lookup = _build_strategic_area_lookup(cur)
@@ -366,10 +383,11 @@ def seed_strategic_area_budgets_from_appendix(
         cur.execute("""
             INSERT INTO strategic_area_budgets
                 (fiscal_year_id, strategic_area_id, operating_budget,
-                 capital_budget, cents_per_dollar)
-            VALUES (%s, %s, %s, %s, %s)
+                 capital_budget, cents_per_dollar, stage)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """, (
             fiscal_year_id, area_id, operating, capital, cents_per_dollar,
+            stage,
         ))
         seeded += 1
 
@@ -380,23 +398,27 @@ def seed_strategic_area_budgets_from_appendix(
     )
 
 
-def seed_revenue(conn, fiscal_year_id: int, revenue: list[dict]):
+def seed_revenue(conn, fiscal_year_id: int, revenue: list[dict],
+                 stage: str = 'adopted'):
     """Seed revenue by source records for a fiscal year.
 
-    Idempotent: deletes existing records for the fiscal year before inserting.
+    Idempotent: deletes existing records for the fiscal year and stage
+    before inserting.
 
     Args:
         conn: psycopg2 connection.
         fiscal_year_id: ID of the target fiscal year.
         revenue: List of dicts from extraction, each with keys:
             source, amount, percentage.
+        stage: Budget stage for the rows ('adopted' or 'proposed').
     """
     cur = conn.cursor()
 
-    # Delete existing records for this fiscal year
+    # Delete existing records for this fiscal year and stage only
     cur.execute(
-        "DELETE FROM revenue_by_source WHERE fiscal_year_id = %s",
-        (fiscal_year_id,)
+        "DELETE FROM revenue_by_source "
+        "WHERE fiscal_year_id = %s AND stage = %s",
+        (fiscal_year_id, stage)
     )
 
     # Build revenue source name -> id lookup
@@ -421,10 +443,10 @@ def seed_revenue(conn, fiscal_year_id: int, revenue: list[dict]):
         cur.execute("""
             INSERT INTO revenue_by_source
                 (fiscal_year_id, revenue_source_id, amount, percentage,
-                 is_actual)
-            VALUES (%s, %s, %s, %s, FALSE)
+                 stage)
+            VALUES (%s, %s, %s, %s, %s)
         """, (
-            fiscal_year_id, source_id, amount, percentage,
+            fiscal_year_id, source_id, amount, percentage, stage,
         ))
         seeded += 1
 
@@ -435,23 +457,27 @@ def seed_revenue(conn, fiscal_year_id: int, revenue: list[dict]):
     )
 
 
-def seed_millage_rates(conn, fiscal_year_id: int, rates: list[dict]):
+def seed_millage_rates(conn, fiscal_year_id: int, rates: list[dict],
+                       stage: str = 'adopted'):
     """Seed millage rate records for a fiscal year.
 
-    Idempotent: deletes existing records for the fiscal year before inserting.
+    Idempotent: deletes existing records for the fiscal year and stage
+    before inserting.
 
     Args:
         conn: psycopg2 connection.
         fiscal_year_id: ID of the target fiscal year.
         rates: List of dicts from extraction, each with keys:
             authority, millage_rate, is_county.
+        stage: Budget stage for the rows ('adopted' or 'proposed').
     """
     cur = conn.cursor()
 
-    # Delete existing records for this fiscal year
+    # Delete existing records for this fiscal year and stage only
     cur.execute(
-        "DELETE FROM millage_rates WHERE fiscal_year_id = %s",
-        (fiscal_year_id,)
+        "DELETE FROM millage_rates "
+        "WHERE fiscal_year_id = %s AND stage = %s",
+        (fiscal_year_id, stage)
     )
 
     seeded = 0
@@ -476,14 +502,15 @@ def seed_millage_rates(conn, fiscal_year_id: int, rates: list[dict]):
         cur.execute("""
             INSERT INTO millage_rates
                 (fiscal_year_id, authority, millage_rate, is_county,
-                 display_order)
-            VALUES (%s, %s, %s, %s, %s)
-            ON CONFLICT (fiscal_year_id, authority) DO UPDATE SET
+                 display_order, stage)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (fiscal_year_id, authority, stage) DO UPDATE SET
                 millage_rate = EXCLUDED.millage_rate,
                 is_county = EXCLUDED.is_county,
                 display_order = EXCLUDED.display_order
         """, (
             fiscal_year_id, authority, millage_rate, is_county, i + 1,
+            stage,
         ))
         seeded += 1
 
@@ -495,7 +522,8 @@ def seed_millage_rates(conn, fiscal_year_id: int, rates: list[dict]):
 
 
 def seed_all(conn, data: dict, fiscal_year_label: str = "FY 2025-26",
-             start_date: str = "2025-10-01", end_date: str = "2026-09-30"):
+             start_date: str = "2025-10-01", end_date: str = "2026-09-30",
+             stage: str = 'adopted'):
     """Orchestrate all seed functions in order.
 
     Wraps everything in a single transaction. The caller is responsible
@@ -508,6 +536,8 @@ def seed_all(conn, data: dict, fiscal_year_label: str = "FY 2025-26",
         fiscal_year_label: Fiscal year label (default 'FY 2025-26').
         start_date: Fiscal year start date (default '2025-10-01').
         end_date: Fiscal year end date (default '2026-09-30').
+        stage: Budget stage written on every row (default 'adopted';
+            Phase 8 passes 'proposed' for FY 2026-27 proposed data).
 
     Returns:
         Dict with seed counts for each data type.
@@ -545,12 +575,12 @@ def seed_all(conn, data: dict, fiscal_year_label: str = "FY 2025-26",
 
         # Step 2: Seed strategic area budgets from appendices
         seed_strategic_area_budgets_from_appendix(
-            conn, fiscal_year_id, c_areas, j_areas, penny
+            conn, fiscal_year_id, c_areas, j_areas, penny, stage=stage
         )
 
         # Step 3: Seed department budgets from appendices
         seed_department_budgets_from_appendix(
-            conn, fiscal_year_id, c_depts, j_depts
+            conn, fiscal_year_id, c_depts, j_depts, stage=stage
         )
 
         dept_count = len(c_depts)
@@ -558,21 +588,23 @@ def seed_all(conn, data: dict, fiscal_year_label: str = "FY 2025-26",
     else:
         # BIB-only path (backward compatible)
         strategic_areas = data.get("strategic_areas", [])
-        seed_strategic_area_budgets(conn, fiscal_year_id, strategic_areas, penny)
+        seed_strategic_area_budgets(
+            conn, fiscal_year_id, strategic_areas, penny, stage=stage
+        )
 
         departments = data.get("departments", [])
-        seed_department_budgets(conn, fiscal_year_id, departments)
+        seed_department_budgets(conn, fiscal_year_id, departments, stage=stage)
 
         dept_count = len(departments)
         area_count = len(strategic_areas)
 
     # Step 4: Seed revenue
     revenue = data.get("revenue", [])
-    seed_revenue(conn, fiscal_year_id, revenue)
+    seed_revenue(conn, fiscal_year_id, revenue, stage=stage)
 
     # Step 5: Seed millage rates
     millage = data.get("millage", [])
-    seed_millage_rates(conn, fiscal_year_id, millage)
+    seed_millage_rates(conn, fiscal_year_id, millage, stage=stage)
 
     return {
         "fiscal_year_id": fiscal_year_id,

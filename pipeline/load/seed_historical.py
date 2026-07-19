@@ -23,6 +23,16 @@ from pipeline.transform.historical import (
 logger = logging.getLogger(__name__)
 
 
+def _record_stage(record: dict) -> str:
+    """Map a historical record's legacy boolean to a budget stage.
+
+    The CSV files and transform/historical.py keep the is_actual column
+    name; this is the single place the load layer reads it. Everything
+    downstream speaks stage ('actual' or 'adopted').
+    """
+    return "actual" if record.get("is_actual", False) else "adopted"
+
+
 def resolve_strategic_area(conn, name: str) -> int | None:
     """Resolve a strategic area name to a database ID.
 
@@ -166,11 +176,16 @@ def seed_historical_year(
     )
     fiscal_year_id = cur.fetchone()[0]
 
-    # Delete existing department_budgets for this fiscal year (idempotent)
-    cur.execute(
-        "DELETE FROM department_budgets WHERE fiscal_year_id = %s",
-        (fiscal_year_id,),
-    )
+    # Delete existing department_budgets for this fiscal year (idempotent),
+    # scoped to the stages actually present in the incoming data so a
+    # historical reseed can never wipe rows from another stage
+    stages_in_data = sorted({_record_stage(record) for record in data})
+    for stg in stages_in_data:
+        cur.execute(
+            "DELETE FROM department_budgets "
+            "WHERE fiscal_year_id = %s AND stage = %s",
+            (fiscal_year_id, stg),
+        )
 
     seeded = 0
     skipped = 0
@@ -201,7 +216,8 @@ def seed_historical_year(
         # Aliases can resolve several historical names to one current
         # department; conflicting rows must SUM, not overwrite, or one
         # predecessor's budget silently disappears.
-        key = (department_id, strategic_area_id, record.get("is_actual", False))
+        stage = _record_stage(record)
+        key = (department_id, strategic_area_id, stage)
         if key in seen_keys:
             logger.warning(
                 "%s: multiple rows resolve to the same department in one "
@@ -215,9 +231,9 @@ def seed_historical_year(
             INSERT INTO department_budgets
                 (fiscal_year_id, department_id, strategic_area_id,
                  operating_budget, capital_budget, total_budget,
-                 employee_count, is_actual)
+                 employee_count, stage)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (fiscal_year_id, department_id, strategic_area_id, is_actual)
+            ON CONFLICT (fiscal_year_id, department_id, strategic_area_id, stage)
             DO UPDATE SET
                 operating_budget = COALESCE(department_budgets.operating_budget, 0)
                     + COALESCE(EXCLUDED.operating_budget, 0),
@@ -240,7 +256,7 @@ def seed_historical_year(
                 record["capital_budget_cents"],
                 record["total_budget_cents"],
                 record.get("employee_count"),
-                record.get("is_actual", False),
+                stage,
             ),
         )
         seeded += 1

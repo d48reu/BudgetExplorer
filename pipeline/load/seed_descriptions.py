@@ -89,19 +89,23 @@ def seed_descriptions(json_path: str):
 
             department_id = dept_row[0]
 
-            # Delete existing description (idempotent)
+            # Delete existing description (idempotent); stage-scoped so
+            # adopted descriptions never clobber proposed ones (or vice versa)
             cur.execute(
                 "DELETE FROM budget_descriptions "
-                "WHERE fiscal_year_id = %s AND entity_type = 'department' AND entity_id = %s",
+                "WHERE fiscal_year_id = %s AND entity_type = 'department' "
+                "AND entity_id = %s AND stage = 'adopted'",
                 (fiscal_year_id, department_id),
             )
 
-            # Insert new description
+            # Insert new description (stage literal for now; Phase 13
+            # parameterizes when descriptions regenerate per stage)
             cur.execute(
                 "INSERT INTO budget_descriptions "
                 "(fiscal_year_id, entity_type, entity_id, summary, "
-                "detailed_description, key_changes, generated_at, model_version) "
-                "VALUES (%s, 'department', %s, %s, %s, %s, %s, %s)",
+                "detailed_description, key_changes, generated_at, "
+                "model_version, stage) "
+                "VALUES (%s, 'department', %s, %s, %s, %s, %s, %s, 'adopted')",
                 (
                     fiscal_year_id,
                     department_id,
