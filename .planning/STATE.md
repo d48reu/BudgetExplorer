@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: FY 2026-27 Proposed Budget
 status: executing
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-07-19T04:22:05.222Z"
-last_activity: 2026-07-19 -- 07-02 complete (Migration A applied locally, exact backfill, render-invisible)
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-07-19T04:28:41.794Z"
+last_activity: "2026-07-19 -- 07-03 complete (Deploy 1 web contract: final-state schema.prisma + stage-scoped reader queries, render-invisible)"
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-07-18)
 ## Current Position
 
 Phase: 7 of 13 (Stage-Aware Schema Foundation) -- in progress
-Plan: 2 of 6 complete (next: 07-03)
+Plan: 3 of 6 complete (07-04 in parallel wave; next: 07-05)
 Status: Executing phase 7 plans
-Last activity: 2026-07-19 -- 07-02 complete (Migration A applied locally: budget_stage enum + backfilled stage columns, render-invisible)
+Last activity: 2026-07-19 -- 07-03 complete (Deploy 1 web contract: final-state schema.prisma + stage-scoped reader queries, 69/69 render-identical)
 
 Progress: [------------------------------] 0/7 v1.2 phases
 
@@ -56,6 +56,8 @@ v1.2 roadmap decisions:
 - [Phase 07]: Snapshot manifest keyed by URL path (origin-independent) so local and prod captures diff directly
 - [Phase 07]: Pre-flight audits clean: no stray actual-era rows (simple Migration A backfill suffices); Migration B constraint names verified identical on local and prod
 - [Phase 07]: Migration A shipped verbatim (clean audit); Tier 1 snapshot normalization extended to collapse Next build-id doctype comment only
+- [Phase 07]: Deploy 1 web contract hand-written mid-window: final post-B schema.prisma (is_actual absent, 007 constraint names) + 10 stage-adopted reader filters + three-way YoY; 69/69 render-identical to baseline
+- [Phase 07]: stage placed as last scalar field and enum after models to match prisma db pull emission order (07-05 no-diff gate)
 
 ### Pending Todos
 
@@ -76,9 +78,10 @@ v1.2 roadmap decisions:
 | 1 | Clean up orphaned exports: remove unused ChartTooltip, centsToDollars, getDepartmentCount | 2026-03-01 | 59054e5 | [1-clean-up-orphaned-exports-remove-unused-](./quick/1-clean-up-orphaned-exports-remove-unused-/) |
 | Phase 07 P01 | 15min | 3 tasks | 3 files |
 | Phase 07 P02 | 4min | 2 tasks | 2 files |
+| Phase 07-stage-aware-schema-foundation P03 | 4min | 3 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-07-19T04:22:05.220Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-07-19T04:28:41.793Z
+Stopped at: Completed 07-03-PLAN.md
 Resume file: None
