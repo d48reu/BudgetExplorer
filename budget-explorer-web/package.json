@@ -7,7 +7,8 @@
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "snapshot": "node scripts/snapshot.mjs"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.18",

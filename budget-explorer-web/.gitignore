@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# snapshot regression gate output (scripts/snapshot.mjs)
+.snapshots/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
