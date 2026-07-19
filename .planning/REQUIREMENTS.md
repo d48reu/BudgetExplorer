@@ -83,13 +83,37 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated by roadmap) | | |
+| DATA-01 | Phase 7 | Pending |
+| DATA-02 | Phase 8 | Pending |
+| DATA-03 | Phase 8 | Pending |
+| DATA-04 | Phase 13 | Pending |
+| PIPE-01 | Phase 8 | Pending |
+| PIPE-02 | Phase 8 | Pending |
+| PIPE-03 | Phase 8 | Pending |
+| PIPE-04 | Phase 8 | Pending |
+| PIPE-05 | Phase 8 | Pending |
+| PIPE-06 | Phase 8 | Pending |
+| PIPE-07 | Phase 8 | Pending |
+| DIFF-01 | Phase 9 | Pending |
+| PROP-01 | Phase 10 | Pending |
+| PROP-02 | Phase 10 | Pending |
+| PROP-03 | Phase 10 | Pending |
+| PROP-04 | Phase 10 | Pending |
+| PROP-05 | Phase 10 | Pending |
+| PROP-06 | Phase 10 | Pending |
+| PROP-07 | Phase 10 | Pending |
+| PROP-08 | Phase 10 | Pending |
+| VIZ-08 | Phase 11 | Pending |
+| CALC-06 | Phase 12 | Pending |
+| CALC-07 | Phase 12 | Pending |
+| AI-05 | Phase 13 | Pending |
+| AI-06 | Phase 13 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24 ⚠️ (roadmap pending)
+- v1.2 requirements: 25 total (count corrected 2026-07-18 during roadmap creation; previous "24" was a miscount)
+- Mapped to phases: 25
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-07-18*
-*Last updated: 2026-07-18 after initial definition*
+*Last updated: 2026-07-18 after roadmap creation (traceability populated, count corrected to 25)*
