@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: FY 2026-27 Proposed Budget
 status: executing
-stopped_at: Completed 07-04-PLAN.md
-last_updated: "2026-07-19T04:30:34.933Z"
-last_activity: "2026-07-19 -- 07-04 complete (pipeline fully stage-native: seeders write explicit stage with stage-based conflict targets and stage-scoped deletes; verify green 13/13 via stage)"
+stopped_at: Completed 07-05-PLAN.md
+last_updated: "2026-07-19T04:39:07.905Z"
+last_activity: "2026-07-19 -- 07-05 complete (Migration B applied locally: is_actual unrepresentable, stage keys live, db-pull zero-diff, snapshots identical, proposed-row probe proves stage isolation)"
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-07-18)
 ## Current Position
 
 Phase: 7 of 13 (Stage-Aware Schema Foundation) -- in progress
-Plan: 4 of 6 complete (Wave 3 done; next: 07-05 Migration B)
+Plan: 5 of 6 complete (Wave 4 done; next: 07-06 prod rollout)
 Status: Executing phase 7 plans
-Last activity: 2026-07-19 -- 07-04 complete (pipeline fully stage-native: seeders write explicit stage with stage-based conflict targets and stage-scoped deletes; verify green 13/13 via stage)
+Last activity: 2026-07-19 -- 07-05 complete (Migration B applied locally: is_actual unrepresentable, stage keys live, db-pull zero-diff, snapshots identical, proposed-row probe proves stage isolation)
 
 Progress: [------------------------------] 0/7 v1.2 phases
 
@@ -60,6 +60,9 @@ v1.2 roadmap decisions:
 - [Phase 07]: stage placed as last scalar field and enum after models to match prisma db pull emission order (07-05 no-diff gate)
 - [Phase 07]: Pipeline loaders/readers rewritten to final stage-only state during dual-column window; loaders must not run until Migration B (07-05) creates the stage-based unique constraints
 - [Phase 07]: All FY-scoped seeder DELETEs stage-scoped (6 in seed.py, per-stage in seed_historical.py) -- September stage-wipe landmine defused at loader level
+- [Phase 07]: Migration B applied locally: is_actual unrepresentable (columns dropped, 5 stage keys, no defaults, views on adopted); prisma db pull zero-diff proves schema convergence
+- [Phase 07]: is_actual grep gate excludes append-only migration SQL and the CSV generator; live-code allowlist is exactly transform/historical.py + seed_historical.py
+- [Phase 07]: Stage isolation proven: six proposed sentinel rows in a scratch clone changed zero rendered bytes across 69 pages (stage-probe.sql is the standing Phases 8-13 leak drill)
 
 ### Pending Todos
 
@@ -82,9 +85,10 @@ v1.2 roadmap decisions:
 | Phase 07 P02 | 4min | 2 tasks | 2 files |
 | Phase 07-stage-aware-schema-foundation P03 | 4min | 3 tasks | 2 files |
 | Phase 07 P04 | 8min | 2 tasks | 5 files |
+| Phase 07 P05 | 6min | 3 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-07-19T04:30:34.931Z
-Stopped at: Completed 07-04-PLAN.md
+Last session: 2026-07-19T04:39:07.904Z
+Stopped at: Completed 07-05-PLAN.md
 Resume file: None

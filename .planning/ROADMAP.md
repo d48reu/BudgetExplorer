@@ -61,9 +61,9 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 Plans:
 - [x] 07-01-PLAN.md — Snapshot regression gate + pre-migration baseline + pre-flight audits (wave 1)
 - [x] 07-02-PLAN.md — Migration A (expand): budget_stage enum + backfilled stage columns, proven invisible (wave 2)
-- [ ] 07-03-PLAN.md — Deploy 1 web code: final-state schema.prisma + 10 stage-filtered reader queries (wave 3)
-- [ ] 07-04-PLAN.md — Stage-native pipeline: seeders, checker, descriptions generator (wave 3)
-- [ ] 07-05-PLAN.md — Migration B (contract) + convergence gates + proposed-row probe (wave 4)
+- [x] 07-03-PLAN.md — Deploy 1 web code: final-state schema.prisma + 10 stage-filtered reader queries (wave 3)
+- [x] 07-04-PLAN.md — Stage-native pipeline: seeders, checker, descriptions generator (wave 3)
+- [x] 07-05-PLAN.md — Migration B (contract) + convergence gates + proposed-row probe (wave 4)
 - [ ] 07-06-PLAN.md — Production rollout: A -> Deploy 1 -> B same day, byte-identity proven (wave 5)
 
 ### Phase 8: Proposed Budget Pipeline & Reference Data
