@@ -12,10 +12,11 @@
  *
  * Tier 0 (default diff): raw SHA-256 byte compare per page. Valid whenever both
  *   snapshots come from the same build. This is the true "byte-identical" gate.
- * Tier 1 (--normalize): strips <script> element bodies (tags kept) and collapses
- *   /_next/static/... asset paths to a placeholder before hashing. For cross-build
- *   comparisons only — removes exactly the build-artifact noise (random buildId,
- *   hashed chunk names, RSC flight payload) while keeping all server-rendered HTML.
+ * Tier 1 (--normalize): strips <script> element bodies (tags kept), collapses
+ *   /_next/static/... asset paths to a placeholder, and collapses the build-id
+ *   comment after <!DOCTYPE html> before hashing. For cross-build comparisons
+ *   only — removes exactly the build-artifact noise (random buildId, hashed
+ *   chunk names, RSC flight payload) while keeping all server-rendered HTML.
  */
 
 import fs from "node:fs";
@@ -115,10 +116,14 @@ async function capture(args) {
  *     (added/removed/moved script) still surfaces as a mismatch.
  * (b) Collapse every /_next/static/... asset path (up to the next quote,
  *     whitespace, backslash, or angle bracket) to /_next/static/X.
+ * (c) Collapse the random build-id comment Next emits immediately after
+ *     <!DOCTYPE html> (e.g. <!--rLTcd68TKbqwe0UqBDA48-->) to <!--X-->.
+ *     Only a bare-token comment in that exact position is forgiven.
  */
 function normalize(html) {
   let out = html.replace(/(<script\b[^>]*>)[\s\S]*?(<\/script>)/gi, "$1$2");
   out = out.replace(/\/_next\/static\/[^"'\s\\<>]*/g, "/_next/static/X");
+  out = out.replace(/^(<!DOCTYPE html>)<!--[A-Za-z0-9_-]+-->/i, "$1<!--X-->");
   return out;
 }
 
