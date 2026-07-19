@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: FY 2026-27 Proposed Budget
 status: executing
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-07-19T04:28:41.794Z"
-last_activity: "2026-07-19 -- 07-03 complete (Deploy 1 web contract: final-state schema.prisma + stage-scoped reader queries, render-invisible)"
+stopped_at: Completed 07-04-PLAN.md
+last_updated: "2026-07-19T04:30:34.933Z"
+last_activity: "2026-07-19 -- 07-04 complete (pipeline fully stage-native: seeders write explicit stage with stage-based conflict targets and stage-scoped deletes; verify green 13/13 via stage)"
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-07-18)
 ## Current Position
 
 Phase: 7 of 13 (Stage-Aware Schema Foundation) -- in progress
-Plan: 3 of 6 complete (07-04 in parallel wave; next: 07-05)
+Plan: 4 of 6 complete (Wave 3 done; next: 07-05 Migration B)
 Status: Executing phase 7 plans
-Last activity: 2026-07-19 -- 07-03 complete (Deploy 1 web contract: final-state schema.prisma + stage-scoped reader queries, 69/69 render-identical)
+Last activity: 2026-07-19 -- 07-04 complete (pipeline fully stage-native: seeders write explicit stage with stage-based conflict targets and stage-scoped deletes; verify green 13/13 via stage)
 
 Progress: [------------------------------] 0/7 v1.2 phases
 
@@ -58,6 +58,8 @@ v1.2 roadmap decisions:
 - [Phase 07]: Migration A shipped verbatim (clean audit); Tier 1 snapshot normalization extended to collapse Next build-id doctype comment only
 - [Phase 07]: Deploy 1 web contract hand-written mid-window: final post-B schema.prisma (is_actual absent, 007 constraint names) + 10 stage-adopted reader filters + three-way YoY; 69/69 render-identical to baseline
 - [Phase 07]: stage placed as last scalar field and enum after models to match prisma db pull emission order (07-05 no-diff gate)
+- [Phase 07]: Pipeline loaders/readers rewritten to final stage-only state during dual-column window; loaders must not run until Migration B (07-05) creates the stage-based unique constraints
+- [Phase 07]: All FY-scoped seeder DELETEs stage-scoped (6 in seed.py, per-stage in seed_historical.py) -- September stage-wipe landmine defused at loader level
 
 ### Pending Todos
 
@@ -79,9 +81,10 @@ v1.2 roadmap decisions:
 | Phase 07 P01 | 15min | 3 tasks | 3 files |
 | Phase 07 P02 | 4min | 2 tasks | 2 files |
 | Phase 07-stage-aware-schema-foundation P03 | 4min | 3 tasks | 2 files |
+| Phase 07 P04 | 8min | 2 tasks | 5 files |
 
 ## Session Continuity
 
-Last session: 2026-07-19T04:28:41.793Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-07-19T04:30:34.931Z
+Stopped at: Completed 07-04-PLAN.md
 Resume file: None
