@@ -79,7 +79,7 @@ def fetch_department_data(conn) -> list[dict]:
                    SUM(db.employee_count) AS employee_count
             FROM department_budgets db
             JOIN fiscal_years fy ON fy.id = db.fiscal_year_id
-            WHERE fy.label = %s AND db.is_actual = FALSE
+            WHERE fy.label = %s AND db.stage = 'adopted'
             GROUP BY db.department_id
         ),
         prior_fy AS (
@@ -96,7 +96,7 @@ def fetch_department_data(conn) -> list[dict]:
                    SUM(db.employee_count) AS prior_employees
             FROM department_budgets db
             WHERE db.fiscal_year_id = (SELECT id FROM prior_fy)
-              AND db.is_actual = FALSE
+              AND db.stage = 'adopted'
             GROUP BY db.department_id
         )
         SELECT

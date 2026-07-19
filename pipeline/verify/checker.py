@@ -58,7 +58,7 @@ def verify_budget_totals(
         """
         SELECT COALESCE(SUM(operating_budget), 0)
         FROM department_budgets
-        WHERE fiscal_year_id = %s AND is_actual = FALSE
+        WHERE fiscal_year_id = %s AND stage = 'adopted'
         """,
         (fiscal_year_id,),
     )
@@ -97,7 +97,7 @@ def verify_budget_totals(
         """
         SELECT COALESCE(SUM(capital_budget), 0)
         FROM department_budgets
-        WHERE fiscal_year_id = %s AND is_actual = FALSE
+        WHERE fiscal_year_id = %s AND stage = 'adopted'
         """,
         (fiscal_year_id,),
     )
@@ -147,7 +147,7 @@ def verify_budget_totals(
                     ))
                 WHERE db.fiscal_year_id = %s
                   AND sa.slug = %s
-                  AND db.is_actual = FALSE
+                  AND db.stage = 'adopted'
                 """,
                 (fiscal_year_id, area["slug"]),
             )
@@ -177,7 +177,7 @@ def verify_budget_totals(
                     ))
                 WHERE db.fiscal_year_id = %s
                   AND sa.slug = %s
-                  AND db.is_actual = FALSE
+                  AND db.stage = 'adopted'
                 """,
                 (fiscal_year_id, area["slug"]),
             )
