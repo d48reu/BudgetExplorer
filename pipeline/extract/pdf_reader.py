@@ -14,7 +14,7 @@ from pipeline.config import PDF_URL
 
 
 def download_pdf(url: str = None, output_path: str = "data/budget-in-brief.pdf") -> str:
-    """Download the Budget in Brief PDF from a URL to a local path.
+    """Download a budget PDF from a URL to a local path.
 
     If the file already exists at output_path, skips the download.
 

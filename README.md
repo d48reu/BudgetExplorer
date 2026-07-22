@@ -6,7 +6,7 @@ Miami-Dade County's $13.2B FY 2025-26 budget as an interactive, searchable, plai
 
 ## What It Does
 
-- Interactive treemap with drill-down into 9 strategic areas and 55 departments
+- Interactive treemap with drill-down into 9 strategic areas and more than 50 departments
 - AI-generated plain-English descriptions of every department's budget
 - Tax calculator showing how your property taxes are allocated
 - Full-text search across all budget items
@@ -46,6 +46,8 @@ pnpm dev
 Open [http://localhost:3000](http://localhost:3000). Run `pnpm check` for the
 same lint, unit-test, and type-check gate used by CI. A remote database can be
 used instead by replacing `DATABASE_URL` in both local environment files.
+On the first pipeline run, the official Budget in Brief and authoritative
+Appendices C and J are downloaded automatically into the ignored `data/` folder.
 
 Do not run migrations against a shared or production database until the target
 and pending migration list have been audited.

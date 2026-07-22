@@ -35,6 +35,14 @@ CURRENT_FISCAL_YEAR = "FY 2025-26"
 # Appendix PDF paths
 APPENDIX_C_PATH = os.getenv("APPENDIX_C_PATH", "data/appendix-c.pdf")
 APPENDIX_J_PATH = os.getenv("APPENDIX_J_PATH", "data/appendix-j.pdf")
+APPENDIX_C_URL = os.getenv(
+    "APPENDIX_C_URL",
+    "https://www.miamidade.gov/resources/budget/adopted/fy2025-26/appendix-c.pdf",
+)
+APPENDIX_J_URL = os.getenv(
+    "APPENDIX_J_URL",
+    "https://www.miamidade.gov/resources/budget/adopted/fy2025-26/appendix-j.pdf",
+)
 
 # Debug mode (enables saving debug images during extraction)
 DEBUG = os.getenv("PIPELINE_DEBUG", "false").lower() in ("true", "1", "yes")

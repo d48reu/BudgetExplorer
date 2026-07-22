@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def seed_fiscal_year(conn, label: str, start_date: str, end_date: str,
-                     totals: dict) -> int:
+                     totals: dict, is_adopted: bool = True) -> int:
     """Insert or update a fiscal year record.
 
     Uses ON CONFLICT (label) DO UPDATE for idempotency.
@@ -33,7 +33,9 @@ def seed_fiscal_year(conn, label: str, start_date: str, end_date: str,
         start_date: Start date string (e.g., '2025-10-01').
         end_date: End date string (e.g., '2026-09-30').
         totals: Dict with keys: operating_cents, capital_cents,
-                total_cents, employees.
+                total_cents, employees. Legacy fiscal-year totals are only
+                populated for an adopted release.
+        is_adopted: Whether this load is the adopted release.
 
     Returns:
         The fiscal_year_id (serial primary key).
@@ -44,24 +46,30 @@ def seed_fiscal_year(conn, label: str, start_date: str, end_date: str,
         INSERT INTO fiscal_years
             (label, start_date, end_date, total_operating, total_capital,
              total_budget, total_employees, is_adopted)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, TRUE)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (label) DO UPDATE SET
             start_date = EXCLUDED.start_date,
             end_date = EXCLUDED.end_date,
-            total_operating = EXCLUDED.total_operating,
-            total_capital = EXCLUDED.total_capital,
-            total_budget = EXCLUDED.total_budget,
-            total_employees = EXCLUDED.total_employees,
-            is_adopted = EXCLUDED.is_adopted
+            total_operating = CASE WHEN EXCLUDED.is_adopted
+                THEN EXCLUDED.total_operating ELSE fiscal_years.total_operating END,
+            total_capital = CASE WHEN EXCLUDED.is_adopted
+                THEN EXCLUDED.total_capital ELSE fiscal_years.total_capital END,
+            total_budget = CASE WHEN EXCLUDED.is_adopted
+                THEN EXCLUDED.total_budget ELSE fiscal_years.total_budget END,
+            total_employees = CASE WHEN EXCLUDED.is_adopted
+                THEN EXCLUDED.total_employees ELSE fiscal_years.total_employees END,
+            is_adopted = COALESCE(fiscal_years.is_adopted, FALSE)
+                OR EXCLUDED.is_adopted
         RETURNING id
     """, (
         label,
         start_date,
         end_date,
-        totals.get("operating_cents", 0),
-        totals.get("capital_cents", 0),
-        totals.get("total_cents", 0),
-        totals.get("employees"),
+        totals.get("operating_cents") if is_adopted else None,
+        totals.get("capital_cents") if is_adopted else None,
+        totals.get("total_cents") if is_adopted else None,
+        totals.get("employees") if is_adopted else None,
+        is_adopted,
     ))
 
     fiscal_year_id = cur.fetchone()[0]
@@ -69,6 +77,50 @@ def seed_fiscal_year(conn, label: str, start_date: str, end_date: str,
 
     logger.info("Seeded fiscal year %s (id=%d)", label, fiscal_year_id)
     return fiscal_year_id
+
+
+def seed_budget_release(conn, fiscal_year_id: int, stage: str,
+                        totals: dict, metadata: dict | None = None):
+    """Insert or update release-scoped totals and official source metadata."""
+    metadata = metadata or {}
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO budget_releases
+            (fiscal_year_id, stage, as_of_date, published_at,
+             total_operating, total_capital, total_budget, total_employees,
+             budget_in_brief_url, volume_1_url, volume_2_url, volume_3_url)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (fiscal_year_id, stage) DO UPDATE SET
+            as_of_date = EXCLUDED.as_of_date,
+            published_at = EXCLUDED.published_at,
+            total_operating = EXCLUDED.total_operating,
+            total_capital = EXCLUDED.total_capital,
+            total_budget = EXCLUDED.total_budget,
+            total_employees = EXCLUDED.total_employees,
+            budget_in_brief_url = EXCLUDED.budget_in_brief_url,
+            volume_1_url = EXCLUDED.volume_1_url,
+            volume_2_url = EXCLUDED.volume_2_url,
+            volume_3_url = EXCLUDED.volume_3_url,
+            updated_at = NOW()
+    """, (
+        fiscal_year_id,
+        stage,
+        metadata.get("as_of_date"),
+        metadata.get("published_at"),
+        totals.get("operating_cents"),
+        totals.get("capital_cents"),
+        totals.get("total_cents"),
+        totals.get("employees"),
+        metadata.get("budget_in_brief_url"),
+        metadata.get("volume_1_url"),
+        metadata.get("volume_2_url"),
+        metadata.get("volume_3_url"),
+    ))
+    cur.close()
+    logger.info(
+        "Seeded %s budget release for fiscal_year_id=%d",
+        stage, fiscal_year_id,
+    )
 
 
 def seed_department_budgets(conn, fiscal_year_id: int,
@@ -543,23 +595,47 @@ def seed_all(conn, data: dict, fiscal_year_label: str = "FY 2025-26",
         Dict with seed counts for each data type.
     """
     from pipeline.config import (
+        PDF_URL,
         PUBLISHED_OPERATING_CENTS,
         PUBLISHED_CAPITAL_CENTS,
         PUBLISHED_TOTAL_BUDGET_CENTS,
         PUBLISHED_TOTAL_EMPLOYEES,
     )
 
-    # Step 1: Seed fiscal year
-    totals = {
-        "operating_cents": PUBLISHED_OPERATING_CENTS,
-        "capital_cents": PUBLISHED_CAPITAL_CENTS,
-        "total_cents": PUBLISHED_TOTAL_BUDGET_CENTS,
-        "employees": PUBLISHED_TOTAL_EMPLOYEES,
-    }
+    release = data.get("release") or {}
+    if stage == 'adopted':
+        totals = {
+            "operating_cents": release.get(
+                "operating_cents", PUBLISHED_OPERATING_CENTS
+            ),
+            "capital_cents": release.get(
+                "capital_cents", PUBLISHED_CAPITAL_CENTS
+            ),
+            "total_cents": release.get(
+                "total_cents", PUBLISHED_TOTAL_BUDGET_CENTS
+            ),
+            "employees": release.get(
+                "employees", PUBLISHED_TOTAL_EMPLOYEES
+            ),
+        }
+        release.setdefault("budget_in_brief_url", PDF_URL)
+    else:
+        required_totals = (
+            "operating_cents", "capital_cents", "total_cents", "employees"
+        )
+        missing = [key for key in required_totals if release.get(key) is None]
+        if missing:
+            raise ValueError(
+                f"{stage} load requires explicit release totals: "
+                + ", ".join(missing)
+            )
+        totals = {key: release[key] for key in required_totals}
 
     fiscal_year_id = seed_fiscal_year(
-        conn, fiscal_year_label, start_date, end_date, totals
+        conn, fiscal_year_label, start_date, end_date, totals,
+        is_adopted=(stage == 'adopted'),
     )
+    seed_budget_release(conn, fiscal_year_id, stage, totals, release)
 
     # Determine data source: appendix (authoritative) or BIB-only
     appendix_c = data.get("appendix_c")
