@@ -46,14 +46,15 @@ function StackedBar({
   const total = segments.reduce((s, seg) => s + seg.taxAmount, 0)
   const barHeight = 40
 
-  // Build cumulative offsets manually (simpler than d3.stack for single-row)
-  let cumulative = 0
-  const bars = segments.map((seg) => {
-    const x0 = cumulative
+  // Build cumulative offsets without mutating render-local state.
+  const bars = segments.reduce<
+    Array<(typeof segments)[number] & { x0: number; barWidth: number }>
+  >((result, seg) => {
+    const previous = result.at(-1)
+    const x0 = previous ? previous.x0 + previous.barWidth : 0
     const barWidth = total > 0 ? (seg.taxAmount / total) * width : 0
-    cumulative += barWidth
-    return { ...seg, x0, barWidth }
-  })
+    return [...result, { ...seg, x0, barWidth }]
+  }, [])
 
   return (
     <svg

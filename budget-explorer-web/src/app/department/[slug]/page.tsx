@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation'
-import prisma from '@/lib/prisma'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
 import { StatCards } from '@/components/department/StatCards'
 import { AiDescription } from '@/components/department/AiDescription'
@@ -12,16 +11,15 @@ import {
   getDepartmentExpenditures,
   getDepartmentYoY,
   getRelatedDepartments,
+  getAdoptedDepartmentSlugs,
 } from '@/lib/db/queries'
 import { formatYoYChange } from '@/lib/format'
 import type { Metadata } from 'next'
 
-/** Pre-render all 35 department pages at build time. */
+/** Pre-render department pages that belong to the adopted release. */
 export async function generateStaticParams() {
-  const departments = await prisma.departments.findMany({
-    select: { slug: true },
-  })
-  return departments.map((dept) => ({ slug: dept.slug }))
+  const slugs = await getAdoptedDepartmentSlugs()
+  return slugs.map((slug) => ({ slug }))
 }
 
 type PageProps = {

@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
-import prisma from '@/lib/prisma'
-import { getAreaWithDepartments } from '@/lib/db/queries'
+import { getAdoptedStrategicAreaSlugs, getAreaWithDepartments } from '@/lib/db/queries'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
 import { AreaHeader } from '@/components/explorer/AreaHeader'
 import { AreaDeptTreemap } from '@/components/explorer/ExplorerCharts'
@@ -12,10 +11,8 @@ export const revalidate = 86400
 
 /** Pre-render all 9 strategic area pages at build time. */
 export async function generateStaticParams() {
-  const areas = await prisma.strategic_areas.findMany({
-    select: { slug: true },
-  })
-  return areas.map((area) => ({ 'area-slug': area.slug }))
+  const slugs = await getAdoptedStrategicAreaSlugs()
+  return slugs.map((slug) => ({ 'area-slug': slug }))
 }
 
 type PageProps = {

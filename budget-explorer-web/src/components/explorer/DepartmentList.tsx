@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import clsx from 'clsx'
 import { toChartValue } from '@/lib/chart-utils'
 import { formatDollarsAbbreviated } from '@/lib/format'
 import type { SerializedDepartment } from '@/types/budget'
@@ -13,6 +12,21 @@ type SortDirection = 'asc' | 'desc'
 type DepartmentListProps = {
   departments: SerializedDepartment[]
   areaColor: string | null
+}
+
+type SortIndicatorProps = {
+  field: SortField
+  activeField: SortField
+  direction: SortDirection
+}
+
+function SortIndicator({ field, activeField, direction }: SortIndicatorProps) {
+  if (activeField !== field) return null
+  return (
+    <span className="ml-1" aria-hidden="true">
+      {direction === 'asc' ? '\u25B2' : '\u25BC'}
+    </span>
+  )
 }
 
 /**
@@ -52,37 +66,49 @@ export function DepartmentList({ departments, areaColor }: DepartmentListProps) 
     }
   }
 
-  function SortIndicator({ field }: { field: SortField }) {
-    if (sortField !== field) return null
-    return (
-      <span className="ml-1" aria-hidden="true">
-        {sortDirection === 'asc' ? '\u25B2' : '\u25BC'}
-      </span>
-    )
-  }
-
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr>
             <th
-              className="py-2 px-3 font-medium text-text-secondary text-left cursor-pointer hover:text-text-primary select-none border-b border-border"
-              onClick={() => handleSort('name')}
+              className="py-2 px-3 font-medium text-text-secondary text-left border-b border-border"
+              aria-sort={sortField === 'name' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
-              Department <SortIndicator field="name" />
+              <button
+                type="button"
+                className="w-full cursor-pointer select-none text-left hover:text-text-primary"
+                onClick={() => handleSort('name')}
+              >
+                Department
+                <SortIndicator field="name" activeField={sortField} direction={sortDirection} />
+              </button>
             </th>
             <th
-              className="py-2 px-3 font-medium text-text-secondary text-right cursor-pointer hover:text-text-primary select-none border-b border-border"
-              onClick={() => handleSort('operatingBudget')}
+              className="py-2 px-3 font-medium text-text-secondary text-right border-b border-border"
+              aria-sort={sortField === 'operatingBudget' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
-              Operating Budget <SortIndicator field="operatingBudget" />
+              <button
+                type="button"
+                className="w-full cursor-pointer select-none text-right hover:text-text-primary"
+                onClick={() => handleSort('operatingBudget')}
+              >
+                Operating Budget
+                <SortIndicator field="operatingBudget" activeField={sortField} direction={sortDirection} />
+              </button>
             </th>
             <th
-              className="py-2 px-3 font-medium text-text-secondary text-right cursor-pointer hover:text-text-primary select-none border-b border-border"
-              onClick={() => handleSort('employeeCount')}
+              className="py-2 px-3 font-medium text-text-secondary text-right border-b border-border"
+              aria-sort={sortField === 'employeeCount' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
-              Employees <SortIndicator field="employeeCount" />
+              <button
+                type="button"
+                className="w-full cursor-pointer select-none text-right hover:text-text-primary"
+                onClick={() => handleSort('employeeCount')}
+              >
+                Employees
+                <SortIndicator field="employeeCount" activeField={sortField} direction={sortDirection} />
+              </button>
             </th>
           </tr>
         </thead>

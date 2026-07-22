@@ -117,6 +117,11 @@ export async function getStrategicAreas(): Promise<SerializedStrategicArea[]> {
   if (!fy) return []
 
   const areas = await prisma.strategic_areas.findMany({
+    where: {
+      strategic_area_budgets: {
+        some: { fiscal_year_id: fy.id, stage: 'adopted' },
+      },
+    },
     include: {
       strategic_area_budgets: {
         where: { fiscal_year_id: fy.id, stage: 'adopted' },
@@ -143,17 +148,39 @@ export async function getStrategicAreas(): Promise<SerializedStrategicArea[]> {
  * Get aggregated quick stats for the homepage.
  */
 export async function getQuickStats(): Promise<QuickStats> {
-  const [fy, strategicAreaCount, departmentCount] = await Promise.all([
-    getCurrentFiscalYear(),
-    prisma.strategic_areas.count(),
-    prisma.departments.count(),
+  const fyRow = await getCurrentFiscalYearRow()
+
+  if (!fyRow) {
+    return {
+      strategicAreaCount: 0,
+      departmentCount: 0,
+      totalEmployees: 0,
+      fiscalYear: CURRENT_FY_LABEL,
+    }
+  }
+
+  const [strategicAreaCount, departmentCount] = await Promise.all([
+    prisma.strategic_areas.count({
+      where: {
+        strategic_area_budgets: {
+          some: { fiscal_year_id: fyRow.id, stage: 'adopted' },
+        },
+      },
+    }),
+    prisma.departments.count({
+      where: {
+        department_budgets: {
+          some: { fiscal_year_id: fyRow.id, stage: 'adopted' },
+        },
+      },
+    }),
   ])
 
   return {
     strategicAreaCount,
     departmentCount,
-    totalEmployees: fy?.totalEmployees ?? 0,
-    fiscalYear: fy?.label ?? 'FY 2025-26',
+    totalEmployees: fyRow.total_employees ?? 0,
+    fiscalYear: fyRow.label,
   }
 }
 
@@ -170,7 +197,12 @@ export const getAreaWithDepartments = cache(async (areaSlug: string): Promise<{
   if (!fy) return null
 
   const area = await prisma.strategic_areas.findFirst({
-    where: { slug: areaSlug },
+    where: {
+      slug: areaSlug,
+      strategic_area_budgets: {
+        some: { fiscal_year_id: fy.id, stage: 'adopted' },
+      },
+    },
     include: {
       strategic_area_budgets: {
         where: { fiscal_year_id: fy.id, stage: 'adopted' },
@@ -277,17 +309,37 @@ export async function getStrategicAreasWithDetails(): Promise<
 
   if (!fy) return []
 
-  const areas = await prisma.strategic_areas.findMany({
-    include: {
-      strategic_area_budgets: {
-        where: { fiscal_year_id: fy.id, stage: 'adopted' },
+  const [areas, departmentBudgetRows] = await Promise.all([
+    prisma.strategic_areas.findMany({
+      where: {
+        strategic_area_budgets: {
+          some: { fiscal_year_id: fy.id, stage: 'adopted' },
+        },
       },
-      _count: {
-        select: { departments: true },
+      include: {
+        strategic_area_budgets: {
+          where: { fiscal_year_id: fy.id, stage: 'adopted' },
+        },
       },
-    },
-    orderBy: { display_order: 'asc' },
-  })
+      orderBy: { display_order: 'asc' },
+    }),
+    prisma.department_budgets.findMany({
+      where: { fiscal_year_id: fy.id, stage: 'adopted' },
+      select: {
+        department_id: true,
+        strategic_area_id: true,
+        departments: { select: { strategic_area_id: true } },
+      },
+    }),
+  ])
+
+  const departmentIdsByArea = new Map<number, Set<number>>()
+  for (const row of departmentBudgetRows) {
+    const areaId = row.strategic_area_id ?? row.departments.strategic_area_id
+    const departmentIds = departmentIdsByArea.get(areaId) ?? new Set<number>()
+    departmentIds.add(row.department_id)
+    departmentIdsByArea.set(areaId, departmentIds)
+  }
 
   return areas.map((area) => {
     const budget = area.strategic_area_budgets[0]
@@ -300,7 +352,7 @@ export async function getStrategicAreasWithDetails(): Promise<
       operatingBudget: budget?.operating_budget?.toString() ?? '0',
       capitalBudget: budget?.capital_budget?.toString() ?? '0',
       centsPerDollar: budget?.cents_per_dollar ?? null,
-      departmentCount: area._count.departments,
+      departmentCount: departmentIdsByArea.get(area.id)?.size ?? 0,
     }
   })
 }
@@ -314,7 +366,12 @@ export const getDepartmentDetail = cache(async (slug: string): Promise<Serialize
   if (!fy) return null
 
   const dept = await prisma.departments.findFirst({
-    where: { slug },
+    where: {
+      slug,
+      department_budgets: {
+        some: { fiscal_year_id: fy.id, stage: 'adopted' },
+      },
+    },
     include: {
       strategic_areas: true,
       department_budgets: {
@@ -359,6 +416,38 @@ export const getDepartmentDetail = cache(async (slug: string): Promise<Serialize
     } : null,
   }
 })
+
+/** Slugs that are part of the currently published adopted release. */
+export async function getAdoptedDepartmentSlugs(): Promise<string[]> {
+  const fy = await getCurrentFiscalYearRow()
+  if (!fy) return []
+
+  const departments = await prisma.departments.findMany({
+    where: {
+      department_budgets: {
+        some: { fiscal_year_id: fy.id, stage: 'adopted' },
+      },
+    },
+    select: { slug: true },
+  })
+  return departments.map((department) => department.slug)
+}
+
+/** Strategic-area slugs that are part of the currently published adopted release. */
+export async function getAdoptedStrategicAreaSlugs(): Promise<string[]> {
+  const fy = await getCurrentFiscalYearRow()
+  if (!fy) return []
+
+  const areas = await prisma.strategic_areas.findMany({
+    where: {
+      strategic_area_budgets: {
+        some: { fiscal_year_id: fy.id, stage: 'adopted' },
+      },
+    },
+    select: { slug: true },
+  })
+  return areas.map((area) => area.slug)
+}
 
 /**
  * Get expenditure category breakdown for a department in FY 2025-26.

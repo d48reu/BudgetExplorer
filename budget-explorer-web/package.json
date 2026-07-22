@@ -8,6 +8,9 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm lint && pnpm test && pnpm typecheck",
     "snapshot": "node scripts/snapshot.mjs"
   },
   "dependencies": {
@@ -20,9 +23,9 @@
     "d3-shape": "^3.2.0",
     "next": "16.1.6",
     "pg": "^8.19.0",
-    "react": "19.2.3",
+    "react": "19.2.8",
     "react-countup": "^6.5.3",
-    "react-dom": "19.2.3",
+    "react-dom": "19.2.8",
     "recharts": "^3.7.0"
   },
   "pnpm": {
