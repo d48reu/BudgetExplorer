@@ -1,0 +1,86 @@
+{
+  "FY 2025-26|adopted": {
+    "label": "FY 2025-26 adopted",
+    "budget_in_brief_url": "https://www.miamidade.gov/resources/budget/adopted/fy2025-26/budget-in-brief.pdf",
+    "headline_page": 3,
+    "headlines": {
+      "net_operating_cents": 857560600000,
+      "capital_cents": 465763200000,
+      "total_budget_cents": 1323323800000,
+      "employees": 31996
+    },
+    "revenue_page": 4,
+    "revenue": [
+      {"source": "Proprietary", "amount_cents": 362714200000, "percentage": "42"},
+      {"source": "Federal and State Grants", "amount_cents": 39942800000, "percentage": "5"},
+      {"source": "Property Tax", "amount_cents": 325079700000, "percentage": "38"},
+      {"source": "Sales Tax", "amount_cents": 48259700000, "percentage": "6"},
+      {"source": "Gas Tax", "amount_cents": 7017000000, "percentage": "1"},
+      {"source": "Misc. State Revenues", "amount_cents": 14795500000, "percentage": "2"},
+      {"source": "Miscellaneous", "amount_cents": 59751700000, "percentage": "7"}
+    ],
+    "allocation_page": 5,
+    "allocation": [
+      {"area": "Public Safety", "cents_per_dollar": 19},
+      {"area": "Neighborhood & Infrastructure", "cents_per_dollar": 20},
+      {"area": "Recreation & Culture", "cents_per_dollar": 7},
+      {"area": "Economic Development", "cents_per_dollar": 14},
+      {"area": "Policy Formulation", "cents_per_dollar": 1},
+      {"area": "Transportation & Mobility", "cents_per_dollar": 8},
+      {"area": "General Government", "cents_per_dollar": 6},
+      {"area": "Health & Society", "cents_per_dollar": 10},
+      {"area": "Constitutional Offices", "cents_per_dollar": 15}
+    ],
+    "millage_page": 6,
+    "millage": [
+      {"authority": "Countywide Operating", "millage_rate": "4.5740"},
+      {"authority": "UMSA Operating", "millage_rate": "1.9090"},
+      {"authority": "Fire Rescue Operating", "millage_rate": "2.3965"},
+      {"authority": "Library System", "millage_rate": "0.2812"},
+      {"authority": "Countywide Debt Service", "millage_rate": "0.4171"},
+      {"authority": "Total to County", "millage_rate": "9.5778"},
+      {"authority": "Other", "millage_rate": "7.3539"}
+    ]
+  },
+  "FY 2026-27|proposed": {
+    "label": "FY 2026-27 proposed",
+    "budget_in_brief_url": "https://www.miamidade.gov/resources/budget/fy-26-27/proposed/budget-in-brief.pdf",
+    "headline_page": 3,
+    "headlines": {
+      "net_operating_cents": 902167600000,
+      "capital_cents": 523954800000,
+      "total_budget_cents": 1426122400000,
+      "employees": 31942
+    },
+    "revenue_page": 4,
+    "revenue": [
+      {"source": "Proprietary", "amount_cents": 392518000000, "percentage": "44"},
+      {"source": "Federal and State Grants", "amount_cents": 35845700000, "percentage": "4"},
+      {"source": "Property Tax", "amount_cents": 329790000000, "percentage": "37"},
+      {"source": "Sales Tax", "amount_cents": 49414600000, "percentage": "5"},
+      {"source": "Gas Tax", "amount_cents": 6631500000, "percentage": "1"},
+      {"source": "Misc. State Revenues", "amount_cents": 15485500000, "percentage": "2"},
+      {"source": "Miscellaneous", "amount_cents": 72482300000, "percentage": "8"}
+    ],
+    "allocation_page": 5,
+    "allocation": [
+      {"area": "An Economy that Works for All", "cents_per_dollar": 19},
+      {"area": "Investment in Infrastructure", "cents_per_dollar": 25},
+      {"area": "Healthy and Safe Communities", "cents_per_dollar": 34},
+      {"area": "Policy Formulation", "cents_per_dollar": 1},
+      {"area": "Fiscal Responsibility and Efficiency", "cents_per_dollar": 5},
+      {"area": "Risk Reduction and Resilience", "cents_per_dollar": 1},
+      {"area": "Constitutional Offices", "cents_per_dollar": 15}
+    ],
+    "millage_page": 6,
+    "millage": [
+      {"authority": "Countywide Operating", "millage_rate": "4.5740"},
+      {"authority": "UMSA Operating", "millage_rate": "1.9090"},
+      {"authority": "Fire Rescue Operating", "millage_rate": "2.3965"},
+      {"authority": "Library System", "millage_rate": "0.2812"},
+      {"authority": "Countywide Debt Service", "millage_rate": "0.3937"},
+      {"authority": "Total to County", "millage_rate": "9.5544"},
+      {"authority": "Other", "millage_rate": "7.3539"}
+    ]
+  }
+}

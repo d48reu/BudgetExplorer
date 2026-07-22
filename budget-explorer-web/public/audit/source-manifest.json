@@ -1,0 +1,47 @@
+[
+  {
+    "id": "adopted-bib",
+    "label": "FY 2025-26 adopted Budget in Brief",
+    "file": "data/budget-in-brief.pdf",
+    "sourceUrl": "https://www.miamidade.gov/resources/budget/adopted/fy2025-26/budget-in-brief.pdf",
+    "sha256": "d256bc98a9d721597cf7da63b943418886c5c1a8d2648ebb583499142efcf000",
+    "bytes": 2618908,
+    "pages": 7
+  },
+  {
+    "id": "adopted-appendix-c",
+    "label": "FY 2025-26 Appendix C",
+    "file": "data/appendix-c.pdf",
+    "sourceUrl": "https://www.miamidade.gov/resources/budget/adopted/fy2025-26/appendix-c.pdf",
+    "sha256": "113051d63e4395a82249df75a44366559468836eb2d2804fdb78819585ef50ae",
+    "bytes": 1029988,
+    "pages": 22
+  },
+  {
+    "id": "adopted-appendix-j",
+    "label": "FY 2025-26 Appendix J",
+    "file": "data/appendix-j.pdf",
+    "sourceUrl": "https://www.miamidade.gov/resources/budget/adopted/fy2025-26/appendix-j.pdf",
+    "sha256": "cf42cb74458f6b76cf2537cfd10c12cde367e00a72472057c5d43c19581ddba0",
+    "bytes": 1501917,
+    "pages": 18
+  },
+  {
+    "id": "proposed-bib",
+    "label": "FY 2026-27 proposed Budget in Brief",
+    "file": "data/fy-2026-27-proposed-budget-in-brief.pdf",
+    "sourceUrl": "https://www.miamidade.gov/resources/budget/fy-26-27/proposed/budget-in-brief.pdf",
+    "sha256": "17bb735c1b53110ffc56fa103ed41deb27f535d21b47e76d5227908e7e214ab2",
+    "bytes": 3107991,
+    "pages": 7
+  },
+  {
+    "id": "proposed-volume-1",
+    "label": "FY 2026-27 proposed Volume 1",
+    "file": "data/fy-2026-27-proposed-volume-1.pdf",
+    "sourceUrl": "https://www.miamidade.gov/resources/budget/fy-26-27/proposed/volume-1-bookmarks.pdf",
+    "sha256": "0f566d2cc7b5d5e1d3b298bae707e0e8285baa6c2d083648d2a61770946585bd",
+    "bytes": 17287129,
+    "pages": 282
+  }
+]

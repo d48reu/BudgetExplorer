@@ -319,6 +319,47 @@ def verify(fiscal_year, published_totals, stage):
         sys.exit(1)
 
 
+@cli.command(name="audit-numbers")
+@click.option(
+    "--public-dir",
+    default="budget-explorer-web/public/audit",
+    show_default=True,
+    help="Directory for the public ledger, source manifest, and summary.",
+)
+@click.option(
+    "--site-data",
+    default="budget-explorer-web/src/data/budget-audit.json",
+    show_default=True,
+    help="Generated JSON imported by the public audit page.",
+)
+@click.option(
+    "--strict/--no-strict",
+    default=True,
+    show_default=True,
+    help="Exit non-zero when any exact audit gate fails.",
+)
+def audit_numbers(public_dir, site_data, strict):
+    """Create the exact source-to-database numeric audit artifacts."""
+    from pipeline.audit import generate_audit
+
+    click.echo("Building the source-to-database number ledger...")
+    summary = generate_audit(
+        public_dir=public_dir,
+        site_data_path=site_data,
+    )
+    gate = summary["gate"]
+    click.echo(
+        f"Audit {gate['status']}: {gate['passed']}/{gate['checks']} exact checks "
+        f"passed; monetary variance {gate['exactMonetaryVarianceCents']} cents."
+    )
+    click.echo(f"Ledger: {os.path.join(public_dir, 'number-ledger.csv')}")
+
+    if strict and gate["status"] != "PASS":
+        raise click.ClickException(
+            f"{gate['failures']} exact numeric audit check(s) failed"
+        )
+
+
 @cli.command(name="run-all")
 @click.option("--pdf", default=None, help="Path to Budget in Brief PDF or URL.")
 @click.option("--output", default="extracted_data.json", help="Intermediate JSON file for extracted data.")

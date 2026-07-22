@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 const ADOPTED_BUDGET_PDF_URL =
   'https://www.miamidade.gov/resources/budget/adopted/fy2025-26/budget-in-brief.pdf'
 const PROPOSED_BUDGET_PDF_URL =
@@ -31,6 +33,11 @@ export function Footer() {
               >
                 FY 2026-27 Proposed Budget in Brief (PDF)
               </a>
+            </li>
+            <li>
+              <Link href="/audit" className="underline hover:text-text-primary">
+                Number audit and source ledger
+              </Link>
             </li>
           </ul>
         </div>
