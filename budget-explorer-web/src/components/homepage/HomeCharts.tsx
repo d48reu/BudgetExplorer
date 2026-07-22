@@ -43,6 +43,7 @@ export function RevenueVisualization({ data }: RevenueVisualizationProps) {
       chartLabel="Revenue sources"
       data={data}
       columns={revenueColumns}
+      rowKey="name"
     >
       <div className="border-y-2 border-text-primary py-6">
         <ChartContainer aspectRatio={1.35} minHeight={320}>

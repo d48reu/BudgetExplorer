@@ -6,7 +6,7 @@ import { toChartValue } from '@/lib/chart-utils'
 import { formatDollarsAbbreviated } from '@/lib/format'
 import type { SerializedDepartment } from '@/types/budget'
 
-type SortField = 'name' | 'operatingBudget' | 'employeeCount'
+type SortField = 'name' | 'operatingBudget' | 'capitalBudget' | 'employeeCount'
 type SortDirection = 'asc' | 'desc'
 
 type DepartmentListProps = {
@@ -48,6 +48,9 @@ export function DepartmentList({ departments, areaColor }: DepartmentListProps) 
         case 'operatingBudget':
           cmp = toChartValue(a.operatingBudget) - toChartValue(b.operatingBudget)
           break
+        case 'capitalBudget':
+          cmp = toChartValue(a.capitalBudget) - toChartValue(b.capitalBudget)
+          break
         case 'employeeCount':
           cmp = (a.employeeCount ?? 0) - (b.employeeCount ?? 0)
           break
@@ -67,12 +70,12 @@ export function DepartmentList({ departments, areaColor }: DepartmentListProps) 
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="overflow-x-auto border-t-2 border-text-primary">
+      <table className="w-full min-w-[46rem] text-sm">
         <thead>
           <tr>
             <th
-              className="py-2 px-3 font-medium text-text-secondary text-left border-b border-border"
+              className="border-b border-text-primary px-3 py-3 text-left text-xs font-bold uppercase tracking-[0.1em] text-text-secondary"
               aria-sort={sortField === 'name' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
               <button
@@ -85,7 +88,7 @@ export function DepartmentList({ departments, areaColor }: DepartmentListProps) 
               </button>
             </th>
             <th
-              className="py-2 px-3 font-medium text-text-secondary text-right border-b border-border"
+              className="border-b border-text-primary px-3 py-3 text-right text-xs font-bold uppercase tracking-[0.1em] text-text-secondary"
               aria-sort={sortField === 'operatingBudget' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
               <button
@@ -98,7 +101,20 @@ export function DepartmentList({ departments, areaColor }: DepartmentListProps) 
               </button>
             </th>
             <th
-              className="py-2 px-3 font-medium text-text-secondary text-right border-b border-border"
+              className="border-b border-text-primary px-3 py-3 text-right text-xs font-bold uppercase tracking-[0.1em] text-text-secondary"
+              aria-sort={sortField === 'capitalBudget' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
+            >
+              <button
+                type="button"
+                className="w-full cursor-pointer select-none text-right hover:text-text-primary"
+                onClick={() => handleSort('capitalBudget')}
+              >
+                Capital
+                <SortIndicator field="capitalBudget" activeField={sortField} direction={sortDirection} />
+              </button>
+            </th>
+            <th
+              className="border-b border-text-primary px-3 py-3 text-right text-xs font-bold uppercase tracking-[0.1em] text-text-secondary"
               aria-sort={sortField === 'employeeCount' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
               <button
@@ -114,26 +130,29 @@ export function DepartmentList({ departments, areaColor }: DepartmentListProps) 
         </thead>
         <tbody>
           {sorted.map((dept) => (
-            <tr key={dept.id} className="border-b border-border last:border-0 hover:bg-surface-secondary">
-              <td className="py-2 px-3">
+            <tr key={dept.id} className="border-b border-border-strong last:border-0">
+              <td className="px-3 py-4">
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-2 h-2 rounded-full shrink-0"
+                    className="h-2.5 w-2.5 shrink-0"
                     style={{ backgroundColor: areaColor ?? '#6B7280' }}
                     aria-hidden="true"
                   />
                   <Link
                     href={`/department/${dept.slug}`}
-                    className="text-mdc-blue hover:underline"
+                    className="font-heading font-bold text-text-primary hover:text-mdc-blue"
                   >
                     {dept.name}
                   </Link>
                 </div>
               </td>
-              <td className="py-2 px-3 text-right">
+              <td className="px-3 py-4 text-right font-heading font-bold tabular-nums">
                 {formatDollarsAbbreviated(dept.operatingBudget)}
               </td>
-              <td className="py-2 px-3 text-right">
+              <td className="px-3 py-4 text-right font-heading font-bold tabular-nums">
+                {formatDollarsAbbreviated(dept.capitalBudget)}
+              </td>
+              <td className="px-3 py-4 text-right tabular-nums">
                 {dept.employeeCount != null ? dept.employeeCount.toLocaleString() : 'N/A'}
               </td>
             </tr>

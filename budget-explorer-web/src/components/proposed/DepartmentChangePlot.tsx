@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { formatDollarsAbbreviated } from '@/lib/format'
 import type { SerializedDepartmentChange } from '@/types/budget'
 
@@ -50,9 +51,12 @@ export function DepartmentChangePlot({
               aria-label={`${change.name}: ${formatDollarsAbbreviated(change.baselineOperating)} restated adopted to ${formatDollarsAbbreviated(change.proposedOperating)} proposed, ${signedDollars(change.operatingChange)} change${employeeText ? `, ${employeeText}` : ''}`}
             >
               <div className="min-w-0">
-                <p className="truncate font-heading text-sm font-semibold text-text-primary sm:text-base">
+                <Link
+                  href={`/department/${change.slug}`}
+                  className="block truncate font-heading text-sm font-semibold text-text-primary hover:text-mdc-blue sm:text-base"
+                >
                   {change.name}
-                </p>
+                </Link>
                 <p className="mt-1 truncate text-[0.65rem] tabular-nums text-text-muted sm:text-xs">
                   {formatDollarsAbbreviated(change.baselineOperating)} →{' '}
                   {formatDollarsAbbreviated(change.proposedOperating)}
@@ -64,7 +68,10 @@ export function DepartmentChangePlot({
                 <div
                   className="absolute top-1/2 h-3 -translate-y-1/2"
                   style={{
-                    backgroundColor: amount >= 0 ? '#0057B8' : '#F7941D',
+                    backgroundColor:
+                      amount >= 0
+                        ? 'var(--color-change-increase)'
+                        : 'var(--color-change-decrease)',
                     left: amount >= 0 ? '50%' : `${50 - width}%`,
                     width: `${width}%`,
                   }}

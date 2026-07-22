@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 type ReleaseSwitcherProps = {
-  activeStage: 'adopted' | 'proposed'
+  activeStage: 'adopted' | 'proposed' | 'comparison'
 }
 
 const releases = [
@@ -17,6 +17,12 @@ const releases = [
     fiscalYear: 'FY 2026–27',
     href: '/proposed',
   },
+  {
+    stage: 'comparison' as const,
+    label: 'Compare',
+    fiscalYear: 'Side by side',
+    href: '/compare',
+  },
 ]
 
 export function ReleaseSwitcher({ activeStage }: ReleaseSwitcherProps) {
@@ -26,9 +32,9 @@ export function ReleaseSwitcher({ activeStage }: ReleaseSwitcherProps) {
       className="grid border-y border-text-primary sm:grid-cols-[9rem_1fr]"
     >
       <p className="flex items-center py-3 text-xs font-bold uppercase tracking-[0.14em] text-text-secondary sm:border-r sm:border-text-primary sm:pr-5">
-        Budget release
+        Budget view
       </p>
-      <div className="grid grid-cols-2 border-t border-text-primary sm:border-t-0">
+      <div className="grid grid-cols-3 border-t border-text-primary sm:border-t-0">
         {releases.map((release) => {
           const isActive = release.stage === activeStage
           return (
@@ -36,7 +42,7 @@ export function ReleaseSwitcher({ activeStage }: ReleaseSwitcherProps) {
               key={release.stage}
               href={release.href}
               aria-current={isActive ? 'page' : undefined}
-              className={`group flex items-baseline justify-between gap-3 border-b-4 px-3 py-3 transition-colors sm:px-5 ${
+              className={`group flex flex-col items-start gap-1 border-b-4 px-3 py-3 transition-colors sm:px-5 ${
                 isActive
                   ? 'border-mdc-blue text-text-primary'
                   : 'border-transparent text-text-secondary hover:border-border-strong hover:text-text-primary'

@@ -1,9 +1,14 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { getAdoptedStrategicAreaSlugs, getAreaWithDepartments } from '@/lib/db/queries'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
-import { AreaHeader } from '@/components/explorer/AreaHeader'
+import { ExplorationMasthead } from '@/components/explorer/ExplorationMasthead'
 import { AreaDeptTreemap } from '@/components/explorer/ExplorerCharts'
 import { DepartmentList } from '@/components/explorer/DepartmentList'
+import { ReleaseFacts } from '@/components/releases/ReleaseFacts'
+import { ReleaseSwitcher } from '@/components/releases/ReleaseSwitcher'
+import { ReportSection } from '@/components/releases/ReportSection'
+import { formatDollarsAbbreviated } from '@/lib/format'
 import type { Metadata } from 'next'
 
 // Static with daily revalidation, matching the department pages.
@@ -42,6 +47,10 @@ export default async function AreaDetailPage({ params }: PageProps) {
   }
 
   const { area, departments } = data
+  const employeeCount = departments.reduce(
+    (total, department) => total + (department.employeeCount ?? 0),
+    0
+  )
 
   // Build treemap items from departments
   const treemapItems = departments.map((dept) => ({
@@ -50,37 +59,98 @@ export default async function AreaDetailPage({ params }: PageProps) {
     color: area.color,
     value: dept.operatingBudget,
   }))
+  const facts = [
+    {
+      label: 'Operating',
+      value: formatDollarsAbbreviated(area.operatingBudget),
+      note: 'Gross adopted allocation',
+    },
+    {
+      label: 'Capital',
+      value: formatDollarsAbbreviated(area.capitalBudget),
+      note: 'Multi-year adopted program',
+    },
+    {
+      label: 'Departments',
+      value: area.departmentCount.toLocaleString('en-US'),
+      note: 'With allocations in this area',
+    },
+    {
+      label: 'Funded positions',
+      value: employeeCount.toLocaleString('en-US'),
+      note: 'Across listed department slices',
+    },
+  ]
 
   return (
-    <div className="px-(--spacing-page) py-6">
-      <Breadcrumbs
-        items={[
-          { label: 'Home', href: '/' },
-          { label: 'Explorer', href: '/explorer' },
-          { label: area.name },
-        ]}
-      />
+    <div className="bg-[#F5F2EA]">
+      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+        <ReleaseSwitcher activeStage="adopted" />
+        <div className="mt-5">
+          <Breadcrumbs
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Explorer', href: '/explorer' },
+              { label: area.name },
+            ]}
+          />
+        </div>
 
-      <div className="mt-6">
-        <AreaHeader area={area} />
+        <div className="mt-5">
+          <ExplorationMasthead
+            eyebrow="Adopted strategic area"
+            title={area.name}
+            description={
+              area.description ??
+              'Explore the departments and adopted budget allocated to this strategic area.'
+            }
+            metricLabel="Operating allocation"
+            metricValue={formatDollarsAbbreviated(area.operatingBudget)}
+            metricNote={`${area.centsPerDollar ?? 0} cents of each adopted operating dollar across ${area.departmentCount} departments.`}
+            accentColor={area.color}
+          />
+        </div>
+
+        <ReleaseFacts facts={facts} />
+
+        <ReportSection
+          number="01"
+          label="Department map"
+          title="How the area is distributed"
+          description="Rectangle area represents each department’s operating allocation within this strategic area. Select a department for its full adopted record."
+        >
+          <div className="border-y-2 border-text-primary py-5">
+            <AreaDeptTreemap
+              areaName={area.name}
+              departments={departments}
+              treemapItems={treemapItems}
+            />
+          </div>
+        </ReportSection>
+
+        <ReportSection
+          number="02"
+          label="Directory"
+          title="The departments behind the strategy"
+          description="Sort by operating dollars, funded positions, or name. Multi-area departments show only the allocation belonging to this strategic area."
+        >
+          <DepartmentList departments={departments} areaColor={area.color} />
+        </ReportSection>
       </div>
 
-      {/* Desktop: department treemap with data table toggle */}
-      <div className="hidden md:block mb-8">
-        <AreaDeptTreemap
-          areaName={area.name}
-          departments={departments}
-          treemapItems={treemapItems}
-        />
+      <div className="bg-text-primary text-white">
+        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-7 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <p className="max-w-2xl text-sm text-white/70">
+            The proposal reorganizes services under seven priorities, so area-level comparisons are not asserted.
+          </p>
+          <Link
+            href="/compare"
+            className="font-bold underline decoration-mdc-orange decoration-2 underline-offset-4 hover:text-white/75"
+          >
+            Compare departments instead <span aria-hidden="true">→</span>
+          </Link>
+        </div>
       </div>
-
-      {/* Department list (visible on all screen sizes) */}
-      <section className="mt-8">
-        <h2 className="text-lg font-heading font-semibold text-text-primary mb-4">
-          Departments
-        </h2>
-        <DepartmentList departments={departments} areaColor={area.color} />
-      </section>
     </div>
   )
 }

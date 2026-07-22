@@ -23,6 +23,7 @@ export function AiDescription({
       {detailedDescription && (
         <>
           <button
+            type="button"
             onClick={() => setExpanded(!expanded)}
             className="mt-2 text-sm text-mdc-blue hover:underline"
             aria-expanded={expanded}

@@ -128,6 +128,7 @@ export type SerializedDepartmentChange = {
   baselineOperating: string
   proposedOperating: string
   operatingChange: string
+  proposedCapital: string
   baselineEmployees: number | null
   proposedEmployees: number | null
   employeeChange: number | null

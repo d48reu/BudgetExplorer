@@ -9,6 +9,7 @@ Miami-Dade County's adopted and proposed budgets as an interactive, searchable, 
 - Interactive treemap with drill-down into 9 strategic areas and more than 50 departments
 - A shared release design for the FY 2025-26 adopted and FY 2026-27 proposed budgets
 - Gross-to-net waterfalls, allocation ribbons, and proposed department-change analysis
+- A filterable `/compare` workspace for operating, staffing, and proposed capital views
 - AI-generated plain-English descriptions of every department's budget
 - Tax calculator showing how your property taxes are allocated
 - Full-text search across all budget items
@@ -70,12 +71,14 @@ PDFs download automatically when the local paths do not exist.
   --published-totals pipeline/data/fy_2026_27_proposed_totals.json
 ```
 
-The adopted homepage and dedicated `/proposed` page share the same report and
-visual language. Headline comparisons use published release totals. Department
-changes use the proposal's Appendix A restatement of the adopted budget so
-departments remain comparable even though the proposal reorganizes the adopted
-strategic areas into a new priority taxonomy. Keep production deployment and
-database migration as separate, explicitly reviewed steps.
+The adopted homepage, Explorer, department records, `/proposed`, and `/compare`
+share the same report and visual language. Headline comparisons use published
+release totals. Department changes use the proposal's Appendix A restatement of
+the adopted budget so departments remain comparable even though the proposal
+reorganizes the adopted strategic areas into a new priority taxonomy. Proposed
+capital is presented without a change claim because the source does not publish
+a restated adopted capital baseline. Keep production deployment and database
+migration as separate, explicitly reviewed steps.
 
 Do not run migrations against a shared or production database until the target
 and pending migration list have been audited.

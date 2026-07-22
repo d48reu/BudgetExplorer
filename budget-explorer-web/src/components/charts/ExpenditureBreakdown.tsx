@@ -125,6 +125,7 @@ export function ExpenditureBreakdown({ data, areaColor }: ExpenditureBreakdownPr
       chartLabel="Expenditure breakdown chart"
       data={data}
       columns={tableColumns}
+      rowKey="categoryName"
     >
       <ChartContainer minHeight={chartHeight}>
         {({ width, height }) => (

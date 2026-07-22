@@ -126,6 +126,7 @@ export function AuthorityBreakdown({ breakdown, totalTax }: AuthorityBreakdownPr
         chartLabel="Tax breakdown by taxing authority"
         data={breakdown}
         columns={accessibleColumns}
+        rowKey="authority"
       >
         <ChartContainer minHeight={40} className="max-h-[60px]">
           {({ width }) => (

@@ -11,6 +11,8 @@ type DataTableToggleProps<T> = {
   data: T[]
   /** Column definitions for the table. */
   columns: TableColumn<T>[]
+  /** Stable field used as the React key for each table row. */
+  rowKey: keyof T & string
   /** The chart component to display. */
   children: React.ReactNode
   /** Initial view mode. Defaults to 'chart'. */
@@ -25,11 +27,13 @@ function DataTable<T>({
   chartLabel,
   data,
   columns,
+  rowKey,
   className,
 }: {
   chartLabel: string
   data: T[]
   columns: TableColumn<T>[]
+  rowKey: keyof T & string
   className?: string
 }) {
   return (
@@ -55,8 +59,11 @@ function DataTable<T>({
           </tr>
         </thead>
         <tbody>
-          {data.map((row, i) => (
-            <tr key={i} className="border-b border-border last:border-0">
+          {data.map((row) => (
+            <tr
+              key={String(row[rowKey])}
+              className="border-b border-border last:border-0"
+            >
               {columns.map((col) => (
                 <td
                   key={col.key}
@@ -87,6 +94,7 @@ export function DataTableToggle<T>({
   chartLabel,
   data,
   columns,
+  rowKey,
   children,
   defaultView = 'chart',
 }: DataTableToggleProps<T>) {
@@ -96,6 +104,7 @@ export function DataTableToggle<T>({
     <div>
       <div className="flex justify-end mb-2">
         <button
+          type="button"
           onClick={() => setShowTable(!showTable)}
           className="text-sm text-mdc-blue hover:underline"
           aria-pressed={showTable}
@@ -109,6 +118,7 @@ export function DataTableToggle<T>({
           chartLabel={chartLabel}
           data={data}
           columns={columns}
+          rowKey={rowKey}
         />
       ) : (
         <>
@@ -119,6 +129,7 @@ export function DataTableToggle<T>({
             chartLabel={chartLabel}
             data={data}
             columns={columns}
+            rowKey={rowKey}
             className="sr-only"
           />
         </>

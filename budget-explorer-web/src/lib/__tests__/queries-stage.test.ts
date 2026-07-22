@@ -37,6 +37,7 @@ vi.mock('@/lib/prisma', () => ({
 import {
   getAdoptedDepartmentSlugs,
   getAdoptedStrategicAreaSlugs,
+  getDepartmentProposalChange,
   getQuickStats,
   getProposedBudgetOverview,
   getMillageRates,
@@ -163,6 +164,7 @@ describe('adopted release isolation', () => {
       {
         department_id: 42,
         operating_budget: BigInt(600),
+        capital_budget: BigInt(90),
         employee_count: 7,
         baseline_operating_budget: BigInt(500),
         baseline_employee_count: 6,
@@ -171,6 +173,7 @@ describe('adopted release isolation', () => {
       {
         department_id: 42,
         operating_budget: BigInt(500),
+        capital_budget: BigInt(10),
         employee_count: 5,
         baseline_operating_budget: BigInt(400),
         baseline_employee_count: 4,
@@ -187,6 +190,7 @@ describe('adopted release isolation', () => {
           baselineOperating: '900',
           proposedOperating: '1100',
           operatingChange: '200',
+          proposedCapital: '100',
           baselineEmployees: 10,
           proposedEmployees: 12,
           employeeChange: 2,
@@ -202,6 +206,53 @@ describe('adopted release isolation', () => {
     expect(db.departmentBudgetsFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { fiscal_year_id: 7, stage: 'proposed' },
+      })
+    )
+  })
+
+  it('aggregates one department against the restated proposal baseline', async () => {
+    db.budgetReleasesFindFirst.mockResolvedValue({ fiscal_year_id: 7 })
+    db.departmentBudgetsFindMany.mockResolvedValue([
+      {
+        department_id: 42,
+        operating_budget: BigInt(600),
+        capital_budget: BigInt(90),
+        employee_count: 7,
+        baseline_operating_budget: BigInt(500),
+        baseline_employee_count: 6,
+        departments: { name: 'Transit', slug: 'transit' },
+      },
+      {
+        department_id: 42,
+        operating_budget: BigInt(500),
+        capital_budget: BigInt(10),
+        employee_count: 5,
+        baseline_operating_budget: BigInt(400),
+        baseline_employee_count: 4,
+        departments: { name: 'Transit', slug: 'transit' },
+      },
+    ])
+
+    await expect(getDepartmentProposalChange('transit')).resolves.toEqual({
+      id: 42,
+      name: 'Transit',
+      slug: 'transit',
+      baselineOperating: '900',
+      proposedOperating: '1100',
+      operatingChange: '200',
+      proposedCapital: '100',
+      baselineEmployees: 10,
+      proposedEmployees: 12,
+      employeeChange: 2,
+    })
+
+    expect(db.departmentBudgetsFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          fiscal_year_id: 7,
+          stage: 'proposed',
+          departments: { slug: 'transit' },
+        },
       })
     )
   })

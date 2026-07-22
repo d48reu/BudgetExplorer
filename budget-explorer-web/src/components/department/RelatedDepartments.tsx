@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { Card } from '@/components/ui/Card'
 import { formatDollarsAbbreviated } from '@/lib/format'
 import type { SerializedDepartment } from '@/types/budget'
 
@@ -17,30 +16,28 @@ export function RelatedDepartments({
   if (departments.length === 0) return null
 
   return (
-    <section>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-heading font-semibold text-text-primary">
-          More in {areaName}
-        </h2>
-        <Link
-          href={`/explorer/${areaSlug}`}
-          className="text-sm text-mdc-blue hover:underline"
-        >
-          View all
-        </Link>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div>
+      <ol className="grid border-t-2 border-text-primary sm:grid-cols-2 sm:gap-x-8">
         {departments.map((dept) => (
-          <Link key={dept.id} href={`/department/${dept.slug}`}>
-            <Card className="hover:border-text-secondary transition-colors">
-              <p className="font-medium text-text-primary">{dept.name}</p>
-              <p className="text-sm text-text-secondary mt-1">
+          <li key={dept.id} className="border-b border-border-strong">
+            <Link
+              href={`/department/${dept.slug}`}
+              className="flex items-baseline justify-between gap-4 py-4 font-heading font-bold text-text-primary hover:text-mdc-blue"
+            >
+              <span>{dept.name}</span>
+              <span className="shrink-0 tabular-nums text-text-secondary">
                 {formatDollarsAbbreviated(dept.operatingBudget)}
-              </p>
-            </Card>
-          </Link>
+              </span>
+            </Link>
+          </li>
         ))}
-      </div>
-    </section>
+      </ol>
+      <Link
+        href={`/explorer/${areaSlug}`}
+        className="mt-5 inline-block font-heading text-sm font-bold underline decoration-mdc-blue decoration-2 underline-offset-4 hover:text-mdc-blue"
+      >
+        View every department in {areaName} <span aria-hidden="true">→</span>
+      </Link>
+    </div>
   )
 }

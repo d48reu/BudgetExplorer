@@ -167,7 +167,15 @@ export default async function ProposedBudgetPage() {
           title="Where operating budgets move most"
           description="Department comparisons use Appendix A’s restated adopted baseline, which applies the proposal’s own department and priority structure to both years."
         >
-          <DepartmentChangePlot changes={departmentChanges} />
+          <div>
+            <DepartmentChangePlot changes={departmentChanges} />
+            <Link
+              href="/compare"
+              className="mt-5 inline-block font-heading text-sm font-bold underline decoration-mdc-blue decoration-2 underline-offset-4 hover:text-mdc-blue"
+            >
+              Filter every department and measure <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </ReportSection>
 
         <ReportSection
@@ -214,9 +222,14 @@ export default async function ProposedBudgetPage() {
           <p className="max-w-2xl text-white/70">
             Informational only. This explorer is not an official Miami-Dade County website.
           </p>
-          <Link href="/" className="font-bold underline decoration-mdc-orange decoration-2 underline-offset-4 hover:text-white/75">
-            Return to the adopted budget <span aria-hidden="true">→</span>
-          </Link>
+          <div className="flex flex-wrap gap-5">
+            <Link href="/compare" className="font-bold underline decoration-mdc-green decoration-2 underline-offset-4 hover:text-white/75">
+              Compare releases <span aria-hidden="true">→</span>
+            </Link>
+            <Link href="/" className="font-bold underline decoration-mdc-orange decoration-2 underline-offset-4 hover:text-white/75">
+              Return to adopted <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

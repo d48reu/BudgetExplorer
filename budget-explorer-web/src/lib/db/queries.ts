@@ -12,6 +12,7 @@ import type {
   QuickStats,
   ProposedBudgetOverview,
   SerializedBudgetRelease,
+  SerializedDepartmentChange,
 } from '@/types/budget'
 
 const CURRENT_FY_LABEL = 'FY 2025-26'
@@ -164,6 +165,7 @@ export async function getProposedBudgetOverview(): Promise<ProposedBudgetOvervie
         select: {
           department_id: true,
           operating_budget: true,
+          capital_budget: true,
           employee_count: true,
           baseline_operating_budget: true,
           baseline_employee_count: true,
@@ -214,6 +216,7 @@ export async function getProposedBudgetOverview(): Promise<ProposedBudgetOvervie
       slug: string
       baselineOperating: bigint
       proposedOperating: bigint
+      proposedCapital: bigint
       baselineEmployees: number | null
       proposedEmployees: number | null
     }
@@ -225,11 +228,13 @@ export async function getProposedBudgetOverview(): Promise<ProposedBudgetOvervie
       slug: row.departments.slug,
       baselineOperating: BigInt(0),
       proposedOperating: BigInt(0),
+      proposedCapital: BigInt(0),
       baselineEmployees: null,
       proposedEmployees: null,
     }
     change.baselineOperating += row.baseline_operating_budget ?? BigInt(0)
     change.proposedOperating += row.operating_budget ?? BigInt(0)
+    change.proposedCapital += row.capital_budget ?? BigInt(0)
     if (row.baseline_employee_count != null) {
       change.baselineEmployees =
         (change.baselineEmployees ?? 0) + row.baseline_employee_count
@@ -251,6 +256,7 @@ export async function getProposedBudgetOverview(): Promise<ProposedBudgetOvervie
       operatingChange: (
         change.proposedOperating - change.baselineOperating
       ).toString(),
+      proposedCapital: change.proposedCapital.toString(),
       baselineEmployees: change.baselineEmployees,
       proposedEmployees: change.proposedEmployees,
       employeeChange:
@@ -294,6 +300,89 @@ export async function getProposedBudgetOverview(): Promise<ProposedBudgetOvervie
     },
   }
 }
+
+/**
+ * Proposed operating, staffing, and capital context for one adopted department.
+ * Operating and staffing comparisons use Appendix A's restated baseline.
+ * Capital is proposal-only because the source does not publish a restated
+ * adopted capital baseline in the new priority structure.
+ */
+export const getDepartmentProposalChange = cache(
+  async (slug: string): Promise<SerializedDepartmentChange | null> => {
+    const release = await prisma.budget_releases.findFirst({
+      where: {
+        stage: 'proposed',
+        fiscal_years: { label: PROPOSED_FY_LABEL },
+      },
+      select: { fiscal_year_id: true },
+    })
+    if (!release) return null
+
+    const rows = await prisma.department_budgets.findMany({
+      where: {
+        fiscal_year_id: release.fiscal_year_id,
+        stage: 'proposed',
+        departments: { slug },
+      },
+      select: {
+        department_id: true,
+        operating_budget: true,
+        capital_budget: true,
+        employee_count: true,
+        baseline_operating_budget: true,
+        baseline_employee_count: true,
+        departments: { select: { name: true, slug: true } },
+      },
+    })
+    if (rows.length === 0) return null
+
+    const first = rows[0]
+    const totals = rows.reduce(
+      (result, row) => ({
+        baselineOperating:
+          result.baselineOperating +
+          (row.baseline_operating_budget ?? BigInt(0)),
+        proposedOperating:
+          result.proposedOperating + (row.operating_budget ?? BigInt(0)),
+        proposedCapital:
+          result.proposedCapital + (row.capital_budget ?? BigInt(0)),
+        baselineEmployees:
+          row.baseline_employee_count == null
+            ? result.baselineEmployees
+            : (result.baselineEmployees ?? 0) + row.baseline_employee_count,
+        proposedEmployees:
+          row.employee_count == null
+            ? result.proposedEmployees
+            : (result.proposedEmployees ?? 0) + row.employee_count,
+      }),
+      {
+        baselineOperating: BigInt(0),
+        proposedOperating: BigInt(0),
+        proposedCapital: BigInt(0),
+        baselineEmployees: null as number | null,
+        proposedEmployees: null as number | null,
+      }
+    )
+
+    return {
+      id: first.department_id,
+      name: first.departments.name,
+      slug: first.departments.slug,
+      baselineOperating: totals.baselineOperating.toString(),
+      proposedOperating: totals.proposedOperating.toString(),
+      operatingChange: (
+        totals.proposedOperating - totals.baselineOperating
+      ).toString(),
+      proposedCapital: totals.proposedCapital.toString(),
+      baselineEmployees: totals.baselineEmployees,
+      proposedEmployees: totals.proposedEmployees,
+      employeeChange:
+        totals.baselineEmployees != null && totals.proposedEmployees != null
+          ? totals.proposedEmployees - totals.baselineEmployees
+          : null,
+    }
+  }
+)
 
 /**
  * Get millage rates for FY 2025-26.

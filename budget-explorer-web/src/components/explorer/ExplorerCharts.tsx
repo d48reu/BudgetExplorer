@@ -27,6 +27,12 @@ const areaColumns: TableColumn<AreaTableRow>[] = [
     format: (value) => formatDollarsAbbreviated(value as string),
   },
   {
+    key: 'capitalBudget',
+    label: 'Capital Program',
+    align: 'right',
+    format: (value) => formatDollarsAbbreviated(value as string),
+  },
+  {
     key: 'centsPerDollar',
     label: 'Cents per Dollar',
     align: 'right',
@@ -70,6 +76,7 @@ export function ExplorerTreemap({
       chartLabel="Strategic area budget treemap"
       data={tableData}
       columns={areaColumns}
+      rowKey="id"
     >
       <ChartContainer minHeight={400}>
         {({ width, height }) => (
@@ -97,6 +104,12 @@ const deptColumns: TableColumn<SerializedDepartment>[] = [
     format: (value) => formatDollarsAbbreviated(value as string),
   },
   {
+    key: 'capitalBudget',
+    label: 'Capital Program',
+    align: 'right',
+    format: (value) => formatDollarsAbbreviated(value as string),
+  },
+  {
     key: 'employeeCount',
     label: 'Employees',
     align: 'right',
@@ -118,6 +131,7 @@ export function AreaDeptTreemap({
       chartLabel={`${areaName} department budget treemap`}
       data={departments}
       columns={deptColumns}
+      rowKey="id"
     >
       <ChartContainer minHeight={350}>
         {({ width, height }) => (

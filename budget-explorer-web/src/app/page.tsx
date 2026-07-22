@@ -114,8 +114,8 @@ export default async function HomePage() {
           <Link href="/calculator" className="border-t-2 border-mdc-orange pt-4 font-heading text-lg font-bold hover:text-white/75">
             Estimate property taxes <span aria-hidden="true">→</span>
           </Link>
-          <Link href="/proposed" className="border-t-2 border-mdc-green pt-4 font-heading text-lg font-bold hover:text-white/75">
-            Compare the proposal <span aria-hidden="true">→</span>
+          <Link href="/compare" className="border-t-2 border-mdc-green pt-4 font-heading text-lg font-bold hover:text-white/75">
+            Compare both releases <span aria-hidden="true">→</span>
           </Link>
         </div>
       </div>
