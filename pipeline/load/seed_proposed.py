@@ -101,8 +101,9 @@ def seed_proposed_all(conn, data: dict) -> dict:
             INSERT INTO department_budgets
                 (fiscal_year_id, department_id, strategic_area_id,
                  operating_budget, capital_budget, total_budget,
-                 employee_count, stage)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, 'proposed')
+                 employee_count, baseline_operating_budget,
+                 baseline_employee_count, stage)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'proposed')
         """, (
             fiscal_year_id,
             department_id,
@@ -111,6 +112,8 @@ def seed_proposed_all(conn, data: dict) -> dict:
             budget["capital_cents"],
             budget["total_budget_cents"],
             budget.get("employee_count"),
+            budget.get("restated_adopted_operating_cents"),
+            budget.get("restated_adopted_positions"),
         ))
 
     cur.execute(

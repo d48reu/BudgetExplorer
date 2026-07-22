@@ -121,10 +121,23 @@ export type SerializedProposedPriority = {
   capitalBudget: string
 }
 
+export type SerializedDepartmentChange = {
+  id: number
+  name: string
+  slug: string
+  baselineOperating: string
+  proposedOperating: string
+  operatingChange: string
+  baselineEmployees: number | null
+  proposedEmployees: number | null
+  employeeChange: number | null
+}
+
 export type ProposedBudgetOverview = {
   proposed: SerializedBudgetRelease
   adopted: SerializedBudgetRelease | null
   priorities: SerializedProposedPriority[]
+  departmentChanges: SerializedDepartmentChange[]
   departmentCount: number
   sources: {
     budgetInBrief: string | null

@@ -11,44 +11,51 @@ export function PriorityBudgetTable({
   grossOperating,
 }: PriorityBudgetTableProps) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface">
-      <div className="divide-y divide-border md:hidden">
-        {priorities.map((priority) => {
+    <div className="border-t-2 border-text-primary">
+      <div className="md:hidden">
+        {priorities.map((priority, index) => {
           const share =
             Number(grossOperating) > 0
               ? (Number(priority.operatingBudget) / Number(grossOperating)) * 100
               : 0
           return (
-            <article key={priority.id} className="p-5">
-              <div className="flex items-start gap-3">
-                <span
-                  className="mt-1 h-3 w-3 shrink-0 rounded-sm"
-                  style={{ backgroundColor: priority.color ?? '#6B7280' }}
-                  aria-hidden="true"
-                />
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-text-primary">{priority.name}</h3>
-                  <p className="mt-1 text-sm text-text-secondary">
-                    {priority.description}
-                  </p>
+            <article key={priority.id} className="border-b border-border-strong py-6">
+              <div className="grid grid-cols-[2.5rem_1fr] gap-3">
+                <p className="font-heading text-sm font-bold tabular-nums text-mdc-blue">
+                  {String(index + 1).padStart(2, '0')}
+                </p>
+                <div>
+                  <h3 className="font-heading text-xl font-bold leading-tight text-text-primary">
+                    {priority.name}
+                  </h3>
+                  <p className="mt-2 text-sm leading-5 text-text-secondary">{priority.description}</p>
+                  <div className="mt-4 h-1 bg-border" aria-hidden="true">
+                    <div
+                      className="h-full"
+                      style={{
+                        backgroundColor: priority.color ?? '#6B7280',
+                        width: `${share}%`,
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-              <dl className="mt-4 grid grid-cols-3 gap-3 text-sm">
+              <dl className="mt-5 grid grid-cols-3 gap-3 border-l-[2.5rem] border-transparent text-sm">
                 <div>
-                  <dt className="text-text-secondary">Operating</dt>
-                  <dd className="mt-1 font-semibold">
+                  <dt className="text-xs uppercase tracking-wide text-text-muted">Operating</dt>
+                  <dd className="mt-1 font-heading font-bold tabular-nums">
                     {formatDollarsAbbreviated(priority.operatingBudget)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-secondary">Capital</dt>
-                  <dd className="mt-1 font-semibold">
+                  <dt className="text-xs uppercase tracking-wide text-text-muted">Capital</dt>
+                  <dd className="mt-1 font-heading font-bold tabular-nums">
                     {formatDollarsAbbreviated(priority.capitalBudget)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-secondary">Share</dt>
-                  <dd className="mt-1 font-semibold">{share.toFixed(1)}%</dd>
+                  <dt className="text-xs uppercase tracking-wide text-text-muted">Share</dt>
+                  <dd className="mt-1 font-heading font-bold tabular-nums">{share.toFixed(1)}%</dd>
                 </div>
               </dl>
             </article>
@@ -56,49 +63,55 @@ export function PriorityBudgetTable({
         })}
       </div>
 
-      <div className="hidden overflow-x-auto md:block">
+      <div className="hidden md:block">
         <table className="w-full border-collapse text-left text-sm">
           <caption className="sr-only">
             Proposed gross operating and capital budgets by priority
           </caption>
-          <thead className="bg-surface-secondary text-text-secondary">
+          <thead className="border-b border-text-primary text-text-secondary">
             <tr>
-              <th scope="col" className="px-5 py-3 font-medium">Priority</th>
-              <th scope="col" className="px-5 py-3 text-right font-medium">Operating</th>
-              <th scope="col" className="px-5 py-3 text-right font-medium">Capital</th>
-              <th scope="col" className="px-5 py-3 text-right font-medium">Operating share</th>
+              <th scope="col" className="w-14 py-3 pr-4 text-xs font-bold uppercase tracking-wider">No.</th>
+              <th scope="col" className="py-3 pr-5 text-xs font-bold uppercase tracking-wider">Priority</th>
+              <th scope="col" className="px-5 py-3 text-right text-xs font-bold uppercase tracking-wider">Operating</th>
+              <th scope="col" className="px-5 py-3 text-right text-xs font-bold uppercase tracking-wider">Capital</th>
+              <th scope="col" className="py-3 pl-5 text-right text-xs font-bold uppercase tracking-wider">Share</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
-            {priorities.map((priority) => {
+          <tbody>
+            {priorities.map((priority, index) => {
               const share =
                 Number(grossOperating) > 0
                   ? (Number(priority.operatingBudget) / Number(grossOperating)) * 100
                   : 0
               return (
-                <tr key={priority.id}>
-                  <th scope="row" className="px-5 py-4 font-normal">
-                    <div className="flex items-start gap-3">
-                      <span
-                        className="mt-1 h-3 w-3 shrink-0 rounded-sm"
-                        style={{ backgroundColor: priority.color ?? '#6B7280' }}
-                        aria-hidden="true"
-                      />
-                      <div>
-                        <p className="font-semibold text-text-primary">{priority.name}</p>
-                        <p className="mt-1 max-w-xl text-xs text-text-secondary">
-                          {priority.description}
-                        </p>
+                <tr key={priority.id} className="border-b border-border-strong align-top">
+                  <td className="py-5 pr-4 font-heading font-bold tabular-nums text-mdc-blue">
+                    {String(index + 1).padStart(2, '0')}
+                  </td>
+                  <th scope="row" className="py-5 pr-5 font-normal">
+                    <div>
+                      <p className="font-heading text-base font-bold text-text-primary">{priority.name}</p>
+                      <p className="mt-1 max-w-xl text-xs leading-5 text-text-secondary">
+                        {priority.description}
+                      </p>
+                      <div className="mt-3 h-1 max-w-xs bg-border" aria-hidden="true">
+                        <div
+                          className="h-full"
+                          style={{
+                            backgroundColor: priority.color ?? '#6B7280',
+                            width: `${share}%`,
+                          }}
+                        />
                       </div>
                     </div>
                   </th>
-                  <td className="whitespace-nowrap px-5 py-4 text-right font-medium">
+                  <td className="whitespace-nowrap px-5 py-5 text-right font-heading font-bold tabular-nums">
                     {formatDollarsFull(priority.operatingBudget)}
                   </td>
-                  <td className="whitespace-nowrap px-5 py-4 text-right text-text-secondary">
+                  <td className="whitespace-nowrap px-5 py-5 text-right tabular-nums text-text-secondary">
                     {formatDollarsFull(priority.capitalBudget)}
                   </td>
-                  <td className="whitespace-nowrap px-5 py-4 text-right text-text-secondary">
+                  <td className="whitespace-nowrap py-5 pl-5 text-right font-heading font-bold tabular-nums text-text-primary">
                     {share.toFixed(1)}%
                   </td>
                 </tr>

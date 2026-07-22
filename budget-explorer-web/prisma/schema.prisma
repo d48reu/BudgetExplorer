@@ -84,18 +84,20 @@ model department_aliases {
 }
 
 model department_budgets {
-  id                Int              @id @default(autoincrement())
-  fiscal_year_id    Int
-  department_id     Int
-  operating_budget  BigInt?
-  capital_budget    BigInt?
-  total_budget      BigInt?
-  employee_count    Int?
-  strategic_area_id Int?
-  stage             budget_stage
-  departments       departments      @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  fiscal_years      fiscal_years     @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  strategic_areas   strategic_areas? @relation(fields: [strategic_area_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                        Int              @id @default(autoincrement())
+  fiscal_year_id            Int
+  department_id             Int
+  operating_budget          BigInt?
+  capital_budget            BigInt?
+  total_budget              BigInt?
+  employee_count            Int?
+  baseline_operating_budget BigInt?
+  baseline_employee_count   Int?
+  strategic_area_id         Int?
+  stage                     budget_stage
+  departments               departments      @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fiscal_years              fiscal_years     @relation(fields: [fiscal_year_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  strategic_areas           strategic_areas? @relation(fields: [strategic_area_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([fiscal_year_id, department_id, strategic_area_id, stage], map: "department_budgets_fy_dept_area_stage_key")
   @@index([strategic_area_id], map: "idx_dept_budgets_area")

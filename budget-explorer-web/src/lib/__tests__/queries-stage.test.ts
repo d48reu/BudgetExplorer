@@ -159,10 +159,39 @@ describe('adopted release isolation', () => {
             }
       )
     )
+    db.departmentBudgetsFindMany.mockResolvedValue([
+      {
+        department_id: 42,
+        operating_budget: BigInt(600),
+        employee_count: 7,
+        baseline_operating_budget: BigInt(500),
+        baseline_employee_count: 6,
+        departments: { name: 'Transit', slug: 'transit' },
+      },
+      {
+        department_id: 42,
+        operating_budget: BigInt(500),
+        employee_count: 5,
+        baseline_operating_budget: BigInt(400),
+        baseline_employee_count: 4,
+        departments: { name: 'Transit', slug: 'transit' },
+      },
+    ])
 
     await expect(getProposedBudgetOverview()).resolves.toMatchObject({
       proposed: { fiscalYear: 'FY 2026-27', stage: 'proposed' },
       adopted: { fiscalYear: 'FY 2025-26', stage: 'adopted' },
+      departmentChanges: [
+        {
+          name: 'Transit',
+          baselineOperating: '900',
+          proposedOperating: '1100',
+          operatingChange: '200',
+          baselineEmployees: 10,
+          proposedEmployees: 12,
+          employeeChange: 2,
+        },
+      ],
     })
 
     expect(db.strategicAreaBudgetsFindMany).toHaveBeenCalledWith(

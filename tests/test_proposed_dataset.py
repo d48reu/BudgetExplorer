@@ -47,6 +47,7 @@ def test_proposed_priority_totals_match_release() -> None:
 def test_proposed_department_slices_match_release() -> None:
     data = _dataset()
     release = data["release"]
+    baseline = data["restated_adopted_baseline"]
     departments = data["department_budgets"]
 
     assert len(departments) == 86
@@ -55,4 +56,10 @@ def test_proposed_department_slices_match_release() -> None:
     ]
     assert sum(item["capital_cents"] for item in departments) == release["capital_cents"]
     assert sum(item["employee_count"] or 0 for item in departments) == release["employees"]
+    assert sum(
+        item["restated_adopted_operating_cents"] for item in departments
+    ) == baseline["gross_operating_cents"]
+    assert sum(
+        item["restated_adopted_positions"] or 0 for item in departments
+    ) == baseline["employees"]
     assert all(item["total_budget_cents"] >= 0 for item in departments)

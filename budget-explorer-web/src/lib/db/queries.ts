@@ -11,6 +11,7 @@ import type {
   SerializedRevenueSource,
   QuickStats,
   ProposedBudgetOverview,
+  SerializedBudgetRelease,
 } from '@/types/budget'
 
 const CURRENT_FY_LABEL = 'FY 2025-26'
@@ -86,6 +87,40 @@ export async function getCurrentFiscalYear(): Promise<SerializedFiscalYear | nul
   }
 }
 
+/** Release-level adopted totals used by the shared adopted/proposed visuals. */
+export async function getAdoptedBudgetRelease(): Promise<SerializedBudgetRelease | null> {
+  const release = await prisma.budget_releases.findFirst({
+    where: {
+      stage: 'adopted',
+      fiscal_years: { label: CURRENT_FY_LABEL },
+    },
+    include: { fiscal_years: true },
+  })
+  if (!release) return null
+
+  const millage = await prisma.millage_rates.findFirst({
+    where: {
+      fiscal_year_id: release.fiscal_year_id,
+      stage: 'adopted',
+      authority: 'Total to County',
+    },
+    select: { millage_rate: true },
+  })
+
+  return {
+    fiscalYear: release.fiscal_years.label,
+    stage: 'adopted',
+    asOfDate: release.as_of_date?.toISOString().slice(0, 10) ?? null,
+    netOperating: release.total_operating?.toString() ?? '0',
+    grossOperating: release.gross_operating?.toString() ?? '0',
+    interagencyTransfers: release.interagency_transfers?.toString() ?? '0',
+    capital: release.total_capital?.toString() ?? '0',
+    total: release.total_budget?.toString() ?? '0',
+    employees: release.total_employees,
+    countyMillage: millage ? Number(millage.millage_rate) : null,
+  }
+}
+
 /**
  * Return the proposed release alongside the currently adopted release.
  * This is the only public query that intentionally reads proposed-stage facts;
@@ -126,7 +161,14 @@ export async function getProposedBudgetOverview(): Promise<ProposedBudgetOvervie
           fiscal_year_id: proposedRelease.fiscal_year_id,
           stage: 'proposed',
         },
-        select: { department_id: true },
+        select: {
+          department_id: true,
+          operating_budget: true,
+          employee_count: true,
+          baseline_operating_budget: true,
+          baseline_employee_count: true,
+          departments: { select: { name: true, slug: true } },
+        },
       }),
       prisma.millage_rates.findFirst({
         where: {
@@ -164,6 +206,63 @@ export async function getProposedBudgetOverview(): Promise<ProposedBudgetOvervie
     countyMillage,
   })
 
+  const changesByDepartment = new Map<
+    number,
+    {
+      id: number
+      name: string
+      slug: string
+      baselineOperating: bigint
+      proposedOperating: bigint
+      baselineEmployees: number | null
+      proposedEmployees: number | null
+    }
+  >()
+  for (const row of departmentRows) {
+    const change = changesByDepartment.get(row.department_id) ?? {
+      id: row.department_id,
+      name: row.departments.name,
+      slug: row.departments.slug,
+      baselineOperating: BigInt(0),
+      proposedOperating: BigInt(0),
+      baselineEmployees: null,
+      proposedEmployees: null,
+    }
+    change.baselineOperating += row.baseline_operating_budget ?? BigInt(0)
+    change.proposedOperating += row.operating_budget ?? BigInt(0)
+    if (row.baseline_employee_count != null) {
+      change.baselineEmployees =
+        (change.baselineEmployees ?? 0) + row.baseline_employee_count
+    }
+    if (row.employee_count != null) {
+      change.proposedEmployees =
+        (change.proposedEmployees ?? 0) + row.employee_count
+    }
+    changesByDepartment.set(row.department_id, change)
+  }
+
+  const departmentChanges = Array.from(changesByDepartment.values())
+    .map((change) => ({
+      id: change.id,
+      name: change.name,
+      slug: change.slug,
+      baselineOperating: change.baselineOperating.toString(),
+      proposedOperating: change.proposedOperating.toString(),
+      operatingChange: (
+        change.proposedOperating - change.baselineOperating
+      ).toString(),
+      baselineEmployees: change.baselineEmployees,
+      proposedEmployees: change.proposedEmployees,
+      employeeChange:
+        change.baselineEmployees != null && change.proposedEmployees != null
+          ? change.proposedEmployees - change.baselineEmployees
+          : null,
+    }))
+    .sort(
+      (a, b) =>
+        Math.abs(Number(b.operatingChange)) - Math.abs(Number(a.operatingChange))
+    )
+
   return {
     proposed: serializeRelease(
       proposedRelease,
@@ -185,7 +284,8 @@ export async function getProposedBudgetOverview(): Promise<ProposedBudgetOvervie
       operatingBudget: budget.operating_budget?.toString() ?? '0',
       capitalBudget: budget.capital_budget?.toString() ?? '0',
     })),
-    departmentCount: new Set(departmentRows.map((row) => row.department_id)).size,
+    departmentChanges,
+    departmentCount: changesByDepartment.size,
     sources: {
       budgetInBrief: proposedRelease.budget_in_brief_url,
       volume1: proposedRelease.volume_1_url,

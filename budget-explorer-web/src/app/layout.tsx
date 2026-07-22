@@ -39,7 +39,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="bg-surface text-text-primary font-body antialiased">
         <Navbar />
-        <main className="pt-16 pb-16 md:pb-0 min-h-screen">
+        <main className="min-h-screen pb-16 md:pt-16 md:pb-0">
           {children}
         </main>
         <Footer />
