@@ -20,6 +20,7 @@ from pipeline.config import (
     PDF_PATH, PDF_URL, CURRENT_FISCAL_YEAR,
     APPENDIX_C_PATH, APPENDIX_J_PATH,
     APPENDIX_C_URL, APPENDIX_J_URL,
+    PROPOSED_BIB_PATH, PROPOSED_VOLUME_1_PATH,
 )
 
 
@@ -128,6 +129,71 @@ def extract(pdf, output, appendix_c, appendix_j):
     click.echo(f"  Penny entries: {len(data.get('penny', []))}")
 
 
+@cli.command(name="extract-proposed")
+@click.option(
+    "--budget-in-brief",
+    "budget_in_brief",
+    default=None,
+    help="Local path or URL for the FY 2026-27 proposed Budget in Brief.",
+)
+@click.option(
+    "--volume-1",
+    "volume_1",
+    default=None,
+    help="Local path or URL for FY 2026-27 proposed Volume 1.",
+)
+@click.option(
+    "--output",
+    default="pipeline/data/fy_2026_27_proposed.json",
+    help="Output path for the extracted proposed dataset.",
+)
+@click.option(
+    "--totals-output",
+    default="pipeline/data/fy_2026_27_proposed_totals.json",
+    help="Output path for the proposed verification sidecar.",
+)
+def extract_proposed(budget_in_brief, volume_1, output, totals_output):
+    """Extract the FY 2026-27 proposed budget from official PDFs."""
+    from pipeline.extract import download_pdf
+    from pipeline.extract.proposed import (
+        PROPOSED_BIB_URL,
+        PROPOSED_VOLUME_1_URL,
+        extract_proposed_budget,
+        proposed_verification_totals,
+    )
+
+    bib_path = _resolve_appendix(
+        budget_in_brief,
+        PROPOSED_BIB_PATH,
+        PROPOSED_BIB_URL,
+        "FY 2026-27 proposed Budget in Brief",
+        download_pdf,
+    )
+    volume_1_path = _resolve_appendix(
+        volume_1,
+        PROPOSED_VOLUME_1_PATH,
+        PROPOSED_VOLUME_1_URL,
+        "FY 2026-27 proposed Volume 1",
+        download_pdf,
+    )
+
+    data = extract_proposed_budget(bib_path, volume_1_path)
+    totals = proposed_verification_totals(data)
+    for path, payload in ((output, data), (totals_output, totals)):
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        with open(path, "w") as f:
+            json.dump(payload, f, indent=2)
+
+    click.echo(f"Proposed dataset written to: {output}")
+    click.echo(f"Verification totals written to: {totals_output}")
+    click.echo(f"  Priorities: {len(data['priorities'])}")
+    click.echo(f"  Department/priority slices: {len(data['department_budgets'])}")
+    click.echo(
+        f"  Gross operating: ${data['release']['gross_operating_cents'] / 100:,.0f}"
+    )
+    click.echo(f"  Capital: ${data['release']['capital_cents'] / 100:,.0f}")
+
+
 @cli.command()
 @click.option(
     "--data",
@@ -174,13 +240,21 @@ def load(data, fiscal_year, stage):
     # Seed all data in a single transaction
     click.echo("\nSeeding database...")
     with get_db_connection() as conn:
-        counts = seed_all(
-            conn, extracted,
-            fiscal_year_label=fiscal_year,
-            start_date=start_date,
-            end_date=end_date,
-            stage=stage,
-        )
+        if extracted.get("format") == "proposed-budget-v1":
+            if stage != "proposed":
+                raise click.ClickException(
+                    "proposed-budget-v1 data must be loaded with --stage proposed"
+                )
+            from pipeline.load.seed_proposed import seed_proposed_all
+            counts = seed_proposed_all(conn, extracted)
+        else:
+            counts = seed_all(
+                conn, extracted,
+                fiscal_year_label=fiscal_year,
+                start_date=start_date,
+                end_date=end_date,
+                stage=stage,
+            )
 
     click.echo("\nSeeding complete:")
     click.echo(f"  Fiscal year ID: {counts['fiscal_year_id']}")

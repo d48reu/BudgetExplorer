@@ -6,6 +6,11 @@ const db = vi.hoisted(() => ({
   strategicAreasCount: vi.fn(),
   departmentsFindMany: vi.fn(),
   departmentsCount: vi.fn(),
+  budgetReleasesFindFirst: vi.fn(),
+  strategicAreaBudgetsFindMany: vi.fn(),
+  departmentBudgetsFindMany: vi.fn(),
+  millageRatesFindMany: vi.fn(),
+  millageRatesFindFirst: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -19,6 +24,13 @@ vi.mock('@/lib/prisma', () => ({
       findMany: db.departmentsFindMany,
       count: db.departmentsCount,
     },
+    budget_releases: { findFirst: db.budgetReleasesFindFirst },
+    strategic_area_budgets: { findMany: db.strategicAreaBudgetsFindMany },
+    department_budgets: { findMany: db.departmentBudgetsFindMany },
+    millage_rates: {
+      findMany: db.millageRatesFindMany,
+      findFirst: db.millageRatesFindFirst,
+    },
   },
 }))
 
@@ -26,6 +38,8 @@ import {
   getAdoptedDepartmentSlugs,
   getAdoptedStrategicAreaSlugs,
   getQuickStats,
+  getProposedBudgetOverview,
+  getMillageRates,
   getStrategicAreas,
 } from '@/lib/db/queries'
 
@@ -42,6 +56,11 @@ beforeEach(() => {
   db.departmentsFindMany.mockResolvedValue([])
   db.strategicAreasCount.mockResolvedValue(9)
   db.departmentsCount.mockResolvedValue(55)
+  db.budgetReleasesFindFirst.mockResolvedValue(null)
+  db.strategicAreaBudgetsFindMany.mockResolvedValue([])
+  db.departmentBudgetsFindMany.mockResolvedValue([])
+  db.millageRatesFindMany.mockResolvedValue([])
+  db.millageRatesFindFirst.mockResolvedValue(null)
 })
 
 describe('adopted release isolation', () => {
@@ -103,5 +122,71 @@ describe('adopted release isolation', () => {
         },
       })
     )
+  })
+
+  it('reads proposed facts only through the dedicated proposed overview', async () => {
+    const baseRelease = {
+      id: 1,
+      as_of_date: new Date('2026-07-15T00:00:00Z'),
+      published_at: null,
+      total_operating: BigInt(9),
+      gross_operating: BigInt(10),
+      interagency_transfers: BigInt(1),
+      total_capital: BigInt(5),
+      total_budget: BigInt(14),
+      total_employees: 100,
+      budget_in_brief_url: 'https://example.com/bib.pdf',
+      volume_1_url: null,
+      volume_2_url: null,
+      volume_3_url: null,
+      created_at: null,
+      updated_at: null,
+    }
+    db.budgetReleasesFindFirst.mockImplementation(({ where }) =>
+      Promise.resolve(
+        where.stage === 'proposed'
+          ? {
+              ...baseRelease,
+              fiscal_year_id: 7,
+              stage: 'proposed',
+              fiscal_years: { label: 'FY 2026-27' },
+            }
+          : {
+              ...baseRelease,
+              fiscal_year_id: 6,
+              stage: 'adopted',
+              fiscal_years: { label: 'FY 2025-26' },
+            }
+      )
+    )
+
+    await expect(getProposedBudgetOverview()).resolves.toMatchObject({
+      proposed: { fiscalYear: 'FY 2026-27', stage: 'proposed' },
+      adopted: { fiscalYear: 'FY 2025-26', stage: 'adopted' },
+    })
+
+    expect(db.strategicAreaBudgetsFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { fiscal_year_id: 7, stage: 'proposed' },
+      })
+    )
+    expect(db.departmentBudgetsFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { fiscal_year_id: 7, stage: 'proposed' },
+      })
+    )
+  })
+
+  it('excludes the county subtotal from calculator millage rows', async () => {
+    await getMillageRates()
+
+    expect(db.millageRatesFindMany).toHaveBeenCalledWith({
+      where: {
+        fiscal_year_id: 6,
+        stage: 'adopted',
+        authority: { not: 'Total to County' },
+      },
+      orderBy: { display_order: 'asc' },
+    })
   })
 })

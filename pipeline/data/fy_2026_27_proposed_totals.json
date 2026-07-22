@@ -1,0 +1,47 @@
+{
+  "fiscal_year": "FY 2026-27",
+  "stage": "proposed",
+  "gross_operating_cents": 989776200000,
+  "interagency_transfers_cents": 87608600000,
+  "operating_cents": 902167600000,
+  "capital_cents": 523954800000,
+  "total_budget_cents": 1426122400000,
+  "total_employees": 31942,
+  "strategic_areas": [
+    {
+      "name": "Policy Formulation",
+      "slug": "policy-formulation",
+      "operating_cents": 11054200000
+    },
+    {
+      "name": "Constitutional Offices",
+      "slug": "constitutional-offices",
+      "operating_cents": 139441300000
+    },
+    {
+      "name": "An Economy that Works for All",
+      "slug": "economy-that-works-for-all",
+      "operating_cents": 167214500000
+    },
+    {
+      "name": "Healthy and Safe Communities",
+      "slug": "healthy-and-safe-communities",
+      "operating_cents": 315014300000
+    },
+    {
+      "name": "Investment in Infrastructure",
+      "slug": "investment-in-infrastructure",
+      "operating_cents": 242672400000
+    },
+    {
+      "name": "Risk Reduction and Resilience",
+      "slug": "risk-reduction-and-resilience",
+      "operating_cents": 9635000000
+    },
+    {
+      "name": "Fiscal Responsibility and Efficiency",
+      "slug": "fiscal-responsibility-and-efficiency",
+      "operating_cents": 104744500000
+    }
+  ]
+}

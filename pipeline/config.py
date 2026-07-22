@@ -24,6 +24,8 @@ TOLERANCE_CENTS = 100_000
 # Published budget totals for FY 2025-26 (all values in cents)
 PUBLISHED_TOTAL_BUDGET_CENTS = 1_323_323_800_000   # $13,233,238,000
 PUBLISHED_OPERATING_CENTS = 857_560_600_000         # $8,575,606,000
+PUBLISHED_GROSS_OPERATING_CENTS = 950_130_800_000   # $9,501,308,000
+PUBLISHED_INTERAGENCY_CENTS = 92_570_200_000         # $925,702,000
 PUBLISHED_CAPITAL_CENTS = 465_763_200_000           # $4,657,632,000
 
 # Published employee total
@@ -42,6 +44,14 @@ APPENDIX_C_URL = os.getenv(
 APPENDIX_J_URL = os.getenv(
     "APPENDIX_J_URL",
     "https://www.miamidade.gov/resources/budget/adopted/fy2025-26/appendix-j.pdf",
+)
+
+# FY 2026-27 proposed source paths
+PROPOSED_BIB_PATH = os.getenv(
+    "PROPOSED_BIB_PATH", "data/fy-2026-27-proposed-budget-in-brief.pdf"
+)
+PROPOSED_VOLUME_1_PATH = os.getenv(
+    "PROPOSED_VOLUME_1_PATH", "data/fy-2026-27-proposed-volume-1.pdf"
 )
 
 # Debug mode (enables saving debug images during extraction)

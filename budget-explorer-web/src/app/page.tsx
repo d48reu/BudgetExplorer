@@ -7,6 +7,7 @@ import {
 import { HeroBanner } from '@/components/homepage/HeroBanner'
 import { QuickStats } from '@/components/homepage/QuickStats'
 import { CTASection } from '@/components/homepage/CTASection'
+import { ProposedBudgetNotice } from '@/components/homepage/ProposedBudgetNotice'
 import { WaffleSection, RevenueSection } from '@/components/homepage/HomeCharts'
 
 import type { Metadata } from 'next'
@@ -52,6 +53,7 @@ export default async function HomePage() {
   return (
     <>
       <HeroBanner totalBudgetCents={fiscalYear?.totalBudget ?? '0'} />
+      <ProposedBudgetNotice />
       <QuickStats
         strategicAreaCount={stats.strategicAreaCount}
         departmentCount={stats.departmentCount}

@@ -10,9 +10,11 @@ import type {
   SerializedYoYData,
   SerializedRevenueSource,
   QuickStats,
+  ProposedBudgetOverview,
 } from '@/types/budget'
 
 const CURRENT_FY_LABEL = 'FY 2025-26'
+const PROPOSED_FY_LABEL = 'FY 2026-27'
 
 /**
  * The current fiscal_years row, deduped per request with React cache() so
@@ -85,6 +87,115 @@ export async function getCurrentFiscalYear(): Promise<SerializedFiscalYear | nul
 }
 
 /**
+ * Return the proposed release alongside the currently adopted release.
+ * This is the only public query that intentionally reads proposed-stage facts;
+ * adopted explorer, search, and department routes remain stage-isolated.
+ */
+export async function getProposedBudgetOverview(): Promise<ProposedBudgetOverview | null> {
+  const [proposedRelease, adoptedRelease] = await Promise.all([
+    prisma.budget_releases.findFirst({
+      where: {
+        stage: 'proposed',
+        fiscal_years: { label: PROPOSED_FY_LABEL },
+      },
+      include: { fiscal_years: true },
+    }),
+    prisma.budget_releases.findFirst({
+      where: {
+        stage: 'adopted',
+        fiscal_years: { label: CURRENT_FY_LABEL },
+      },
+      include: { fiscal_years: true },
+    }),
+  ])
+
+  if (!proposedRelease) return null
+
+  const [priorityBudgets, departmentRows, proposedMillage, adoptedMillage] =
+    await Promise.all([
+      prisma.strategic_area_budgets.findMany({
+        where: {
+          fiscal_year_id: proposedRelease.fiscal_year_id,
+          stage: 'proposed',
+        },
+        include: { strategic_areas: true },
+        orderBy: { strategic_areas: { display_order: 'asc' } },
+      }),
+      prisma.department_budgets.findMany({
+        where: {
+          fiscal_year_id: proposedRelease.fiscal_year_id,
+          stage: 'proposed',
+        },
+        select: { department_id: true },
+      }),
+      prisma.millage_rates.findFirst({
+        where: {
+          fiscal_year_id: proposedRelease.fiscal_year_id,
+          stage: 'proposed',
+          authority: 'Total to County',
+        },
+        select: { millage_rate: true },
+      }),
+      adoptedRelease
+        ? prisma.millage_rates.findFirst({
+            where: {
+              fiscal_year_id: adoptedRelease.fiscal_year_id,
+              stage: 'adopted',
+              authority: 'Total to County',
+            },
+            select: { millage_rate: true },
+          })
+        : Promise.resolve(null),
+    ])
+
+  const serializeRelease = (
+    release: NonNullable<typeof proposedRelease>,
+    countyMillage: number | null
+  ) => ({
+    fiscalYear: release.fiscal_years.label,
+    stage: release.stage as 'adopted' | 'proposed',
+    asOfDate: release.as_of_date?.toISOString().slice(0, 10) ?? null,
+    netOperating: release.total_operating?.toString() ?? '0',
+    grossOperating: release.gross_operating?.toString() ?? '0',
+    interagencyTransfers: release.interagency_transfers?.toString() ?? '0',
+    capital: release.total_capital?.toString() ?? '0',
+    total: release.total_budget?.toString() ?? '0',
+    employees: release.total_employees,
+    countyMillage,
+  })
+
+  return {
+    proposed: serializeRelease(
+      proposedRelease,
+      proposedMillage ? Number(proposedMillage.millage_rate) : null
+    ),
+    adopted: adoptedRelease
+      ? serializeRelease(
+          adoptedRelease,
+          adoptedMillage ? Number(adoptedMillage.millage_rate) : null
+        )
+      : null,
+    priorities: priorityBudgets.map((budget) => ({
+      id: budget.strategic_areas.id,
+      name: budget.strategic_areas.name,
+      slug: budget.strategic_areas.slug,
+      description: budget.strategic_areas.description,
+      color: budget.strategic_areas.color,
+      centsPerDollar: budget.cents_per_dollar,
+      operatingBudget: budget.operating_budget?.toString() ?? '0',
+      capitalBudget: budget.capital_budget?.toString() ?? '0',
+    })),
+    departmentCount: new Set(departmentRows.map((row) => row.department_id)).size,
+    sources: {
+      budgetInBrief: proposedRelease.budget_in_brief_url,
+      volume1: proposedRelease.volume_1_url,
+      volume2: proposedRelease.volume_2_url,
+      volume3: proposedRelease.volume_3_url,
+    },
+  }
+}
+
+/**
  * Get millage rates for FY 2025-26.
  * Converts Prisma Decimal to JavaScript number and nullable boolean to definite boolean.
  */
@@ -94,7 +205,13 @@ export async function getMillageRates(): Promise<SerializedMillageRate[]> {
   if (!fy) return []
 
   const rates = await prisma.millage_rates.findMany({
-    where: { fiscal_year_id: fy.id, stage: 'adopted' },
+    where: {
+      fiscal_year_id: fy.id,
+      stage: 'adopted',
+      // This row is a published subtotal of the five county levies above it.
+      // Excluding it prevents the property-tax calculator from double counting.
+      authority: { not: 'Total to County' },
+    },
     orderBy: { display_order: 'asc' },
   })
 

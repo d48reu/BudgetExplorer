@@ -87,13 +87,16 @@ def seed_budget_release(conn, fiscal_year_id: int, stage: str,
     cur.execute("""
         INSERT INTO budget_releases
             (fiscal_year_id, stage, as_of_date, published_at,
-             total_operating, total_capital, total_budget, total_employees,
+             total_operating, gross_operating, interagency_transfers,
+             total_capital, total_budget, total_employees,
              budget_in_brief_url, volume_1_url, volume_2_url, volume_3_url)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (fiscal_year_id, stage) DO UPDATE SET
             as_of_date = EXCLUDED.as_of_date,
             published_at = EXCLUDED.published_at,
             total_operating = EXCLUDED.total_operating,
+            gross_operating = EXCLUDED.gross_operating,
+            interagency_transfers = EXCLUDED.interagency_transfers,
             total_capital = EXCLUDED.total_capital,
             total_budget = EXCLUDED.total_budget,
             total_employees = EXCLUDED.total_employees,
@@ -108,6 +111,8 @@ def seed_budget_release(conn, fiscal_year_id: int, stage: str,
         metadata.get("as_of_date"),
         metadata.get("published_at"),
         totals.get("operating_cents"),
+        totals.get("gross_operating_cents"),
+        totals.get("interagency_transfers_cents"),
         totals.get("capital_cents"),
         totals.get("total_cents"),
         totals.get("employees"),
@@ -597,6 +602,8 @@ def seed_all(conn, data: dict, fiscal_year_label: str = "FY 2025-26",
     from pipeline.config import (
         PDF_URL,
         PUBLISHED_OPERATING_CENTS,
+        PUBLISHED_GROSS_OPERATING_CENTS,
+        PUBLISHED_INTERAGENCY_CENTS,
         PUBLISHED_CAPITAL_CENTS,
         PUBLISHED_TOTAL_BUDGET_CENTS,
         PUBLISHED_TOTAL_EMPLOYEES,
@@ -607,6 +614,12 @@ def seed_all(conn, data: dict, fiscal_year_label: str = "FY 2025-26",
         totals = {
             "operating_cents": release.get(
                 "operating_cents", PUBLISHED_OPERATING_CENTS
+            ),
+            "gross_operating_cents": release.get(
+                "gross_operating_cents", PUBLISHED_GROSS_OPERATING_CENTS
+            ),
+            "interagency_transfers_cents": release.get(
+                "interagency_transfers_cents", PUBLISHED_INTERAGENCY_CENTS
             ),
             "capital_cents": release.get(
                 "capital_cents", PUBLISHED_CAPITAL_CENTS
@@ -621,7 +634,9 @@ def seed_all(conn, data: dict, fiscal_year_label: str = "FY 2025-26",
         release.setdefault("budget_in_brief_url", PDF_URL)
     else:
         required_totals = (
-            "operating_cents", "capital_cents", "total_cents", "employees"
+            "operating_cents", "gross_operating_cents",
+            "interagency_transfers_cents", "capital_cents", "total_cents",
+            "employees",
         )
         missing = [key for key in required_totals if release.get(key) is None]
         if missing:

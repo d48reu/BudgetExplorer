@@ -25,6 +25,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      url: `${CANONICAL_DOMAIN}/proposed`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
       url: `${CANONICAL_DOMAIN}/calculator`,
       lastModified: new Date(),
       changeFrequency: 'yearly',
