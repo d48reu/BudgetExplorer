@@ -1,6 +1,7 @@
 import { PrismaClient } from '@/generated/prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
+import { normalizeDatabaseUrl } from '@/lib/database-url'
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient
@@ -24,7 +25,7 @@ function sslConfig(connectionString: string) {
 }
 
 function createPrismaClient(): PrismaClient {
-  const connectionString = process.env.DATABASE_URL!
+  const connectionString = normalizeDatabaseUrl(process.env.DATABASE_URL!)
   const pool = new Pool({
     connectionString,
     ssl: sslConfig(connectionString),
