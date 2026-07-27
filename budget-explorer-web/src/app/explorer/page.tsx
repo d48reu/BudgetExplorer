@@ -1,77 +1,130 @@
-import { getStrategicAreasWithDetails, getCurrentFiscalYear } from '@/lib/db/queries'
-import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
-import { AreaCard } from '@/components/explorer/AreaCard'
-import { ExplorerTreemap } from '@/components/explorer/ExplorerCharts'
-import { formatDollarsFull } from '@/lib/format'
-import { toChartValue } from '@/lib/chart-utils'
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { ExplorerTreemap } from '@/components/explorer/ExplorerCharts'
+import { ExplorationMasthead } from '@/components/explorer/ExplorationMasthead'
+import { StrategicAreaIndex } from '@/components/explorer/StrategicAreaIndex'
+import { ReleaseFacts } from '@/components/releases/ReleaseFacts'
+import { ReleaseSwitcher } from '@/components/releases/ReleaseSwitcher'
+import { ReportSection } from '@/components/releases/ReportSection'
+import {
+  getAdoptedBudgetRelease,
+  getQuickStats,
+  getStrategicAreasWithDetails,
+} from '@/lib/db/queries'
+import { formatDollarsAbbreviated } from '@/lib/format'
 
 export const metadata: Metadata = {
-  title: 'Budget Explorer',
+  title: 'Explore the FY 2025–26 Adopted Budget',
   description:
-    "Explore Miami-Dade County's budget with an interactive treemap showing how $13.2 billion is allocated across 9 strategic areas.",
+    'Explore Miami-Dade County’s adopted operating budget across nine strategic areas and every funded department.',
 }
 
-// Static with daily revalidation; the underlying data changes only when
-// the pipeline reseeds.
 export const revalidate = 86400
 
 export default async function ExplorerPage() {
-  const [areas, fiscalYear] = await Promise.all([
+  const [areas, release, stats] = await Promise.all([
     getStrategicAreasWithDetails(),
-    getCurrentFiscalYear(),
+    getAdoptedBudgetRelease(),
+    getQuickStats(),
   ])
+  if (!release) notFound()
 
-  const totalBudget = areas
-    .reduce((sum, a) => sum + toChartValue(a.operatingBudget), 0)
+  const totalOperating = areas
+    .reduce((sum, area) => sum + BigInt(area.operatingBudget), BigInt(0))
     .toString()
-
-  // Sort by operating budget descending for mobile cards
-  const sortedAreas = [...areas].sort(
-    (a, b) => toChartValue(b.operatingBudget) - toChartValue(a.operatingBudget)
-  )
-
-  // Build treemap items
   const treemapItems = areas.map((area) => ({
     name: area.name,
     slug: area.slug,
     color: area.color,
     value: area.operatingBudget,
   }))
+  const facts = [
+    {
+      label: 'Strategic areas',
+      value: areas.length.toLocaleString('en-US'),
+      note: 'Adopted service organization',
+    },
+    {
+      label: 'Departments',
+      value: stats.departmentCount.toLocaleString('en-US'),
+      note: 'With adopted budget facts',
+    },
+    {
+      label: 'Gross operating',
+      value: formatDollarsAbbreviated(release.grossOperating),
+      note: 'Before internal transfers',
+    },
+    {
+      label: 'Capital program',
+      value: formatDollarsAbbreviated(release.capital),
+      note: 'Multi-year adopted program',
+    },
+  ]
 
   return (
-    <div className="px-(--spacing-page) py-6">
-      <Breadcrumbs
-        items={[
-          { label: 'Home', href: '/' },
-          { label: 'Explorer' },
-        ]}
-      />
+    <div className="bg-[#F5F2EA]">
+      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+        <ReleaseSwitcher activeStage="adopted" />
+        <div className="mt-5">
+          <ExplorationMasthead
+            eyebrow="Adopted budget explorer"
+            title="Follow the money from strategy to department"
+            description="Start with the County’s nine adopted strategic areas, then move into the departments responsible for delivering each service."
+            metricLabel="Gross operating budget"
+            metricValue={formatDollarsAbbreviated(totalOperating)}
+            metricNote="The department allocation view before internal county transfers are removed."
+            accentColor="var(--color-mdc-blue)"
+          />
+        </div>
 
-      <div className="mt-6 mb-8">
-        <h1 className="text-2xl font-heading font-bold text-text-primary">
-          Budget Explorer
-        </h1>
-        <p className="text-text-secondary mt-1">
-          {fiscalYear?.label ?? 'FY 2025-26'} &middot;{' '}
-          {formatDollarsFull(totalBudget)} total operating budget
-        </p>
+        <ReleaseFacts facts={facts} />
+
+        <ReportSection
+          number="01"
+          label="Allocation map"
+          title="See the adopted operating footprint"
+          description="Rectangle area represents operating dollars. Select any strategic area to inspect its department-level allocation; switch to the table for exact values."
+        >
+          <div className="border-y-2 border-text-primary py-5">
+            <ExplorerTreemap
+              areas={areas}
+              treemapItems={treemapItems}
+              totalBudget={totalOperating}
+            />
+          </div>
+        </ReportSection>
+
+        <ReportSection
+          number="02"
+          label="Area index"
+          title="Nine strategies, one adopted budget"
+          description="The index adds service context, department counts, share of gross operating spending, and cents per adopted operating dollar."
+        >
+          <StrategicAreaIndex
+            areas={[...areas].sort(
+              (a, b) => Number(b.operatingBudget) - Number(a.operatingBudget)
+            )}
+            totalOperating={totalOperating}
+          />
+        </ReportSection>
       </div>
 
-      {/* Desktop: treemap with data table toggle */}
-      <div className="hidden md:block">
-        <ExplorerTreemap
-          areas={areas}
-          treemapItems={treemapItems}
-          totalBudget={totalBudget}
-        />
-      </div>
-
-      {/* Mobile: stacked cards sorted by budget */}
-      <div className="md:hidden space-y-3">
-        {sortedAreas.map((area) => (
-          <AreaCard key={area.id} area={area} totalBudget={totalBudget} />
-        ))}
+      <div className="bg-text-primary text-white">
+        <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:grid-cols-2 sm:px-6 lg:px-8">
+          <Link
+            href="/compare"
+            className="border-t-2 border-mdc-orange pt-4 font-heading text-lg font-bold hover:text-white/75"
+          >
+            Compare adopted and proposed <span aria-hidden="true">→</span>
+          </Link>
+          <Link
+            href="/search"
+            className="border-t-2 border-mdc-green pt-4 font-heading text-lg font-bold hover:text-white/75"
+          >
+            Find a department <span aria-hidden="true">→</span>
+          </Link>
+        </div>
       </div>
     </div>
   )

@@ -2,6 +2,7 @@ export type NavItem = {
   label: string
   href: string
   icon: string
+  mobile?: boolean
 }
 
 /**
@@ -10,9 +11,11 @@ export type NavItem = {
  * Future pages just add entries here.
  */
 export const NAV_ITEMS: NavItem[] = [
-  { label: 'Home', href: '/', icon: '\u2302' },          // House symbol
-  { label: 'Explorer', href: '/explorer', icon: '\u25A6' }, // Chart/grid symbol
-  { label: 'Calculator', href: '/calculator', icon: '\u2261' }, // Calculator-like symbol
-  { label: 'Search', href: '/search', icon: '\uD83D\uDD0D' },  // Magnifying glass
-  { label: 'Glossary', href: '/glossary', icon: '\u2139' },  // Info symbol
+  { label: 'Home', href: '/', icon: '\u2302' },
+  { label: 'Explorer', href: '/explorer', icon: '\u25A6' },
+  { label: 'Compare', href: '/compare', icon: '\u2194' },
+  { label: 'Proposed', href: '/proposed', icon: '\u25C6', mobile: false },
+  { label: 'Calculator', href: '/calculator', icon: '$' },
+  { label: 'Search', href: '/search', icon: '\u2315' },
+  { label: 'Glossary', href: '/glossary', icon: 'i', mobile: false },
 ]

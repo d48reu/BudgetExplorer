@@ -1,5 +1,9 @@
-const BUDGET_PDF_URL =
+import Link from 'next/link'
+
+const ADOPTED_BUDGET_PDF_URL =
   'https://www.miamidade.gov/resources/budget/adopted/fy2025-26/budget-in-brief.pdf'
+const PROPOSED_BUDGET_PDF_URL =
+  'https://www.miamidade.gov/resources/budget/fy-26-27/proposed/budget-in-brief.pdf'
 
 export function Footer() {
   return (
@@ -12,13 +16,28 @@ export function Footer() {
           <ul className="space-y-2 text-sm text-text-secondary">
             <li>
               <a
-                href={BUDGET_PDF_URL}
+                href={ADOPTED_BUDGET_PDF_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-text-primary"
               >
                 FY 2025-26 Budget in Brief (PDF)
               </a>
+            </li>
+            <li>
+              <a
+                href={PROPOSED_BUDGET_PDF_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-text-primary"
+              >
+                FY 2026-27 Proposed Budget in Brief (PDF)
+              </a>
+            </li>
+            <li>
+              <Link href="/audit" className="underline hover:text-text-primary">
+                Number audit and source ledger
+              </Link>
             </li>
           </ul>
         </div>
@@ -54,8 +73,8 @@ export function Footer() {
             About
           </h3>
           <p className="text-sm text-text-secondary">
-            Built by Abreu Data Works LLC. Budget data sourced from the
-            Miami-Dade County FY 2025-26 Adopted Budget.
+            Built by Abreu Data Works LLC. Data comes from Miami-Dade
+            County&apos;s adopted and proposed budget publications.
           </p>
         </div>
       </div>

@@ -38,9 +38,9 @@ const tableColumns: TableColumn<SerializedYoYData>[] = [
 
 /** Color for the percentage change badge based on direction. */
 function badgeColor(direction: 'increase' | 'decrease' | 'unchanged'): string {
-  if (direction === 'increase') return '#0057B8'
-  if (direction === 'decrease') return '#F7941D'
-  return '#6B7280'
+  if (direction === 'increase') return 'var(--color-change-increase)'
+  if (direction === 'decrease') return 'var(--color-change-decrease)'
+  return 'var(--color-text-secondary)'
 }
 
 type InnerChartProps = {
@@ -95,7 +95,7 @@ function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
             x2={innerWidth}
             y1={yScale(tick)}
             y2={yScale(tick)}
-            stroke="#E5E7EB"
+            stroke="var(--color-border)"
             strokeDasharray="4 4"
           />
         ))}
@@ -128,7 +128,7 @@ function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
                 y={barY}
                 width={xScale.bandwidth()}
                 height={barHeight}
-                fill={d.isCurrent ? areaColor : '#D1D5DB'}
+                fill={d.isCurrent ? areaColor : 'var(--color-border-strong)'}
                 rx={2}
               />
 
@@ -177,7 +177,7 @@ function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
                 y={badgeY + 1}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fill="white"
+                fill="var(--color-surface)"
                 className="text-xs font-medium"
               >
                 {yoyChange.value}
@@ -206,6 +206,7 @@ export function YearOverYearChart({ data, areaColor }: YearOverYearChartProps) {
         chartLabel="Year-over-year budget chart"
         data={data}
         columns={tableColumns}
+        rowKey="fiscalYear"
       >
         <ChartContainer minHeight={320}>
           {({ width, height }) => (

@@ -10,9 +10,13 @@ import type {
   SerializedYoYData,
   SerializedRevenueSource,
   QuickStats,
+  ProposedBudgetOverview,
+  SerializedBudgetRelease,
+  SerializedDepartmentChange,
 } from '@/types/budget'
 
 const CURRENT_FY_LABEL = 'FY 2025-26'
+const PROPOSED_FY_LABEL = 'FY 2026-27'
 
 /**
  * The current fiscal_years row, deduped per request with React cache() so
@@ -84,6 +88,302 @@ export async function getCurrentFiscalYear(): Promise<SerializedFiscalYear | nul
   }
 }
 
+/** Release-level adopted totals used by the shared adopted/proposed visuals. */
+export async function getAdoptedBudgetRelease(): Promise<SerializedBudgetRelease | null> {
+  const release = await prisma.budget_releases.findFirst({
+    where: {
+      stage: 'adopted',
+      fiscal_years: { label: CURRENT_FY_LABEL },
+    },
+    include: { fiscal_years: true },
+  })
+  if (!release) return null
+
+  const millage = await prisma.millage_rates.findFirst({
+    where: {
+      fiscal_year_id: release.fiscal_year_id,
+      stage: 'adopted',
+      authority: 'Total to County',
+    },
+    select: { millage_rate: true },
+  })
+
+  return {
+    fiscalYear: release.fiscal_years.label,
+    stage: 'adopted',
+    asOfDate: release.as_of_date?.toISOString().slice(0, 10) ?? null,
+    netOperating: release.total_operating?.toString() ?? '0',
+    grossOperating: release.gross_operating?.toString() ?? '0',
+    interagencyTransfers: release.interagency_transfers?.toString() ?? '0',
+    capital: release.total_capital?.toString() ?? '0',
+    total: release.total_budget?.toString() ?? '0',
+    employees: release.total_employees,
+    countyMillage: millage ? Number(millage.millage_rate) : null,
+  }
+}
+
+/**
+ * Return the proposed release alongside the currently adopted release.
+ * This is the only public query that intentionally reads proposed-stage facts;
+ * adopted explorer, search, and department routes remain stage-isolated.
+ */
+export async function getProposedBudgetOverview(): Promise<ProposedBudgetOverview | null> {
+  const [proposedRelease, adoptedRelease] = await Promise.all([
+    prisma.budget_releases.findFirst({
+      where: {
+        stage: 'proposed',
+        fiscal_years: { label: PROPOSED_FY_LABEL },
+      },
+      include: { fiscal_years: true },
+    }),
+    prisma.budget_releases.findFirst({
+      where: {
+        stage: 'adopted',
+        fiscal_years: { label: CURRENT_FY_LABEL },
+      },
+      include: { fiscal_years: true },
+    }),
+  ])
+
+  if (!proposedRelease) return null
+
+  const [priorityBudgets, departmentRows, proposedMillage, adoptedMillage] =
+    await Promise.all([
+      prisma.strategic_area_budgets.findMany({
+        where: {
+          fiscal_year_id: proposedRelease.fiscal_year_id,
+          stage: 'proposed',
+        },
+        include: { strategic_areas: true },
+        orderBy: { strategic_areas: { display_order: 'asc' } },
+      }),
+      prisma.department_budgets.findMany({
+        where: {
+          fiscal_year_id: proposedRelease.fiscal_year_id,
+          stage: 'proposed',
+        },
+        select: {
+          department_id: true,
+          operating_budget: true,
+          capital_budget: true,
+          employee_count: true,
+          baseline_operating_budget: true,
+          baseline_employee_count: true,
+          departments: { select: { name: true, slug: true } },
+        },
+      }),
+      prisma.millage_rates.findFirst({
+        where: {
+          fiscal_year_id: proposedRelease.fiscal_year_id,
+          stage: 'proposed',
+          authority: 'Total to County',
+        },
+        select: { millage_rate: true },
+      }),
+      adoptedRelease
+        ? prisma.millage_rates.findFirst({
+            where: {
+              fiscal_year_id: adoptedRelease.fiscal_year_id,
+              stage: 'adopted',
+              authority: 'Total to County',
+            },
+            select: { millage_rate: true },
+          })
+        : Promise.resolve(null),
+    ])
+
+  const serializeRelease = (
+    release: NonNullable<typeof proposedRelease>,
+    countyMillage: number | null
+  ) => ({
+    fiscalYear: release.fiscal_years.label,
+    stage: release.stage as 'adopted' | 'proposed',
+    asOfDate: release.as_of_date?.toISOString().slice(0, 10) ?? null,
+    netOperating: release.total_operating?.toString() ?? '0',
+    grossOperating: release.gross_operating?.toString() ?? '0',
+    interagencyTransfers: release.interagency_transfers?.toString() ?? '0',
+    capital: release.total_capital?.toString() ?? '0',
+    total: release.total_budget?.toString() ?? '0',
+    employees: release.total_employees,
+    countyMillage,
+  })
+
+  const changesByDepartment = new Map<
+    number,
+    {
+      id: number
+      name: string
+      slug: string
+      baselineOperating: bigint
+      proposedOperating: bigint
+      proposedCapital: bigint
+      baselineEmployees: number | null
+      proposedEmployees: number | null
+    }
+  >()
+  for (const row of departmentRows) {
+    const change = changesByDepartment.get(row.department_id) ?? {
+      id: row.department_id,
+      name: row.departments.name,
+      slug: row.departments.slug,
+      baselineOperating: BigInt(0),
+      proposedOperating: BigInt(0),
+      proposedCapital: BigInt(0),
+      baselineEmployees: null,
+      proposedEmployees: null,
+    }
+    change.baselineOperating += row.baseline_operating_budget ?? BigInt(0)
+    change.proposedOperating += row.operating_budget ?? BigInt(0)
+    change.proposedCapital += row.capital_budget ?? BigInt(0)
+    if (row.baseline_employee_count != null) {
+      change.baselineEmployees =
+        (change.baselineEmployees ?? 0) + row.baseline_employee_count
+    }
+    if (row.employee_count != null) {
+      change.proposedEmployees =
+        (change.proposedEmployees ?? 0) + row.employee_count
+    }
+    changesByDepartment.set(row.department_id, change)
+  }
+
+  const departmentChanges = Array.from(changesByDepartment.values())
+    .map((change) => ({
+      id: change.id,
+      name: change.name,
+      slug: change.slug,
+      baselineOperating: change.baselineOperating.toString(),
+      proposedOperating: change.proposedOperating.toString(),
+      operatingChange: (
+        change.proposedOperating - change.baselineOperating
+      ).toString(),
+      proposedCapital: change.proposedCapital.toString(),
+      baselineEmployees: change.baselineEmployees,
+      proposedEmployees: change.proposedEmployees,
+      employeeChange:
+        change.baselineEmployees != null && change.proposedEmployees != null
+          ? change.proposedEmployees - change.baselineEmployees
+          : null,
+    }))
+    .sort(
+      (a, b) =>
+        Math.abs(Number(b.operatingChange)) - Math.abs(Number(a.operatingChange))
+    )
+
+  return {
+    proposed: serializeRelease(
+      proposedRelease,
+      proposedMillage ? Number(proposedMillage.millage_rate) : null
+    ),
+    adopted: adoptedRelease
+      ? serializeRelease(
+          adoptedRelease,
+          adoptedMillage ? Number(adoptedMillage.millage_rate) : null
+        )
+      : null,
+    priorities: priorityBudgets.map((budget) => ({
+      id: budget.strategic_areas.id,
+      name: budget.strategic_areas.name,
+      slug: budget.strategic_areas.slug,
+      description: budget.strategic_areas.description,
+      color: budget.strategic_areas.color,
+      centsPerDollar: budget.cents_per_dollar,
+      operatingBudget: budget.operating_budget?.toString() ?? '0',
+      capitalBudget: budget.capital_budget?.toString() ?? '0',
+    })),
+    departmentChanges,
+    departmentCount: changesByDepartment.size,
+    sources: {
+      budgetInBrief: proposedRelease.budget_in_brief_url,
+      volume1: proposedRelease.volume_1_url,
+      volume2: proposedRelease.volume_2_url,
+      volume3: proposedRelease.volume_3_url,
+    },
+  }
+}
+
+/**
+ * Proposed operating, staffing, and capital context for one adopted department.
+ * Operating and staffing comparisons use Appendix A's restated baseline.
+ * Capital is proposal-only because the source does not publish a restated
+ * adopted capital baseline in the new priority structure.
+ */
+export const getDepartmentProposalChange = cache(
+  async (slug: string): Promise<SerializedDepartmentChange | null> => {
+    const release = await prisma.budget_releases.findFirst({
+      where: {
+        stage: 'proposed',
+        fiscal_years: { label: PROPOSED_FY_LABEL },
+      },
+      select: { fiscal_year_id: true },
+    })
+    if (!release) return null
+
+    const rows = await prisma.department_budgets.findMany({
+      where: {
+        fiscal_year_id: release.fiscal_year_id,
+        stage: 'proposed',
+        departments: { slug },
+      },
+      select: {
+        department_id: true,
+        operating_budget: true,
+        capital_budget: true,
+        employee_count: true,
+        baseline_operating_budget: true,
+        baseline_employee_count: true,
+        departments: { select: { name: true, slug: true } },
+      },
+    })
+    if (rows.length === 0) return null
+
+    const first = rows[0]
+    const totals = rows.reduce(
+      (result, row) => ({
+        baselineOperating:
+          result.baselineOperating +
+          (row.baseline_operating_budget ?? BigInt(0)),
+        proposedOperating:
+          result.proposedOperating + (row.operating_budget ?? BigInt(0)),
+        proposedCapital:
+          result.proposedCapital + (row.capital_budget ?? BigInt(0)),
+        baselineEmployees:
+          row.baseline_employee_count == null
+            ? result.baselineEmployees
+            : (result.baselineEmployees ?? 0) + row.baseline_employee_count,
+        proposedEmployees:
+          row.employee_count == null
+            ? result.proposedEmployees
+            : (result.proposedEmployees ?? 0) + row.employee_count,
+      }),
+      {
+        baselineOperating: BigInt(0),
+        proposedOperating: BigInt(0),
+        proposedCapital: BigInt(0),
+        baselineEmployees: null as number | null,
+        proposedEmployees: null as number | null,
+      }
+    )
+
+    return {
+      id: first.department_id,
+      name: first.departments.name,
+      slug: first.departments.slug,
+      baselineOperating: totals.baselineOperating.toString(),
+      proposedOperating: totals.proposedOperating.toString(),
+      operatingChange: (
+        totals.proposedOperating - totals.baselineOperating
+      ).toString(),
+      proposedCapital: totals.proposedCapital.toString(),
+      baselineEmployees: totals.baselineEmployees,
+      proposedEmployees: totals.proposedEmployees,
+      employeeChange:
+        totals.baselineEmployees != null && totals.proposedEmployees != null
+          ? totals.proposedEmployees - totals.baselineEmployees
+          : null,
+    }
+  }
+)
+
 /**
  * Get millage rates for FY 2025-26.
  * Converts Prisma Decimal to JavaScript number and nullable boolean to definite boolean.
@@ -94,7 +394,13 @@ export async function getMillageRates(): Promise<SerializedMillageRate[]> {
   if (!fy) return []
 
   const rates = await prisma.millage_rates.findMany({
-    where: { fiscal_year_id: fy.id, stage: 'adopted' },
+    where: {
+      fiscal_year_id: fy.id,
+      stage: 'adopted',
+      // This row is a published subtotal of the five county levies above it.
+      // Excluding it prevents the property-tax calculator from double counting.
+      authority: { not: 'Total to County' },
+    },
     orderBy: { display_order: 'asc' },
   })
 
@@ -117,6 +423,11 @@ export async function getStrategicAreas(): Promise<SerializedStrategicArea[]> {
   if (!fy) return []
 
   const areas = await prisma.strategic_areas.findMany({
+    where: {
+      strategic_area_budgets: {
+        some: { fiscal_year_id: fy.id, stage: 'adopted' },
+      },
+    },
     include: {
       strategic_area_budgets: {
         where: { fiscal_year_id: fy.id, stage: 'adopted' },
@@ -143,17 +454,39 @@ export async function getStrategicAreas(): Promise<SerializedStrategicArea[]> {
  * Get aggregated quick stats for the homepage.
  */
 export async function getQuickStats(): Promise<QuickStats> {
-  const [fy, strategicAreaCount, departmentCount] = await Promise.all([
-    getCurrentFiscalYear(),
-    prisma.strategic_areas.count(),
-    prisma.departments.count(),
+  const fyRow = await getCurrentFiscalYearRow()
+
+  if (!fyRow) {
+    return {
+      strategicAreaCount: 0,
+      departmentCount: 0,
+      totalEmployees: 0,
+      fiscalYear: CURRENT_FY_LABEL,
+    }
+  }
+
+  const [strategicAreaCount, departmentCount] = await Promise.all([
+    prisma.strategic_areas.count({
+      where: {
+        strategic_area_budgets: {
+          some: { fiscal_year_id: fyRow.id, stage: 'adopted' },
+        },
+      },
+    }),
+    prisma.departments.count({
+      where: {
+        department_budgets: {
+          some: { fiscal_year_id: fyRow.id, stage: 'adopted' },
+        },
+      },
+    }),
   ])
 
   return {
     strategicAreaCount,
     departmentCount,
-    totalEmployees: fy?.totalEmployees ?? 0,
-    fiscalYear: fy?.label ?? 'FY 2025-26',
+    totalEmployees: fyRow.total_employees ?? 0,
+    fiscalYear: fyRow.label,
   }
 }
 
@@ -170,7 +503,12 @@ export const getAreaWithDepartments = cache(async (areaSlug: string): Promise<{
   if (!fy) return null
 
   const area = await prisma.strategic_areas.findFirst({
-    where: { slug: areaSlug },
+    where: {
+      slug: areaSlug,
+      strategic_area_budgets: {
+        some: { fiscal_year_id: fy.id, stage: 'adopted' },
+      },
+    },
     include: {
       strategic_area_budgets: {
         where: { fiscal_year_id: fy.id, stage: 'adopted' },
@@ -277,17 +615,37 @@ export async function getStrategicAreasWithDetails(): Promise<
 
   if (!fy) return []
 
-  const areas = await prisma.strategic_areas.findMany({
-    include: {
-      strategic_area_budgets: {
-        where: { fiscal_year_id: fy.id, stage: 'adopted' },
+  const [areas, departmentBudgetRows] = await Promise.all([
+    prisma.strategic_areas.findMany({
+      where: {
+        strategic_area_budgets: {
+          some: { fiscal_year_id: fy.id, stage: 'adopted' },
+        },
       },
-      _count: {
-        select: { departments: true },
+      include: {
+        strategic_area_budgets: {
+          where: { fiscal_year_id: fy.id, stage: 'adopted' },
+        },
       },
-    },
-    orderBy: { display_order: 'asc' },
-  })
+      orderBy: { display_order: 'asc' },
+    }),
+    prisma.department_budgets.findMany({
+      where: { fiscal_year_id: fy.id, stage: 'adopted' },
+      select: {
+        department_id: true,
+        strategic_area_id: true,
+        departments: { select: { strategic_area_id: true } },
+      },
+    }),
+  ])
+
+  const departmentIdsByArea = new Map<number, Set<number>>()
+  for (const row of departmentBudgetRows) {
+    const areaId = row.strategic_area_id ?? row.departments.strategic_area_id
+    const departmentIds = departmentIdsByArea.get(areaId) ?? new Set<number>()
+    departmentIds.add(row.department_id)
+    departmentIdsByArea.set(areaId, departmentIds)
+  }
 
   return areas.map((area) => {
     const budget = area.strategic_area_budgets[0]
@@ -300,7 +658,7 @@ export async function getStrategicAreasWithDetails(): Promise<
       operatingBudget: budget?.operating_budget?.toString() ?? '0',
       capitalBudget: budget?.capital_budget?.toString() ?? '0',
       centsPerDollar: budget?.cents_per_dollar ?? null,
-      departmentCount: area._count.departments,
+      departmentCount: departmentIdsByArea.get(area.id)?.size ?? 0,
     }
   })
 }
@@ -314,7 +672,12 @@ export const getDepartmentDetail = cache(async (slug: string): Promise<Serialize
   if (!fy) return null
 
   const dept = await prisma.departments.findFirst({
-    where: { slug },
+    where: {
+      slug,
+      department_budgets: {
+        some: { fiscal_year_id: fy.id, stage: 'adopted' },
+      },
+    },
     include: {
       strategic_areas: true,
       department_budgets: {
@@ -359,6 +722,38 @@ export const getDepartmentDetail = cache(async (slug: string): Promise<Serialize
     } : null,
   }
 })
+
+/** Slugs that are part of the currently published adopted release. */
+export async function getAdoptedDepartmentSlugs(): Promise<string[]> {
+  const fy = await getCurrentFiscalYearRow()
+  if (!fy) return []
+
+  const departments = await prisma.departments.findMany({
+    where: {
+      department_budgets: {
+        some: { fiscal_year_id: fy.id, stage: 'adopted' },
+      },
+    },
+    select: { slug: true },
+  })
+  return departments.map((department) => department.slug)
+}
+
+/** Strategic-area slugs that are part of the currently published adopted release. */
+export async function getAdoptedStrategicAreaSlugs(): Promise<string[]> {
+  const fy = await getCurrentFiscalYearRow()
+  if (!fy) return []
+
+  const areas = await prisma.strategic_areas.findMany({
+    where: {
+      strategic_area_budgets: {
+        some: { fiscal_year_id: fy.id, stage: 'adopted' },
+      },
+    },
+    select: { slug: true },
+  })
+  return areas.map((area) => area.slug)
+}
 
 /**
  * Get expenditure category breakdown for a department in FY 2025-26.

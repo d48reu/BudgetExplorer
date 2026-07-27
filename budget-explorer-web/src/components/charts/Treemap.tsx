@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { hierarchy, treemap, treemapSquarify } from 'd3-hierarchy'
 import { toChartValue } from '@/lib/chart-utils'
 import { formatDollarsAbbreviated } from '@/lib/format'
@@ -32,7 +31,6 @@ type TreemapRootData = {
  * React renders all SVG elements declaratively.
  */
 export function Treemap({ items, width, height, linkPrefix, ariaLabel }: TreemapProps) {
-  const router = useRouter()
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
 
   const leaves = useMemo(() => {
@@ -65,19 +63,11 @@ export function Treemap({ items, width, height, linkPrefix, ariaLabel }: Treemap
         const hasDimmedItems = hoveredItem !== null
 
         return (
-          <g
+          <a
             key={d.slug}
-            onClick={() => router.push(`${linkPrefix}${d.slug}`)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                router.push(`${linkPrefix}${d.slug}`)
-              }
-            }}
+            href={`${linkPrefix}${d.slug}`}
             onMouseEnter={() => setHoveredItem(d.slug)}
             onMouseLeave={() => setHoveredItem(null)}
-            role="button"
-            tabIndex={0}
             aria-label={`${d.name}: ${formatDollarsAbbreviated(d.value)} operating budget`}
             style={{ cursor: 'pointer' }}
           >
@@ -116,7 +106,7 @@ export function Treemap({ items, width, height, linkPrefix, ariaLabel }: Treemap
                 {formatDollarsAbbreviated(d.value)}
               </text>
             )}
-          </g>
+          </a>
         )
       })}
     </svg>

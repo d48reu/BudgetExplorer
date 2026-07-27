@@ -20,7 +20,7 @@ export function Navbar() {
         >
           Miami-Dade Budget Explorer
         </Link>
-        <ul className="flex items-center gap-6">
+        <ul className="flex items-center gap-3 lg:gap-6">
           {NAV_ITEMS.map((item) => {
             const isActive =
               item.href === '/'

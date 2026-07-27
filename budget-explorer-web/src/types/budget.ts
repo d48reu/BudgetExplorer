@@ -97,6 +97,57 @@ export type SerializedMillageRate = {
   displayOrder: number
 }
 
+export type SerializedBudgetRelease = {
+  fiscalYear: string
+  stage: 'adopted' | 'proposed'
+  asOfDate: string | null
+  netOperating: string
+  grossOperating: string
+  interagencyTransfers: string
+  capital: string
+  total: string
+  employees: number | null
+  countyMillage: number | null
+}
+
+export type SerializedProposedPriority = {
+  id: number
+  name: string
+  slug: string
+  description: string | null
+  color: string | null
+  centsPerDollar: number | null
+  operatingBudget: string
+  capitalBudget: string
+}
+
+export type SerializedDepartmentChange = {
+  id: number
+  name: string
+  slug: string
+  baselineOperating: string
+  proposedOperating: string
+  operatingChange: string
+  proposedCapital: string
+  baselineEmployees: number | null
+  proposedEmployees: number | null
+  employeeChange: number | null
+}
+
+export type ProposedBudgetOverview = {
+  proposed: SerializedBudgetRelease
+  adopted: SerializedBudgetRelease | null
+  priorities: SerializedProposedPriority[]
+  departmentChanges: SerializedDepartmentChange[]
+  departmentCount: number
+  sources: {
+    budgetInBrief: string | null
+    volume1: string | null
+    volume2: string | null
+    volume3: string | null
+  }
+}
+
 /** Column definition for DataTableToggle */
 export type TableColumn<T> = {
   key: keyof T & string

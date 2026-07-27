@@ -19,6 +19,8 @@ import click
 from pipeline.config import (
     PDF_PATH, PDF_URL, CURRENT_FISCAL_YEAR,
     APPENDIX_C_PATH, APPENDIX_J_PATH,
+    APPENDIX_C_URL, APPENDIX_J_URL,
+    PROPOSED_BIB_PATH, PROPOSED_VOLUME_1_PATH,
 )
 
 
@@ -47,13 +49,13 @@ def cli():
     "--appendix-c",
     "appendix_c",
     default=None,
-    help="Path to Appendix C PDF (operating expenditures). Defaults to data/appendix-c.pdf if exists.",
+    help="Path or URL for Appendix C (operating expenditures). Downloads the official adopted appendix by default.",
 )
 @click.option(
     "--appendix-j",
     "appendix_j",
     default=None,
-    help="Path to Appendix J PDF (capital budget). Defaults to data/appendix-j.pdf if exists.",
+    help="Path or URL for Appendix J (capital budget). Downloads the official adopted appendix by default.",
 )
 def extract(pdf, output, appendix_c, appendix_j):
     """Extract budget data from the Budget in Brief PDF."""
@@ -76,11 +78,17 @@ def extract(pdf, output, appendix_c, appendix_j):
 
     click.echo(f"Extracting budget data from: {source}")
 
-    # Resolve appendix paths
-    ac_path = appendix_c or APPENDIX_C_PATH
-    aj_path = appendix_j or APPENDIX_J_PATH
-    ac_path = ac_path if os.path.exists(ac_path) else None
-    aj_path = aj_path if os.path.exists(aj_path) else None
+    # Resolve authoritative appendices, downloading the official adopted
+    # sources on first run so verification never silently falls back to the
+    # incomplete Budget in Brief department totals.
+    ac_path = _resolve_appendix(
+        appendix_c, APPENDIX_C_PATH, APPENDIX_C_URL,
+        "Appendix C", download_pdf,
+    )
+    aj_path = _resolve_appendix(
+        appendix_j, APPENDIX_J_PATH, APPENDIX_J_URL,
+        "Appendix J", download_pdf,
+    )
 
     # Run extraction
     data = extract_all(source, appendix_c_path=ac_path, appendix_j_path=aj_path)
@@ -121,6 +129,71 @@ def extract(pdf, output, appendix_c, appendix_j):
     click.echo(f"  Penny entries: {len(data.get('penny', []))}")
 
 
+@cli.command(name="extract-proposed")
+@click.option(
+    "--budget-in-brief",
+    "budget_in_brief",
+    default=None,
+    help="Local path or URL for the FY 2026-27 proposed Budget in Brief.",
+)
+@click.option(
+    "--volume-1",
+    "volume_1",
+    default=None,
+    help="Local path or URL for FY 2026-27 proposed Volume 1.",
+)
+@click.option(
+    "--output",
+    default="pipeline/data/fy_2026_27_proposed.json",
+    help="Output path for the extracted proposed dataset.",
+)
+@click.option(
+    "--totals-output",
+    default="pipeline/data/fy_2026_27_proposed_totals.json",
+    help="Output path for the proposed verification sidecar.",
+)
+def extract_proposed(budget_in_brief, volume_1, output, totals_output):
+    """Extract the FY 2026-27 proposed budget from official PDFs."""
+    from pipeline.extract import download_pdf
+    from pipeline.extract.proposed import (
+        PROPOSED_BIB_URL,
+        PROPOSED_VOLUME_1_URL,
+        extract_proposed_budget,
+        proposed_verification_totals,
+    )
+
+    bib_path = _resolve_appendix(
+        budget_in_brief,
+        PROPOSED_BIB_PATH,
+        PROPOSED_BIB_URL,
+        "FY 2026-27 proposed Budget in Brief",
+        download_pdf,
+    )
+    volume_1_path = _resolve_appendix(
+        volume_1,
+        PROPOSED_VOLUME_1_PATH,
+        PROPOSED_VOLUME_1_URL,
+        "FY 2026-27 proposed Volume 1",
+        download_pdf,
+    )
+
+    data = extract_proposed_budget(bib_path, volume_1_path)
+    totals = proposed_verification_totals(data)
+    for path, payload in ((output, data), (totals_output, totals)):
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        with open(path, "w") as f:
+            json.dump(payload, f, indent=2)
+
+    click.echo(f"Proposed dataset written to: {output}")
+    click.echo(f"Verification totals written to: {totals_output}")
+    click.echo(f"  Priorities: {len(data['priorities'])}")
+    click.echo(f"  Department/priority slices: {len(data['department_budgets'])}")
+    click.echo(
+        f"  Gross operating: ${data['release']['gross_operating_cents'] / 100:,.0f}"
+    )
+    click.echo(f"  Capital: ${data['release']['capital_cents'] / 100:,.0f}")
+
+
 @cli.command()
 @click.option(
     "--data",
@@ -133,7 +206,14 @@ def extract(pdf, output, appendix_c, appendix_j):
     default=CURRENT_FISCAL_YEAR,
     help="Fiscal year label (e.g., 'FY 2025-26').",
 )
-def load(data, fiscal_year):
+@click.option(
+    "--stage",
+    type=click.Choice(["proposed", "adopted", "actual"]),
+    default="adopted",
+    show_default=True,
+    help="Release stage for every loaded fact and release total.",
+)
+def load(data, fiscal_year, stage):
     """Load extracted data into PostgreSQL.
 
     Runs migrations first, then seeds all data into the database.
@@ -144,6 +224,7 @@ def load(data, fiscal_year):
 
     click.echo(f"Loading data from: {data}")
     click.echo(f"Target fiscal year: {fiscal_year}")
+    click.echo(f"Budget stage: {stage}")
 
     # Read extracted JSON
     with open(data) as f:
@@ -159,12 +240,21 @@ def load(data, fiscal_year):
     # Seed all data in a single transaction
     click.echo("\nSeeding database...")
     with get_db_connection() as conn:
-        counts = seed_all(
-            conn, extracted,
-            fiscal_year_label=fiscal_year,
-            start_date=start_date,
-            end_date=end_date,
-        )
+        if extracted.get("format") == "proposed-budget-v1":
+            if stage != "proposed":
+                raise click.ClickException(
+                    "proposed-budget-v1 data must be loaded with --stage proposed"
+                )
+            from pipeline.load.seed_proposed import seed_proposed_all
+            counts = seed_proposed_all(conn, extracted)
+        else:
+            counts = seed_all(
+                conn, extracted,
+                fiscal_year_label=fiscal_year,
+                start_date=start_date,
+                end_date=end_date,
+                stage=stage,
+            )
 
     click.echo("\nSeeding complete:")
     click.echo(f"  Fiscal year ID: {counts['fiscal_year_id']}")
@@ -185,7 +275,14 @@ def load(data, fiscal_year):
     default=None,
     help="Path to published_totals.json. Defaults to pipeline/data/published_totals.json.",
 )
-def verify(fiscal_year, published_totals):
+@click.option(
+    "--stage",
+    type=click.Choice(["proposed", "adopted", "actual"]),
+    default="adopted",
+    show_default=True,
+    help="Release stage to verify.",
+)
+def verify(fiscal_year, published_totals, stage):
     """Verify database totals against published figures.
 
     Runs two-level verification: grand total and each strategic area subtotal.
@@ -205,11 +302,12 @@ def verify(fiscal_year, published_totals):
         database_url = DATABASE_URL
 
     click.echo(f"Verifying data for: {fiscal_year}")
+    click.echo(f"Budget stage: {stage}")
     click.echo(f"Published totals: {published_totals}")
     click.echo("")
 
     all_passed, report = run_verification(
-        database_url, fiscal_year, published_totals
+        database_url, fiscal_year, published_totals, stage=stage
     )
 
     click.echo(report)
@@ -219,6 +317,47 @@ def verify(fiscal_year, published_totals):
     else:
         click.echo("\nVERIFICATION FAILED", err=True)
         sys.exit(1)
+
+
+@cli.command(name="audit-numbers")
+@click.option(
+    "--public-dir",
+    default="budget-explorer-web/public/audit",
+    show_default=True,
+    help="Directory for the public ledger, source manifest, and summary.",
+)
+@click.option(
+    "--site-data",
+    default="budget-explorer-web/src/data/budget-audit.json",
+    show_default=True,
+    help="Generated JSON imported by the public audit page.",
+)
+@click.option(
+    "--strict/--no-strict",
+    default=True,
+    show_default=True,
+    help="Exit non-zero when any exact audit gate fails.",
+)
+def audit_numbers(public_dir, site_data, strict):
+    """Create the exact source-to-database numeric audit artifacts."""
+    from pipeline.audit import generate_audit
+
+    click.echo("Building the source-to-database number ledger...")
+    summary = generate_audit(
+        public_dir=public_dir,
+        site_data_path=site_data,
+    )
+    gate = summary["gate"]
+    click.echo(
+        f"Audit {gate['status']}: {gate['passed']}/{gate['checks']} exact checks "
+        f"passed; monetary variance {gate['exactMonetaryVarianceCents']} cents."
+    )
+    click.echo(f"Ledger: {os.path.join(public_dir, 'number-ledger.csv')}")
+
+    if strict and gate["status"] != "PASS":
+        raise click.ClickException(
+            f"{gate['failures']} exact numeric audit check(s) failed"
+        )
 
 
 @cli.command(name="run-all")
@@ -244,11 +383,11 @@ def run_all(ctx, pdf, output, fiscal_year, appendix_c, appendix_j):
 
     # Step 2: Load
     click.echo("\n--- Step 2: Load ---")
-    ctx.invoke(load, data=output, fiscal_year=fiscal_year)
+    ctx.invoke(load, data=output, fiscal_year=fiscal_year, stage="adopted")
 
     # Step 3: Verify (halts on failure with non-zero exit code)
     click.echo("\n--- Step 3: Verify ---")
-    ctx.invoke(verify, fiscal_year=fiscal_year)
+    ctx.invoke(verify, fiscal_year=fiscal_year, stage="adopted")
 
     click.echo("\n" + "=" * 50)
     click.echo("Pipeline complete.")
@@ -373,6 +512,24 @@ def _fiscal_year_dates(label: str) -> tuple[str, str]:
         start_year = 2025
 
     return f"{start_year}-10-01", f"{start_year + 1}-09-30"
+
+
+def _resolve_appendix(provided: str | None, default_path: str,
+                      default_url: str, label: str, downloader) -> str:
+    """Resolve an appendix path and download the official source if absent."""
+    if provided and provided.startswith("http"):
+        click.echo(f"Downloading {label} from: {provided}")
+        return downloader(provided, output_path=default_path)
+
+    path = provided or default_path
+    if os.path.exists(path):
+        return path
+
+    if provided:
+        raise click.ClickException(f"{label} not found at {provided}")
+
+    click.echo(f"{label} not found at {path}, downloading from {default_url}...")
+    return downloader(default_url, output_path=path)
 
 
 if __name__ == "__main__":

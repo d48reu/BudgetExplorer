@@ -1,5 +1,7 @@
 'use client'
 
+/* eslint-disable react-hooks/refs -- Floating UI exposes callback ref setters on `refs`; these are not reads of mutable ref state. */
+
 import { useState } from 'react'
 import {
   useFloating,

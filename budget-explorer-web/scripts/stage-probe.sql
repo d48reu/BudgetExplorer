@@ -3,8 +3,8 @@
 -- Miami-Dade County Budget Explorer
 -- Abreu Data Works LLC
 --
--- Inserts ONE proposed-stage row into each of the six staged
--- tables, with unmissable sentinel values ($999,999,999,999 /
+-- Inserts proposed-stage rows into every staged table, with
+-- unmissable sentinel values ($999,999,999,999 /
 -- 99.9999 mills / PROBE LEAK text). Run against a SCRATCH CLONE
 -- of the database, then re-crawl the site: if any rendered byte
 -- changes, a reader query is missing its stage filter.
@@ -90,3 +90,66 @@ VALUES (
     'stage-probe',
     'proposed'
 );
+
+-- 7. capital_programs: proposed-stage program for an existing department
+INSERT INTO capital_programs
+    (fiscal_year_id, department_id, strategic_area_id, program_name,
+     adopted_amount, multi_year_total, description, stage)
+VALUES (
+    (SELECT id FROM fiscal_years WHERE label = 'FY 2025-26'),
+    (SELECT id FROM departments WHERE slug = 'sheriff'),
+    (SELECT strategic_area_id FROM departments WHERE slug = 'sheriff'),
+    'PROBE LEAK: proposed capital program',
+    99999999999900, 99999999999900,
+    'PROBE LEAK: proposed-stage capital description sentinel.',
+    'proposed'
+);
+
+-- 8. budget_releases: proposed-stage release metadata
+INSERT INTO budget_releases
+    (fiscal_year_id, stage, as_of_date, total_operating, total_capital,
+     total_budget, total_employees, budget_in_brief_url)
+VALUES (
+    (SELECT id FROM fiscal_years WHERE label = 'FY 2025-26'),
+    'proposed', DATE '2099-12-31', 99999999999900, 99999999999900,
+    99999999999900, 999999, 'https://example.invalid/PROBE-LEAK.pdf'
+);
+
+-- Proposed-only dimensions are the important case the original probe missed.
+-- They must not create adopted navigation, routes, counts, or search results.
+INSERT INTO strategic_areas
+    (name, slug, description, display_order, color)
+VALUES (
+    'PROBE LEAK Priority', 'probe-leak-priority',
+    'PROBE LEAK: proposed-only strategic priority.', 999, '#FF00FF'
+);
+
+INSERT INTO departments
+    (strategic_area_id, name, slug, abbreviation, description)
+VALUES (
+    (SELECT id FROM strategic_areas WHERE slug = 'probe-leak-priority'),
+    'PROBE LEAK Department', 'probe-leak-department', 'LEAK',
+    'PROBE LEAK: proposed-only department.'
+);
+
+INSERT INTO strategic_area_budgets
+    (fiscal_year_id, strategic_area_id, operating_budget, capital_budget,
+     cents_per_dollar, stage)
+VALUES (
+    (SELECT id FROM fiscal_years WHERE label = 'FY 2025-26'),
+    (SELECT id FROM strategic_areas WHERE slug = 'probe-leak-priority'),
+    99999999999900, 99999999999900, 99, 'proposed'
+);
+
+INSERT INTO department_budgets
+    (fiscal_year_id, department_id, strategic_area_id, operating_budget,
+     capital_budget, total_budget, employee_count, stage)
+VALUES (
+    (SELECT id FROM fiscal_years WHERE label = 'FY 2025-26'),
+    (SELECT id FROM departments WHERE slug = 'probe-leak-department'),
+    (SELECT id FROM strategic_areas WHERE slug = 'probe-leak-priority'),
+    99999999999900, 99999999999900, 99999999999900, 999999, 'proposed'
+);
+
+-- Search is materialized, so refresh it before the crawl/diff gate.
+REFRESH MATERIALIZED VIEW search_index;

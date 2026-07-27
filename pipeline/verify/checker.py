@@ -29,7 +29,8 @@ class VerificationResult:
 
 
 def verify_budget_totals(
-    conn, fiscal_year_id: int, published_totals_path: str
+    conn, fiscal_year_id: int, published_totals_path: str,
+    stage: str = "adopted",
 ) -> list[VerificationResult]:
     """Compare database totals against published figures.
 
@@ -43,6 +44,7 @@ def verify_budget_totals(
         conn: psycopg2 connection (open, with cursor support).
         fiscal_year_id: ID of the fiscal year to verify.
         published_totals_path: Path to published_totals.json.
+        stage: Release stage to verify.
 
     Returns:
         List of VerificationResult objects, one per check level.
@@ -58,9 +60,9 @@ def verify_budget_totals(
         """
         SELECT COALESCE(SUM(operating_budget), 0)
         FROM department_budgets
-        WHERE fiscal_year_id = %s AND stage = 'adopted'
+        WHERE fiscal_year_id = %s AND stage = %s
         """,
-        (fiscal_year_id,),
+        (fiscal_year_id, stage),
     )
     actual_gross_operating = cur.fetchone()[0]
 
@@ -97,9 +99,9 @@ def verify_budget_totals(
         """
         SELECT COALESCE(SUM(capital_budget), 0)
         FROM department_budgets
-        WHERE fiscal_year_id = %s AND stage = 'adopted'
+        WHERE fiscal_year_id = %s AND stage = %s
         """,
-        (fiscal_year_id,),
+        (fiscal_year_id, stage),
     )
     actual_capital = cur.fetchone()[0]
     expected_capital = published["capital_cents"]
@@ -147,9 +149,9 @@ def verify_budget_totals(
                     ))
                 WHERE db.fiscal_year_id = %s
                   AND sa.slug = %s
-                  AND db.stage = 'adopted'
+                  AND db.stage = %s
                 """,
-                (fiscal_year_id, area["slug"]),
+                (fiscal_year_id, area["slug"], stage),
             )
             actual = cur.fetchone()[0]
             expected = area["operating_cents"]
@@ -177,9 +179,9 @@ def verify_budget_totals(
                     ))
                 WHERE db.fiscal_year_id = %s
                   AND sa.slug = %s
-                  AND db.stage = 'adopted'
+                  AND db.stage = %s
                 """,
-                (fiscal_year_id, area["slug"]),
+                (fiscal_year_id, area["slug"], stage),
             )
             actual = cur.fetchone()[0]
             expected = area["total_budget_cents"]
@@ -264,6 +266,7 @@ def run_verification(
     database_url: str,
     fiscal_year: str,
     published_totals_path: str,
+    stage: str = "adopted",
 ) -> tuple[bool, str]:
     """Orchestrate the full verification process.
 
@@ -274,6 +277,7 @@ def run_verification(
         database_url: PostgreSQL connection string.
         fiscal_year: Fiscal year label (e.g., 'FY 2025-26').
         published_totals_path: Path to published_totals.json.
+        stage: Release stage to verify.
 
     Returns:
         Tuple of (all_passed: bool, report: str).
@@ -302,7 +306,7 @@ def run_verification(
         fiscal_year_id = row[0]
 
         results = verify_budget_totals(
-            conn, fiscal_year_id, published_totals_path
+            conn, fiscal_year_id, published_totals_path, stage=stage
         )
 
     report = generate_diff_report(results)

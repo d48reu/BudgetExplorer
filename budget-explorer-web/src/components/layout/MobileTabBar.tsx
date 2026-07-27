@@ -13,7 +13,7 @@ export function MobileTabBar() {
       className="fixed bottom-0 left-0 right-0 z-nav flex h-16 items-center justify-around border-t border-border bg-surface md:hidden"
       aria-label="Mobile navigation"
     >
-      {NAV_ITEMS.map((item) => {
+      {NAV_ITEMS.filter((item) => item.mobile !== false).map((item) => {
         const isActive =
           item.href === '/'
             ? pathname === '/'
@@ -31,7 +31,7 @@ export function MobileTabBar() {
             )}
             aria-current={isActive ? 'page' : undefined}
           >
-            <span className="text-lg" aria-hidden="true">
+            <span className="font-heading text-base font-semibold leading-none" aria-hidden="true">
               {item.icon}
             </span>
             <span>{item.label}</span>

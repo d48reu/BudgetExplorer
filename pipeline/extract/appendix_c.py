@@ -116,25 +116,32 @@ def extract_appendix_c(pdf_path: str) -> dict:
             interagency_transfers: the interagency adjustment string (thousands)
             total_employees: total position count string
     """
-    # Extract all text, page by page
+    # Extract all text, page by page. Keep the one-based PDF page number on
+    # every line so downstream audit artifacts can point reviewers back to
+    # the exact source page instead of only naming the document.
     all_lines = []
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             text = page.extract_text()
             if text:
-                all_lines.extend(text.split("\n"))
+                all_lines.extend(
+                    (page.page_number, line) for line in text.split("\n")
+                )
 
     departments = []
     area_totals = []
     grand_total = None
+    grand_total_page = None
     interagency_transfers = None
+    interagency_transfers_page = None
     total_employees = None
+    total_employees_page = None
 
     current_area = AREA_ORDER[0]  # starts with Policy Formulation
     area_index = 0
     current_dept = None
 
-    for line in all_lines:
+    for source_page, line in all_lines:
         stripped = line.strip()
 
         if _is_skip_line(stripped):
@@ -145,6 +152,7 @@ def extract_appendix_c(pdf_path: str) -> dict:
             numbers = _extract_numbers(stripped)
             if len(numbers) >= 5:
                 grand_total = numbers[4]  # FY 25-26 adopted
+                grand_total_page = source_page
             continue
 
         # Check for interagency transfers
@@ -152,6 +160,7 @@ def extract_appendix_c(pdf_path: str) -> dict:
             numbers = _extract_numbers(stripped)
             if len(numbers) >= 5:
                 interagency_transfers = numbers[4]
+                interagency_transfers_page = source_page
             continue
 
         # Check for area total line
@@ -165,6 +174,7 @@ def extract_appendix_c(pdf_path: str) -> dict:
                 "actual_23_24": values[2],
                 "budget_24_25": values[3],
                 "adopted_25_26": values[4],
+                "source_page": source_page,
             })
             # Advance to next area
             area_index += 1
@@ -180,6 +190,7 @@ def extract_appendix_c(pdf_path: str) -> dict:
             if area_index >= len(AREA_ORDER):
                 if len(numbers) >= 5:
                     total_employees = numbers[4]
+                    total_employees_page = source_page
             elif len(numbers) >= 5 and current_dept:
                 departments.append({
                     "strategic_area": current_area,
@@ -189,6 +200,7 @@ def extract_appendix_c(pdf_path: str) -> dict:
                     "actual_23_24": numbers[2],
                     "budget_24_25": numbers[3],
                     "adopted_25_26": numbers[4],
+                    "source_page": source_page,
                 })
             elif current_dept:
                 # A dash or blank in any year column yields fewer than 5
@@ -206,6 +218,7 @@ def extract_appendix_c(pdf_path: str) -> dict:
             numbers = _extract_numbers(stripped)
             if len(numbers) >= 5 and departments:
                 departments[-1]["positions_25_26"] = numbers[4]
+                departments[-1]["positions_source_page"] = source_page
             continue
 
         # Skip spending category detail lines
@@ -225,6 +238,9 @@ def extract_appendix_c(pdf_path: str) -> dict:
         "departments": departments,
         "area_totals": area_totals,
         "grand_total": grand_total,
+        "grand_total_page": grand_total_page,
         "interagency_transfers": interagency_transfers,
+        "interagency_transfers_page": interagency_transfers_page,
         "total_employees": total_employees,
+        "total_employees_page": total_employees_page,
     }

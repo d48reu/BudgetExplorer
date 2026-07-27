@@ -11,7 +11,7 @@ export function KeyChangesCallout({
 
   return (
     <div
-      className="rounded-md bg-surface-secondary px-4 py-3"
+      className="border-y border-text-primary py-4 pl-5"
       style={{ borderLeft: `4px solid ${borderColor}` }}
     >
       <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-1">

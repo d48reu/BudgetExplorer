@@ -145,21 +145,25 @@ def extract_appendix_j(pdf_path: str) -> dict:
             area_totals: list of dicts with strategic_area, total_25_26
             grand_total: the total capital budget string (thousands)
     """
+    # Preserve one-based source pages for the numeric audit ledger.
     all_lines = []
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             text = page.extract_text()
             if text:
-                all_lines.extend(text.split("\n"))
+                all_lines.extend(
+                    (page.page_number, line) for line in text.split("\n")
+                )
 
     departments = []
     area_totals = []
     grand_total = None
+    grand_total_page = None
 
     current_area = None
     current_dept = None
 
-    for line in all_lines:
+    for source_page, line in all_lines:
         stripped = line.strip()
 
         if _is_header_line(stripped):
@@ -173,6 +177,7 @@ def extract_appendix_j(pdf_path: str) -> dict:
             # and silently read the wrong column as the total.
             if len(numbers) == 9:
                 grand_total = numbers[6]
+                grand_total_page = source_page
             else:
                 logger.warning(
                     "Appendix J: unexpected column count (%d of 9) in Grand "
@@ -187,6 +192,7 @@ def extract_appendix_j(pdf_path: str) -> dict:
                 area_totals.append({
                     "strategic_area": current_area,
                     "total_25_26": numbers[6],
+                    "source_page": source_page,
                 })
             elif current_area:
                 logger.warning(
@@ -204,6 +210,7 @@ def extract_appendix_j(pdf_path: str) -> dict:
                     "strategic_area": current_area,
                     "department": current_dept,
                     "total_25_26": numbers[6],
+                    "source_page": source_page,
                 })
             elif current_dept and current_area:
                 logger.warning(
@@ -254,4 +261,5 @@ def extract_appendix_j(pdf_path: str) -> dict:
         "departments": departments,
         "area_totals": area_totals,
         "grand_total": grand_total,
+        "grand_total_page": grand_total_page,
     }
