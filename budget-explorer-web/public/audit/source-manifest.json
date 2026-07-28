@@ -31,8 +31,8 @@
     "label": "FY 2026-27 proposed Budget in Brief",
     "file": "data/fy-2026-27-proposed-budget-in-brief.pdf",
     "sourceUrl": "https://www.miamidade.gov/resources/budget/fy-26-27/proposed/budget-in-brief.pdf",
-    "sha256": "17bb735c1b53110ffc56fa103ed41deb27f535d21b47e76d5227908e7e214ab2",
-    "bytes": 3107991,
+    "sha256": "c6fceef2d44a6c8a8bf42d57438843c385fdf07c629dd242b549e958891f6bea",
+    "bytes": 3550753,
     "pages": 7
   },
   {
@@ -40,8 +40,8 @@
     "label": "FY 2026-27 proposed Volume 1",
     "file": "data/fy-2026-27-proposed-volume-1.pdf",
     "sourceUrl": "https://www.miamidade.gov/resources/budget/fy-26-27/proposed/volume-1-bookmarks.pdf",
-    "sha256": "0f566d2cc7b5d5e1d3b298bae707e0e8285baa6c2d083648d2a61770946585bd",
-    "bytes": 17287129,
+    "sha256": "e34859e4ea4528dd114d8bb572c92821087102b507eedd7779b1fc35ffcaf515",
+    "bytes": 18015275,
     "pages": 282
   }
 ]

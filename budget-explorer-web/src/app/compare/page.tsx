@@ -53,6 +53,11 @@ export default async function ComparisonPage({ searchParams }: PageProps) {
   const initialDepartment = Array.isArray(params.department)
     ? params.department[0]
     : params.department
+  const volume1Source =
+    overview.sources.volume1 ??
+    'https://www.miamidade.gov/resources/budget/fy-26-27/proposed/volume-1-bookmarks.pdf'
+  const appendixASource = `${volume1Source}#page=109`
+  const appendixHSource = `${volume1Source}#page=144`
 
   const facts = [
     {
@@ -133,6 +138,39 @@ export default async function ComparisonPage({ searchParams }: PageProps) {
               </dd>
             </div>
           </dl>
+          <div className="mt-7 border-l-4 border-mdc-blue pl-4">
+            <p className="font-heading text-sm font-bold uppercase tracking-[0.12em] text-text-primary">
+              Official source
+            </p>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">
+              Department operating budgets and positions come from{' '}
+              <a
+                href={appendixASource}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-mdc-blue underline decoration-1 underline-offset-4 hover:text-text-primary"
+              >
+                Volume 1, Appendix A (PDF pages 109–116)
+              </a>
+              . Proposed FY 2026–27 capital amounts come from{' '}
+              <a
+                href={appendixHSource}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-mdc-blue underline decoration-1 underline-offset-4 hover:text-text-primary"
+              >
+                Volume 1, Appendix H (PDF pages 144–145)
+              </a>
+              . The{' '}
+              <Link
+                href="/audit"
+                className="font-bold text-mdc-blue underline decoration-1 underline-offset-4 hover:text-text-primary"
+              >
+                number audit
+              </Link>{' '}
+              traces each published figure to its source page.
+            </p>
+          </div>
         </ReportSection>
       </div>
 

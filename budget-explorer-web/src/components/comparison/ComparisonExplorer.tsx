@@ -190,7 +190,7 @@ export function ComparisonExplorer({
                     `${formatDollarsAbbreviated(change.baselineOperating)} → ${formatDollarsAbbreviated(change.proposedOperating)}`}
                   {metric === 'workforce' &&
                     `${change.baselineEmployees?.toLocaleString('en-US') ?? '—'} → ${change.proposedEmployees?.toLocaleString('en-US') ?? '—'} positions`}
-                  {metric === 'capital' && 'Proposed multi-year amount'}
+                  {metric === 'capital' && 'FY 2026–27 proposed capital amount'}
                 </p>
               </div>
               <div
