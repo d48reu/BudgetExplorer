@@ -96,7 +96,7 @@ export function DepartmentList({ departments, areaColor }: DepartmentListProps) 
                 className="w-full cursor-pointer select-none text-right hover:text-text-primary"
                 onClick={() => handleSort('operatingBudget')}
               >
-                Operating Budget
+                Operating
                 <SortIndicator field="operatingBudget" activeField={sortField} direction={sortDirection} />
               </button>
             </th>
@@ -122,7 +122,7 @@ export function DepartmentList({ departments, areaColor }: DepartmentListProps) 
                 className="w-full cursor-pointer select-none text-right hover:text-text-primary"
                 onClick={() => handleSort('employeeCount')}
               >
-                Employees
+                Funded positions
                 <SortIndicator field="employeeCount" activeField={sortField} direction={sortDirection} />
               </button>
             </th>
@@ -153,7 +153,7 @@ export function DepartmentList({ departments, areaColor }: DepartmentListProps) 
                 {formatDollarsAbbreviated(dept.capitalBudget)}
               </td>
               <td className="px-3 py-4 text-right tabular-nums">
-                {dept.employeeCount != null ? dept.employeeCount.toLocaleString() : 'N/A'}
+                {dept.employeeCount != null ? dept.employeeCount.toLocaleString() : '—'}
               </td>
             </tr>
           ))}

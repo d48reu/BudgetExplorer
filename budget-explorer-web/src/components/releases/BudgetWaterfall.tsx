@@ -100,7 +100,8 @@ export function BudgetWaterfall({ release }: BudgetWaterfallProps) {
         ))}
       </div>
       <figcaption className="mt-6 max-w-3xl text-sm leading-6 text-text-secondary">
-        Operating detail is published gross. Removing payments between county agencies produces the net operating figure used in the total budget.
+        Department operating amounts include payments between county agencies.
+        Those payments are removed to calculate the net operating total.
       </figcaption>
     </figure>
   )

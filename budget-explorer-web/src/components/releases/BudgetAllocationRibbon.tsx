@@ -95,7 +95,7 @@ export function BudgetAllocationRibbon({
         })}
       </ol>
       <figcaption className="mt-5 text-sm leading-6 text-text-secondary">
-        Each cent represents one percent of the gross operating budget. Published values may be rounded.
+        One cent equals one percent of gross operating spending. Published shares may be rounded.
       </figcaption>
     </figure>
   )

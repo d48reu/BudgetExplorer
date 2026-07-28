@@ -4,9 +4,9 @@ import { SearchResults } from '@/components/search/SearchResults'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Search',
+  title: 'Search Budget Data',
   description:
-    'Search across Miami-Dade County budget departments, strategic areas, and glossary terms.',
+    'Search Miami-Dade County departments, strategic areas, and budget terms.',
 }
 
 export const dynamic = 'force-dynamic'
@@ -24,7 +24,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 md:py-12">
       <h1 className="text-3xl font-heading font-bold text-text-primary mb-6">
-        Search the Budget
+        Search budget data
       </h1>
       <SearchForm initialQuery={query} />
       <SearchResults query={query} results={results} />

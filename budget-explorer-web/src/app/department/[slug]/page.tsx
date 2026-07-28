@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { AiDescription } from '@/components/department/AiDescription'
+import { DepartmentDescription } from '@/components/department/DepartmentDescription'
 import { DepartmentBudgetMix } from '@/components/department/DepartmentBudgetMix'
 import { DepartmentProposalSnapshot } from '@/components/department/DepartmentProposalSnapshot'
 import { KeyChangesCallout } from '@/components/department/KeyChangesCallout'
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!detail) return { title: 'Department Not Found' }
 
   return {
-    title: `${detail.name} - ${detail.area.name} | Budget Explorer`,
+    title: `${detail.name} — ${detail.area.name}`,
     description: `Adopted budget, spending composition, history, and proposed change for ${detail.name}, Miami-Dade County.`,
   }
 }
@@ -85,12 +85,12 @@ export default async function DepartmentPage({ params }: PageProps) {
     {
       label: 'Funded positions',
       value: detail.employeeCount?.toLocaleString('en-US') ?? '—',
-      note: 'Published department total',
+      note: 'As published',
     },
     {
       label: 'Year-over-year',
       value: yoyChange?.value ?? '—',
-      note: yoyChange ? `${yoyColor} in total budget` : 'Comparable history unavailable',
+      note: yoyChange ? `${yoyColor} in total budget` : 'No comparable history',
     },
   ]
 
@@ -113,10 +113,10 @@ export default async function DepartmentPage({ params }: PageProps) {
           <ExplorationMasthead
             eyebrow={`${detail.area.name} department`}
             title={detail.name}
-            description="The adopted department record: current operations, capital investment, funded positions, spending categories, and recent budget history."
+            description="Adopted operating, capital, position, and expenditure data, with recent budget history and the FY 2026–27 proposal."
             metricLabel="Adopted department total"
             metricValue={formatDollarsAbbreviated(detail.totalBudget)}
-            metricNote="Operating and capital allocations combined across every adopted strategic-area slice."
+            metricNote="Operating and capital allocations across all adopted strategic areas."
             accentColor={detail.area.color}
           />
         </div>
@@ -125,37 +125,39 @@ export default async function DepartmentPage({ params }: PageProps) {
 
         <ReportSection
           number="01"
-          label="Department brief"
-          title="What this department does"
-          description="A plain-English reading of the adopted department record. Generated descriptions are labeled with their source fiscal year."
+          label="Overview"
+          title="Department overview"
+          description="Service responsibilities and the latest adopted operating change."
         >
           {detail.description ? (
             <div className="max-w-3xl">
-              <AiDescription
+              <DepartmentDescription
                 summary={detail.description.summary}
-                detailedDescription={detail.description.detailedDescription}
+                slug={detail.slug}
                 fiscalYear={detail.description.fiscalYear}
-                generatedAt={detail.description.generatedAt}
               />
-              {detail.description.keyChanges && (
+              {currentYear && priorYear && (
                 <div className="mt-6">
                   <KeyChangesCallout
-                    keyChanges={detail.description.keyChanges}
+                    currentFiscalYear={currentYear.fiscalYear}
+                    currentOperating={currentYear.operatingBudget}
+                    priorFiscalYear={priorYear.fiscalYear}
+                    priorOperating={priorYear.operatingBudget}
                     areaColor={detail.area.color}
                   />
                 </div>
               )}
             </div>
           ) : (
-            <p className="text-text-secondary">Description coming soon.</p>
+            <p className="text-text-secondary">No department description is available.</p>
           )}
         </ReportSection>
 
         <ReportSection
           number="02"
-          label="Budget composition"
-          title="Operating services and capital investment"
-          description="The composition strip separates recurring operating resources from the department’s multi-year capital program."
+          label="Budget"
+          title="Operating and capital"
+          description="Operating covers annual services and staffing. Capital covers the department’s multi-year investment program."
         >
           <DepartmentBudgetMix
             operatingBudget={detail.operatingBudget}
@@ -168,8 +170,8 @@ export default async function DepartmentPage({ params }: PageProps) {
           <ReportSection
             number="03"
             label="Expenditures"
-            title="Where department spending goes"
-            description="Adopted expenditures ranked by category, with direct dollar and share labels. The table view provides exact values."
+            title="Expenditures by category"
+            description="Adopted expenditure categories ranked by amount. Switch to the table for exact figures."
           >
             <ExpenditureBreakdown
               data={expenditures}
@@ -182,8 +184,8 @@ export default async function DepartmentPage({ params }: PageProps) {
           <ReportSection
             number="04"
             label="History"
-            title="How the department budget has changed"
-            description="Up to five fiscal years of actual or adopted department totals, with proposed figures excluded from the historical series."
+            title="Total budget by fiscal year"
+            description="Up to five fiscal years of actual or adopted department totals. Proposed figures are not included."
           >
             <YearOverYearChart
               data={yoyData}
@@ -195,9 +197,9 @@ export default async function DepartmentPage({ params }: PageProps) {
         {proposalChange && (
           <ReportSection
             number="05"
-            label="Next proposal"
-            title="What the FY 2026–27 proposal changes"
-            description="Operating and staffing compare against Appendix A’s restated adopted baseline. Capital is shown as proposal-only because no restated adopted capital baseline is published."
+            label="Proposal"
+            title="FY 2026–27 proposed changes"
+            description="Operating and position figures are compared with Appendix A’s restated adopted amounts. Capital is proposal only."
           >
             <DepartmentProposalSnapshot change={proposalChange} />
           </ReportSection>
@@ -206,9 +208,9 @@ export default async function DepartmentPage({ params }: PageProps) {
         {relatedDepts.length > 0 && (
           <ReportSection
             number="06"
-            label="Related departments"
-            title={`More in ${detail.area.name}`}
-            description="Continue through other departments with adopted allocations in this strategic area."
+            label="Departments"
+            title={`Other departments in ${detail.area.name}`}
+            description="Departments with adopted operating allocations in the same strategic area."
           >
             <RelatedDepartments
               departments={relatedDepts}

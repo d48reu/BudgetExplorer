@@ -33,11 +33,11 @@ export function CountyDrillDown({ allocations, countyTotal }: CountyDrillDownPro
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-text-primary">
-        Your County Tax: Where It Goes
+        County portion by strategic area
       </h3>
 
       <p className="text-lg font-semibold text-text-secondary">
-        {dollarFormatter.format(countyTotal)} of your taxes go to Miami-Dade County
+        {dollarFormatter.format(countyTotal)} of this estimate is levied by Miami-Dade County.
       </p>
 
       {/* Strategic area list with inline percentage bars */}

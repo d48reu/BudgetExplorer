@@ -15,13 +15,13 @@ import { getProposedBudgetOverview } from '@/lib/db/queries'
 export const metadata: Metadata = {
   title: 'FY 2026–27 Proposed Budget',
   description:
-    'Explore the Miami-Dade County FY 2026–27 proposed budget and compare it with the current adopted budget.',
+    'Miami-Dade County’s FY 2026–27 proposed budget, with department changes and a comparison to the current adopted budget.',
 }
 
 export const revalidate = 86400
 
 function formatReleaseDate(value: string | null) {
-  if (!value) return 'release date unavailable'
+  if (!value) return null
   return new Intl.DateTimeFormat('en-US', {
     month: 'long',
     day: 'numeric',
@@ -92,19 +92,19 @@ export default async function ProposedBudgetPage() {
     {
       label: 'Priorities',
       value: priorities.length.toLocaleString('en-US'),
-      note: 'Proposed organization',
+      note: 'Used in the proposal',
     },
     {
       label: 'Departments',
       value: departmentCount.toLocaleString('en-US'),
-      note: 'With proposed budget facts',
+      note: 'With proposed budget data',
     },
     {
       label: 'Funded positions',
       value: (proposed.employees ?? 0).toLocaleString('en-US'),
       note:
         employeeDifference == null
-          ? 'Adopted comparison unavailable'
+          ? 'No adopted comparison'
           : `${Math.abs(employeeDifference)} ${employeeDifference < 0 ? 'fewer' : 'more'} than adopted`,
     },
     {
@@ -112,7 +112,7 @@ export default async function ProposedBudgetPage() {
       value: proposed.countyMillage?.toFixed(4) ?? '—',
       note:
         millageChange == null
-          ? 'Adopted comparison unavailable'
+          ? 'No adopted comparison'
           : `${millageChange > 0 ? '+' : ''}${millageChange.toFixed(4)} from adopted`,
     },
   ]
@@ -126,8 +126,12 @@ export default async function ProposedBudgetPage() {
             stage="proposed"
             fiscalYear={proposed.fiscalYear}
             totalBudget={proposed.total}
-            title="Proposed county budget"
-            description={`Released ${formatReleaseDate(proposed.asOfDate)} for public and commission review. Figures may change before final adoption.`}
+            title="Proposed budget"
+            description={
+              formatReleaseDate(proposed.asOfDate)
+                ? `Released ${formatReleaseDate(proposed.asOfDate)}. The County Commission may change these figures before adoption.`
+                : 'The County Commission may change these figures before adoption.'
+            }
             context={`${priorities.length} priorities · ${departmentCount} departments`}
           />
         </div>
@@ -136,27 +140,27 @@ export default async function ProposedBudgetPage() {
 
         <ReportSection
           number="01"
-          label="Budget math"
-          title="How the proposed total is built"
-          description="The proposal uses the same accounting sequence as the adopted release: gross operating costs, less internal transfers, plus the capital program."
+          label="Totals"
+          title="Operating and capital totals"
+          description="The County calculates the proposed total the same way as the adopted total: gross operating spending minus internal transfers, plus the capital program."
         >
           <BudgetWaterfall release={proposed} />
         </ReportSection>
 
         <ReportSection
           number="02"
-          label="Allocation"
-          title="Where each proposed operating dollar goes"
-          description="The proposal reorganizes services under seven priorities. This is a structural change from the nine strategic areas in the current adopted budget, so the two taxonomies are presented separately."
+          label="Operating"
+          title="Operating spending by proposed priority"
+          description="The proposal groups services into seven priorities instead of the adopted budget’s nine strategic areas. The County did not publish a direct mapping between the two sets of categories."
         >
           <BudgetAllocationRibbon items={allocationItems} />
         </ReportSection>
 
         <ReportSection
           number="03"
-          label="Comparison"
-          title="The proposed change at the topline"
-          description={`Headline totals compare the proposal with the published ${adopted?.fiscalYear ?? 'current'} adopted release. Blue denotes a funding increase; orange denotes a decrease.`}
+          label="Change"
+          title="Adopted and proposed totals"
+          description={`Compares the proposal with the ${adopted?.fiscalYear ?? 'current'} adopted budget. Blue marks an increase; orange marks a decrease.`}
         >
           <BudgetComparisonTable rows={comparisons} />
         </ReportSection>
@@ -164,8 +168,8 @@ export default async function ProposedBudgetPage() {
         <ReportSection
           number="04"
           label="Departments"
-          title="Where operating budgets move most"
-          description="Department comparisons use Appendix A’s restated adopted baseline, which applies the proposal’s own department and priority structure to both years."
+          title="Largest department operating changes"
+          description="Appendix A restates the adopted operating budget using the proposal’s department and priority structure, allowing a consistent department comparison."
         >
           <div>
             <DepartmentChangePlot changes={departmentChanges} />
@@ -173,16 +177,16 @@ export default async function ProposedBudgetPage() {
               href="/compare"
               className="mt-5 inline-block font-heading text-sm font-bold underline decoration-mdc-blue decoration-2 underline-offset-4 hover:text-mdc-blue"
             >
-              Filter every department and measure <span aria-hidden="true">→</span>
+              See all department changes <span aria-hidden="true">→</span>
             </Link>
           </div>
         </ReportSection>
 
         <ReportSection
           number="05"
-          label="Priority record"
-          title="Operating and capital by priority"
-          description="Operating allocations are gross of internal transfers. Capital figures show the proposed multi-year program associated with each priority."
+          label="Priorities"
+          title="Budget by proposed priority"
+          description="Operating amounts are before internal transfers. Capital amounts cover the proposed multi-year program."
         >
           <PriorityBudgetTable
             priorities={priorities}
@@ -192,9 +196,9 @@ export default async function ProposedBudgetPage() {
 
         <ReportSection
           number="06"
-          label="Sources"
-          title="The official proposal record"
-          description="Figures were extracted from the County’s published proposal and reconciled to its appendix totals. Each link opens an official PDF."
+          label="Documents"
+          title="County proposal documents"
+          description="These are the County PDFs used for this site. Figures were checked against the published appendix totals."
         >
           <ol className="grid border-t-2 border-text-primary md:grid-cols-2 md:gap-x-10">
             {sourceLinks.map(([label, href], index) => (
@@ -220,14 +224,14 @@ export default async function ProposedBudgetPage() {
       <div className="bg-text-primary text-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-7 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p className="max-w-2xl text-white/70">
-            Informational only. This explorer is not an official Miami-Dade County website.
+            This is an independent presentation of Miami-Dade County budget data.
           </p>
           <div className="flex flex-wrap gap-5">
             <Link href="/compare" className="font-bold underline decoration-mdc-green decoration-2 underline-offset-4 hover:text-white/75">
-              Compare releases <span aria-hidden="true">→</span>
+              Compare budgets <span aria-hidden="true">→</span>
             </Link>
             <Link href="/" className="font-bold underline decoration-mdc-orange decoration-2 underline-offset-4 hover:text-white/75">
-              Return to adopted <span aria-hidden="true">→</span>
+              Adopted budget <span aria-hidden="true">→</span>
             </Link>
           </div>
         </div>

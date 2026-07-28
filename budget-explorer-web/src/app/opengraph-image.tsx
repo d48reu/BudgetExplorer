@@ -37,7 +37,7 @@ export default async function Image() {
             marginTop: 16,
           }}
         >
-          See where your tax dollars go
+          Miami-Dade County adopted and proposed budget data
         </div>
         <div
           style={{

@@ -33,8 +33,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `${data.area.name} | Budget Explorer`,
-    description: `Explore departments and budgets within ${data.area.name}. ${data.area.departmentCount} departments in this strategic area.`,
+    title: `${data.area.name} budget`,
+    description: `Adopted budget figures for ${data.area.departmentCount} departments in Miami-Dade County’s ${data.area.name} strategic area.`,
   }
 }
 
@@ -102,7 +102,7 @@ export default async function AreaDetailPage({ params }: PageProps) {
             title={area.name}
             description={
               area.description ??
-              'Explore the departments and adopted budget allocated to this strategic area.'
+              'Departments and adopted budget amounts assigned to this strategic area.'
             }
             metricLabel="Operating allocation"
             metricValue={formatDollarsAbbreviated(area.operatingBudget)}
@@ -115,9 +115,9 @@ export default async function AreaDetailPage({ params }: PageProps) {
 
         <ReportSection
           number="01"
-          label="Department map"
-          title="How the area is distributed"
-          description="Rectangle area represents each department’s operating allocation within this strategic area. Select a department for its full adopted record."
+          label="Operating"
+          title="Department operating budgets"
+          description="Area size represents each department’s operating allocation within this strategic area. Select a department for more detail."
         >
           <div className="border-y-2 border-text-primary py-5">
             <AreaDeptTreemap
@@ -130,9 +130,9 @@ export default async function AreaDetailPage({ params }: PageProps) {
 
         <ReportSection
           number="02"
-          label="Directory"
-          title="The departments behind the strategy"
-          description="Sort by operating dollars, funded positions, or name. Multi-area departments show only the allocation belonging to this strategic area."
+          label="Departments"
+          title="Departments in this strategic area"
+          description="Sort by operating budget, capital budget, funded positions, or name. For departments assigned to more than one area, this table shows only the amount assigned here."
         >
           <DepartmentList departments={departments} areaColor={area.color} />
         </ReportSection>
@@ -141,13 +141,13 @@ export default async function AreaDetailPage({ params }: PageProps) {
       <div className="bg-text-primary text-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-7 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p className="max-w-2xl text-sm text-white/70">
-            The proposal reorganizes services under seven priorities, so area-level comparisons are not asserted.
+            The proposal uses seven priorities instead of these nine strategic areas. Compare department figures rather than area totals.
           </p>
           <Link
             href="/compare"
             className="font-bold underline decoration-mdc-orange decoration-2 underline-offset-4 hover:text-white/75"
           >
-            Compare departments instead <span aria-hidden="true">→</span>
+            Compare department budgets <span aria-hidden="true">→</span>
           </Link>
         </div>
       </div>

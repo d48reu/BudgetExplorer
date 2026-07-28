@@ -13,67 +13,67 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
   {
     term: 'Ad Valorem Tax',
     definition:
-      'A property tax based on the assessed value of your home or business. "Ad valorem" means "according to value" in Latin. This is the main way Miami-Dade County raises revenue.',
+      'A property tax calculated from a property’s taxable value and the applicable millage rate.',
     slug: 'ad-valorem-tax',
   },
   {
     term: 'Adopted Budget',
     definition:
-      'The final spending plan approved by the Board of County Commissioners for a fiscal year. Once adopted, it authorizes departments to spend up to their budgeted amounts.',
+      'The spending plan approved by the Board of County Commissioners for a fiscal year. It sets authorized spending amounts for county departments and programs.',
     slug: 'adopted-budget',
   },
   {
     term: 'Capital Budget',
     definition:
-      'Money set aside for building, buying, or improving long-term assets like roads, parks, buildings, and transit systems. These are one-time investments, not ongoing operating costs.',
+      'Funding for long-term assets and projects such as roads, parks, buildings, equipment, and transit systems. Capital costs are separate from annual operating costs.',
     slug: 'capital-budget',
   },
   {
     term: 'Enterprise Fund',
     definition:
-      'A self-sustaining county service that operates like a business, funded by fees rather than taxes. Examples include Water and Sewer, Solid Waste, and Aviation (airports). Users of the service pay for it directly.',
+      'A fund for a county service financed mainly through charges to its users. County examples include Aviation and Water and Sewer.',
     slug: 'enterprise-fund',
   },
   {
     term: 'Fiscal Year',
     definition:
-      'The county\'s 12-month budget cycle, which runs from October 1 to September 30. "FY 2025-26" means October 2025 through September 2026.',
+      'The County’s 12-month budget period, from October 1 through September 30. FY 2025–26 runs from October 2025 through September 2026.',
     slug: 'fiscal-year',
   },
   {
     term: 'Fringes',
     definition:
-      'Employee benefit costs beyond salary, including health insurance, retirement contributions, Social Security, and workers\' compensation. Fringes typically add 30-40% on top of base salary costs.',
+      'Employee costs in addition to salary, including health insurance, retirement contributions, Social Security, and workers’ compensation.',
     slug: 'fringes',
   },
   {
     term: 'General Fund',
     definition:
-      'The county\'s main operating account, funded primarily by property taxes. It pays for core services like police, fire rescue, parks, libraries, and public works that benefit all residents.',
+      'The County’s main operating fund for services that are not supported by a separate enterprise or dedicated revenue source.',
     slug: 'general-fund',
   },
   {
     term: 'Homestead Exemption',
     definition:
-      'A tax break for Florida residents who own and live in their primary home. It reduces the taxable value of your property by up to $50,000, lowering your annual property tax bill.',
+      'A reduction in taxable value for eligible Florida residents who own and occupy their primary home. The exemption is up to $50,000, with a smaller amount applying to school taxes.',
     slug: 'homestead-exemption',
   },
   {
     term: 'Millage Rate',
     definition:
-      'The tax rate applied to property values, expressed as dollars per $1,000 of assessed value. A millage rate of 5.0 means you pay $5 for every $1,000 your property is worth.',
+      'A property-tax rate stated in dollars per $1,000 of taxable value. A rate of 5.0 mills equals $5 per $1,000.',
     slug: 'millage-rate',
   },
   {
     term: 'Operating Budget',
     definition:
-      'The day-to-day spending plan covering ongoing costs like employee salaries, utilities, supplies, and maintenance. This is what it costs to keep county services running each year.',
+      'The annual spending plan for recurring costs such as salaries, utilities, supplies, contracts, and maintenance.',
     slug: 'operating-budget',
   },
   {
     term: 'Strategic Area',
     definition:
-      'One of nine broad categories the county uses to organize its departments and spending priorities, such as Public Safety, Transportation, and Neighborhood and Infrastructure.',
+      'One of nine service categories used in the FY 2025–26 adopted budget to organize departments and operating spending.',
     slug: 'strategic-area',
   },
 ]

@@ -56,7 +56,7 @@ export function PropertyValueInput({ value, onChange }: PropertyValueInputProps)
         htmlFor="property-value"
         className="block text-sm font-medium text-text-primary mb-1"
       >
-        Assessed Property Value
+        Assessed property value
       </label>
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg font-medium pointer-events-none">
@@ -69,7 +69,7 @@ export function PropertyValueInput({ value, onChange }: PropertyValueInputProps)
           value={displayValue}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder="Enter assessed value"
+          placeholder="Assessed value"
           className="w-full pl-7 pr-3 py-2.5 border border-border rounded-md bg-surface text-text-primary text-lg focus:outline-none focus:ring-2 focus:ring-mdc-blue focus:border-mdc-blue"
         />
       </div>
@@ -101,10 +101,10 @@ export function PropertyValueInput({ value, onChange }: PropertyValueInputProps)
 
 function getGuardrailMessage(value: number): string | null {
   if (value > 0 && value < 50_000) {
-    return 'This seems low for Miami-Dade -- you may owe no tax with homestead exemption.'
+    return 'At this value, the homestead exemption may reduce some taxes to zero.'
   }
   if (value > 2_000_000) {
-    return 'This is in the top range for Miami-Dade properties.'
+    return 'Check that you entered the assessed value, not the market value.'
   }
   return null
 }

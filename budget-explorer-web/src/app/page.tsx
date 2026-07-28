@@ -16,9 +16,9 @@ import { ReportSection } from '@/components/releases/ReportSection'
 import { RevenueVisualization } from '@/components/homepage/HomeCharts'
 
 export const metadata: Metadata = {
-  title: 'Miami-Dade Budget Explorer | See Where Your Money Goes',
+  title: 'FY 2025–26 Adopted Budget',
   description:
-    "Explore Miami-Dade County's $13.2 billion FY 2025-26 adopted budget with accessible visualizations and department-level detail.",
+    "Miami-Dade County's FY 2025–26 adopted budget by department, strategic area, revenue source, and tax rate.",
 }
 
 export const revalidate = 86400
@@ -42,17 +42,17 @@ export default async function HomePage() {
     {
       label: 'Strategic areas',
       value: stats.strategicAreaCount.toLocaleString('en-US'),
-      note: 'Adopted organization',
+      note: 'Used in the adopted budget',
     },
     {
       label: 'Departments',
       value: stats.departmentCount.toLocaleString('en-US'),
-      note: 'With adopted budget facts',
+      note: 'With adopted budget data',
     },
     {
       label: 'Funded positions',
       value: (release.employees ?? 0).toLocaleString('en-US'),
-      note: 'Published adopted release',
+      note: 'As published',
     },
     {
       label: 'County millage',
@@ -70,8 +70,8 @@ export default async function HomePage() {
             stage="adopted"
             fiscalYear={release.fiscalYear}
             totalBudget={release.total}
-            title="Adopted county budget"
-            description="The County’s current spending plan. This is the budget in force for services, staffing, and capital investment."
+            title="Adopted budget"
+            description="The spending plan currently in effect for county services, staffing, and capital projects."
             context={`${stats.strategicAreaCount} strategic areas · ${stats.departmentCount} departments`}
           />
         </div>
@@ -80,18 +80,18 @@ export default async function HomePage() {
 
         <ReportSection
           number="01"
-          label="Budget math"
-          title="How the adopted total is built"
-          description="The published department detail begins with gross operating costs. Internal county payments are removed before capital is added to reach the adopted total."
+          label="Totals"
+          title="Operating and capital totals"
+          description="Department budgets are shown before internal county transfers. The County subtracts those transfers, then adds the capital program, to calculate the adopted total."
         >
           <BudgetWaterfall release={release} />
         </ReportSection>
 
         <ReportSection
           number="02"
-          label="Allocation"
-          title="Where each operating dollar goes"
-          description="The adopted budget organizes county services into nine strategic areas. The strip and ranked record use the same cents-per-dollar measure throughout the explorer."
+          label="Operating"
+          title="Operating spending by strategic area"
+          description="The adopted budget groups services into nine strategic areas. The amounts below are shares of gross operating spending."
         >
           <BudgetAllocationRibbon items={strategicAreas} linkItems />
         </ReportSection>
@@ -99,8 +99,8 @@ export default async function HomePage() {
         <ReportSection
           number="03"
           label="Revenue"
-          title="Where the money comes from"
-          description="Property taxes are one part of the operating budget. Proprietary revenue, grants, sales and gas taxes, and other sources fund the remainder."
+          title="Operating revenue by source"
+          description="Property taxes fund part of the operating budget. Fees, grants, sales and gas taxes, and other sources fund the rest."
         >
           <RevenueVisualization data={revenueData} />
         </ReportSection>
@@ -109,13 +109,13 @@ export default async function HomePage() {
       <div className="bg-text-primary text-white">
         <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:grid-cols-3 sm:px-6 lg:px-8">
           <Link href="/explorer" className="border-t-2 border-mdc-blue pt-4 font-heading text-lg font-bold hover:text-white/75">
-            Explore departments <span aria-hidden="true">→</span>
+            Browse departments <span aria-hidden="true">→</span>
           </Link>
           <Link href="/calculator" className="border-t-2 border-mdc-orange pt-4 font-heading text-lg font-bold hover:text-white/75">
-            Estimate property taxes <span aria-hidden="true">→</span>
+            Estimate property tax <span aria-hidden="true">→</span>
           </Link>
           <Link href="/compare" className="border-t-2 border-mdc-green pt-4 font-heading text-lg font-bold hover:text-white/75">
-            Compare both releases <span aria-hidden="true">→</span>
+            Compare adopted and proposed <span aria-hidden="true">→</span>
           </Link>
         </div>
       </div>

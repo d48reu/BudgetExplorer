@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { getServiceSummary } from '@/lib/department-copy'
 import { formatDollarsAbbreviated } from '@/lib/format'
 import { POPULAR_SEARCH_SUGGESTIONS } from '@/lib/constants'
 import type { SearchResult } from '@/lib/db/queries'
@@ -13,7 +14,7 @@ export function SearchResults({ query, results }: SearchResultsProps) {
   if (!query) {
     return (
       <p className="text-center text-text-muted py-12">
-        Enter a keyword to search across the Miami-Dade County budget.
+        Search by department, strategic area, or budget term.
       </p>
     )
   }
@@ -63,7 +64,7 @@ export function SearchResults({ query, results }: SearchResultsProps) {
       )}
 
       {areas.length > 0 && (
-        <ResultSection title="Strategic Areas">
+        <ResultSection title="Strategic areas">
           {areas.map(r => (
             <StrategicAreaCard key={`area-${r.entity_id}`} result={r} />
           ))}
@@ -71,7 +72,7 @@ export function SearchResults({ query, results }: SearchResultsProps) {
       )}
 
       {glossary.length > 0 && (
-        <ResultSection title="Glossary Terms">
+        <ResultSection title="Budget terms">
           {glossary.map(r => (
             <GlossaryCard key={`glossary-${r.slug}`} result={r} />
           ))}
@@ -115,7 +116,9 @@ function DepartmentCard({ result }: { result: SearchResult }) {
             </span>
           )}
           {result.snippet && (
-            <p className="mt-2 text-sm text-text-secondary line-clamp-2">{result.snippet}</p>
+            <p className="mt-2 text-sm text-text-secondary line-clamp-2">
+              {getServiceSummary(result.snippet, result.slug)}
+            </p>
           )}
         </div>
         {result.operating_budget != null && (

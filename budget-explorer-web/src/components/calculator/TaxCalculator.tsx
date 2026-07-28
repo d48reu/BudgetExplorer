@@ -81,11 +81,11 @@ export function TaxCalculator({ rates, areas }: TaxCalculatorProps) {
             />
             <div>
               <span className="text-sm font-medium text-text-primary">
-                Homestead Exemption
+                Homestead exemption
               </span>
               <p className="text-text-muted text-xs mt-0.5">
                 Florida homestead exemption reduces taxable value by up to
-                $50,000 for primary residences ($25,000 for school taxes)
+                $50,000 for a primary residence. The school-tax exemption is $25,000.
               </p>
             </div>
           </label>
@@ -104,7 +104,7 @@ export function TaxCalculator({ rates, areas }: TaxCalculatorProps) {
             {/* Authority breakdown */}
             <section className="mt-6">
               <h2 className="text-xl font-semibold text-text-primary mb-4">
-                Tax Breakdown by Authority
+                Estimated tax by authority
               </h2>
               <AuthorityBreakdown breakdown={breakdown} totalTax={totalTax} />
             </section>
@@ -118,8 +118,8 @@ export function TaxCalculator({ rates, areas }: TaxCalculatorProps) {
             </section>
 
             <p className="text-text-muted text-xs mt-8">
-              This is an estimate based on FY 2025-26 millage rates. Actual
-              taxes may vary based on municipality and special taxing districts.
+              Estimate based on FY 2025–26 millage rates. The final bill may
+              include municipal and special-district taxes not shown here.
             </p>
           </>
         ) : (
@@ -130,10 +130,10 @@ export function TaxCalculator({ rates, areas }: TaxCalculatorProps) {
               </span>
             </div>
             <p className="text-text-secondary text-lg">
-              Enter your property&apos;s assessed value to see your tax breakdown.
+              Enter the property&apos;s assessed value.
             </p>
             <p className="text-text-muted text-sm mt-1">
-              Choose a preset or type a custom amount.
+              Choose an amount below or type your own.
             </p>
           </div>
         )}

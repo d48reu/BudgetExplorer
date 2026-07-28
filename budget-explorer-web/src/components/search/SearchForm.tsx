@@ -21,7 +21,7 @@ export function SearchForm({ initialQuery }: SearchFormProps) {
           name="q"
           type="search"
           defaultValue={initialQuery}
-          placeholder="Search departments, strategic areas, glossary terms..."
+          placeholder="Department, strategic area, or budget term"
           autoFocus
           className="w-full rounded-lg border border-border bg-white px-4 py-3 pr-12 text-base text-text-primary placeholder:text-text-muted focus:border-mdc-blue focus:outline-none focus:ring-2 focus:ring-mdc-blue/20"
         />

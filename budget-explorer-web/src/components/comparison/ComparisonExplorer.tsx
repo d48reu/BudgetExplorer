@@ -18,8 +18,8 @@ const metricOptions: Array<{
   label: string
 }> = [
   { value: 'operating', label: 'Operating change' },
-  { value: 'workforce', label: 'Funded position change' },
-  { value: 'capital', label: 'Proposed capital plan' },
+  { value: 'workforce', label: 'Position change' },
+  { value: 'capital', label: 'Proposed capital' },
 ]
 
 function metricValue(
@@ -145,7 +145,7 @@ export function ComparisonExplorer({
           {filtered.length} department{filtered.length === 1 ? '' : 's'}
         </p>
         {metric === 'capital' ? (
-          <p>Green · proposed multi-year program</p>
+          <p>Green · proposed capital</p>
         ) : (
           <p>
             <span className="text-change-increase">Blue · increase</span>
@@ -190,7 +190,7 @@ export function ComparisonExplorer({
                     `${formatDollarsAbbreviated(change.baselineOperating)} → ${formatDollarsAbbreviated(change.proposedOperating)}`}
                   {metric === 'workforce' &&
                     `${change.baselineEmployees?.toLocaleString('en-US') ?? '—'} → ${change.proposedEmployees?.toLocaleString('en-US') ?? '—'} positions`}
-                  {metric === 'capital' && 'Proposed multi-year capital program'}
+                  {metric === 'capital' && 'FY 2026–27 proposed capital amount'}
                 </p>
               </div>
               <div
@@ -226,7 +226,7 @@ export function ComparisonExplorer({
 
       {filtered.length === 0 && (
         <p className="border-b border-text-primary py-10 text-center text-text-secondary">
-          No departments match these filters.
+          No departments match the current filters.
         </p>
       )}
     </div>
