@@ -19,7 +19,7 @@ export function ReleaseMasthead({
   description,
   context,
 }: ReleaseMastheadProps) {
-  const status = stage === 'adopted' ? 'Adopted · Current budget' : 'Proposed · Under review'
+  const status = stage === 'adopted' ? 'Current adopted budget' : 'Proposal under review'
 
   return (
     <header className="border-t-[6px] border-text-primary">
@@ -30,7 +30,7 @@ export function ReleaseMasthead({
       <div className="grid gap-8 py-10 sm:py-14 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.65fr)] lg:gap-16 lg:py-20">
         <div>
           <p className="font-heading text-sm font-bold uppercase tracking-[0.18em] text-mdc-blue">
-            {fiscalYear} county budget
+            {fiscalYear}
           </p>
           <h1 className="mt-5 font-heading font-bold tracking-[-0.055em] text-text-primary">
             <span className="block text-[clamp(4rem,11vw,8.5rem)] leading-[0.78] tabular-nums">

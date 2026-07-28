@@ -22,7 +22,7 @@ const areaColumns: TableColumn<AreaTableRow>[] = [
   { key: 'name', label: 'Strategic Area', align: 'left' },
   {
     key: 'operatingBudget',
-    label: 'Operating Budget',
+    label: 'Operating',
     align: 'right',
     format: (value) => formatDollarsAbbreviated(value as string),
   },
@@ -85,7 +85,7 @@ export function ExplorerTreemap({
             width={width}
             height={height}
             linkPrefix="/explorer/"
-            ariaLabel="Strategic area budget treemap. Click any area to explore its departments."
+            ariaLabel="Strategic area operating budget. Select an area for department figures."
           />
         )}
       </ChartContainer>
@@ -99,7 +99,7 @@ const deptColumns: TableColumn<SerializedDepartment>[] = [
   { key: 'name', label: 'Department', align: 'left' },
   {
     key: 'operatingBudget',
-    label: 'Operating Budget',
+    label: 'Operating',
     align: 'right',
     format: (value) => formatDollarsAbbreviated(value as string),
   },

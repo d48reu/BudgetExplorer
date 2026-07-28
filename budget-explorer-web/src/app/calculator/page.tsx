@@ -3,9 +3,9 @@ import { TaxCalculator } from '@/components/calculator/TaxCalculator'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Tax Calculator',
+  title: 'Property Tax Estimate',
   description:
-    'See how your property taxes fund Miami-Dade County services.',
+    'Estimate property taxes using Miami-Dade County FY 2025–26 millage rates.',
 }
 
 // Millage rates change once a year; the calculator itself is client-side.
@@ -19,9 +19,14 @@ export default async function CalculatorPage() {
 
   return (
     <div className="px-(--spacing-page) py-6">
-      <h1 className="text-2xl font-heading font-bold text-text-primary mb-6">
-        Property Tax Calculator
-      </h1>
+      <header className="mb-6 max-w-2xl">
+        <h1 className="text-2xl font-heading font-bold text-text-primary">
+          Estimate property taxes
+        </h1>
+        <p className="mt-2 text-text-secondary">
+          Enter a property’s assessed value to estimate taxes using FY 2025–26 millage rates.
+        </p>
+      </header>
       <TaxCalculator rates={rates} areas={areas} />
     </div>
   )

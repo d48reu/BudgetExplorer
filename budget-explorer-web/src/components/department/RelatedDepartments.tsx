@@ -36,7 +36,7 @@ export function RelatedDepartments({
         href={`/explorer/${areaSlug}`}
         className="mt-5 inline-block font-heading text-sm font-bold underline decoration-mdc-blue decoration-2 underline-offset-4 hover:text-mdc-blue"
       >
-        View every department in {areaName} <span aria-hidden="true">→</span>
+        All departments in {areaName} <span aria-hidden="true">→</span>
       </Link>
     </div>
   )

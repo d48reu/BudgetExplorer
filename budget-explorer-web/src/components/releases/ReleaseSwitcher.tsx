@@ -32,7 +32,7 @@ export function ReleaseSwitcher({ activeStage }: ReleaseSwitcherProps) {
       className="grid border-y border-text-primary sm:grid-cols-[9rem_1fr]"
     >
       <p className="flex items-center py-3 text-xs font-bold uppercase tracking-[0.14em] text-text-secondary sm:border-r sm:border-text-primary sm:pr-5">
-        Budget view
+        Budget
       </p>
       <div className="grid grid-cols-3 border-t border-text-primary sm:border-t-0">
         {releases.map((release) => {

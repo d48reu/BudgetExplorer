@@ -3,9 +3,9 @@ import audit from '@/data/budget-audit.json'
 import { formatDollarsAbbreviated } from '@/lib/format'
 
 export const metadata: Metadata = {
-  title: 'Number Audit',
+  title: 'Budget Figure Audit',
   description:
-    'Review the source-to-database checks, official PDF fingerprints, and downloadable evidence behind the Miami-Dade Budget Explorer.',
+    'Review the checks, source files, and downloadable results used to verify figures on the Miami-Dade Budget Explorer.',
 }
 
 function formattedDate(value: string) {
@@ -24,22 +24,22 @@ export default function AuditPage() {
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1fr_0.72fr] md:py-16 lg:px-8">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-mdc-blue">
-              Data integrity / {formattedDate(audit.generatedAt)}
+              Audit generated {formattedDate(audit.generatedAt)}
             </p>
             <h1 className="mt-4 max-w-3xl font-heading text-4xl font-black tracking-[-0.04em] text-text-primary sm:text-6xl">
-              Every published number has a receipt.
+              How the budget figures were checked
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-text-secondary sm:text-lg">
-              This audit compares official Miami-Dade budget publications to
-              the database, then recomputes the totals from the underlying
-              department rows. Integer source values must match exactly.
+              The audit compares figures in Miami-Dade County budget PDFs with
+              the database and recalculates totals from department rows.
+              Monetary values and published counts must match exactly.
             </p>
           </div>
 
           <div className="border-t-4 border-text-primary pt-5 md:self-end">
             <div className="flex items-center justify-between gap-4">
               <span className="text-sm font-bold uppercase tracking-[0.16em] text-text-secondary">
-                Release gate
+                Audit result
               </span>
               <span
                 className={`px-3 py-1 text-xs font-black uppercase tracking-[0.16em] ${
@@ -58,8 +58,10 @@ export default function AuditPage() {
               </span>
             </p>
             <p className="mt-2 text-sm leading-6 text-text-secondary">
-              exact checks passed with {audit.gate.exactMonetaryVarianceCents}{' '}
-              cents of monetary variance and a zero-cent tolerance.
+              {audit.gate.passed.toLocaleString('en-US')} of{' '}
+              {audit.gate.checks.toLocaleString('en-US')} checks passed.
+              Monetary difference: {audit.gate.exactMonetaryVarianceCents}{' '}
+              cents. Allowed difference: {audit.gate.toleranceCents} cents.
             </p>
           </div>
         </div>
@@ -117,7 +119,7 @@ export default function AuditPage() {
                 rel="noopener noreferrer"
                 className="mt-5 inline-block text-sm font-bold text-mdc-blue underline underline-offset-4"
               >
-                Open source page {release.sourcePage} ↗
+                County PDF, page {release.sourcePage} ↗
               </a>
             </article>
           ))}
@@ -130,12 +132,13 @@ export default function AuditPage() {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-mdc-orange">Coverage</p>
               <h2 className="mt-3 font-heading text-3xl font-black tracking-[-0.03em]">
-                Six numeric families, checked end to end
+                What the audit covers
               </h2>
               <p className="mt-4 text-sm leading-6 text-text-secondary">
-                The ledger includes headline totals, every department slice,
-                area and priority totals, revenue, millage rates, and release
-                equations. Editorial descriptions are outside the numeric gate.
+                Checks include release totals, department rows, strategic area
+                and priority totals, revenue, millage rates, and the equations
+                used to calculate each release. Descriptive text is not part of
+                the numeric audit.
               </p>
             </div>
             <div className="border-t-2 border-text-primary">
@@ -161,17 +164,17 @@ export default function AuditPage() {
       <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-14 lg:px-8">
         <div className="grid gap-8 md:grid-cols-[0.7fr_1.3fr]">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-mdc-blue">Method</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-mdc-blue">Audit steps</p>
             <h2 className="mt-3 font-heading text-3xl font-black tracking-[-0.03em]">
-              Four ways a number can earn a pass
+              How each figure is checked
             </h2>
           </div>
           <ol className="grid gap-px bg-text-primary sm:grid-cols-2">
             {[
-              ['01', 'Transcribe', 'Key figures are independently recorded from the official publication.'],
-              ['02', 'Extract', 'Department rows are freshly read from the appendices with page references.'],
-              ['03', 'Compare', 'Source values and database values must match exactly.'],
-              ['04', 'Reconcile', 'Department rows are summed back to release totals and equations.'],
+              ['01', 'Record', 'Selected totals are recorded from the County publication.'],
+              ['02', 'Extract', 'Department rows are read from the appendices with page references.'],
+              ['03', 'Match', 'Source and database values are compared for an exact match.'],
+              ['04', 'Recalculate', 'Department rows are summed and checked against release totals.'],
             ].map(([number, title, detail]) => (
               <li key={number} className="bg-[#F5F2EA] p-5">
                 <span className="font-mono text-xs font-bold text-mdc-orange">{number}</span>
@@ -187,13 +190,13 @@ export default function AuditPage() {
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-14 lg:px-8">
           <div className="grid gap-8 md:grid-cols-[0.7fr_1.3fr]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-mdc-orange">Source custody</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-mdc-orange">Source files</p>
               <h2 className="mt-3 font-heading text-3xl font-black tracking-[-0.03em]">
-                Five official PDFs, fingerprinted
+                Official documents used
               </h2>
               <p className="mt-4 text-sm leading-6 text-white/65">
-                A SHA-256 fingerprint makes the exact source edition
-                identifiable even if a file at the public URL changes later.
+                Each SHA-256 fingerprint identifies the exact copy used for
+                the audit, even if the file at the public URL changes.
               </p>
             </div>
             <div className="border-t border-white/35">
@@ -229,7 +232,7 @@ export default function AuditPage() {
         <div className="grid gap-8 md:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-mdc-orange">
-              Documented distinctions
+              Notes
             </p>
             <div className="mt-4 space-y-5">
               {audit.knownNotes.map((note) => (
@@ -243,15 +246,15 @@ export default function AuditPage() {
 
           <div className="border-t-4 border-mdc-blue bg-white p-6">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-mdc-blue">
-              Download the evidence
+              Audit files
             </p>
             <h2 className="mt-3 font-heading text-2xl font-black">
-              Reproduce or review every check
+              Download the results
             </h2>
             <p className="mt-3 text-sm leading-6 text-text-secondary">
-              The workbook is designed for human review. The CSV and JSON
-              files are the machine-readable source for every row and source
-              fingerprint.
+              The workbook is formatted for review. The CSV contains the full
+              check ledger, and the JSON file lists each source document and
+              its fingerprint.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a
@@ -259,21 +262,21 @@ export default function AuditPage() {
                 download
                 className="bg-text-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-mdc-blue"
               >
-                Audit workbook
+                Workbook
               </a>
               <a
                 href={audit.downloads.ledgerCsv}
                 download
                 className="border border-text-primary px-4 py-2.5 text-sm font-bold hover:bg-[#F5F2EA]"
               >
-                Number ledger (CSV)
+                Check ledger (CSV)
               </a>
               <a
                 href={audit.downloads.sourceManifest}
                 download
                 className="border border-text-primary px-4 py-2.5 text-sm font-bold hover:bg-[#F5F2EA]"
               >
-                Source manifest (JSON)
+                Source files (JSON)
               </a>
             </div>
           </div>

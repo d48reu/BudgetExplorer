@@ -20,10 +20,10 @@ export const metadata: Metadata = {
     template: '%s | Miami-Dade Budget Explorer',
   },
   description:
-    "See where your tax dollars go. Explore Miami-Dade County's $13.2 billion budget with interactive visualizations.",
+    "Miami-Dade County budget figures by department, strategic area, revenue source, and tax rate.",
   openGraph: {
     title: 'Miami-Dade Budget Explorer',
-    description: 'See where your tax dollars go.',
+    description: 'Miami-Dade County adopted and proposed budget data.',
     siteName: 'Miami-Dade Budget Explorer',
     locale: 'en_US',
     type: 'website',

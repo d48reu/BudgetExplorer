@@ -15,9 +15,9 @@ import {
 import { formatDollarsAbbreviated } from '@/lib/format'
 
 export const metadata: Metadata = {
-  title: 'Explore the FY 2025–26 Adopted Budget',
+  title: 'Departments in the FY 2025–26 Adopted Budget',
   description:
-    'Explore Miami-Dade County’s adopted operating budget across nine strategic areas and every funded department.',
+    'Miami-Dade County’s adopted operating budget by strategic area and department.',
 }
 
 export const revalidate = 86400
@@ -43,12 +43,12 @@ export default async function ExplorerPage() {
     {
       label: 'Strategic areas',
       value: areas.length.toLocaleString('en-US'),
-      note: 'Adopted service organization',
+      note: 'Used in the adopted budget',
     },
     {
       label: 'Departments',
       value: stats.departmentCount.toLocaleString('en-US'),
-      note: 'With adopted budget facts',
+      note: 'With adopted budget data',
     },
     {
       label: 'Gross operating',
@@ -68,12 +68,12 @@ export default async function ExplorerPage() {
         <ReleaseSwitcher activeStage="adopted" />
         <div className="mt-5">
           <ExplorationMasthead
-            eyebrow="Adopted budget explorer"
-            title="Follow the money from strategy to department"
-            description="Start with the County’s nine adopted strategic areas, then move into the departments responsible for delivering each service."
+            eyebrow="FY 2025–26 adopted"
+            title="Departments by strategic area"
+            description="The adopted budget groups departments under nine strategic areas. Open an area to see its departments and operating allocations."
             metricLabel="Gross operating budget"
             metricValue={formatDollarsAbbreviated(totalOperating)}
-            metricNote="The department allocation view before internal county transfers are removed."
+            metricNote="Department operating allocations before internal county transfers."
             accentColor="var(--color-mdc-blue)"
           />
         </div>
@@ -82,9 +82,9 @@ export default async function ExplorerPage() {
 
         <ReportSection
           number="01"
-          label="Allocation map"
-          title="See the adopted operating footprint"
-          description="Rectangle area represents operating dollars. Select any strategic area to inspect its department-level allocation; switch to the table for exact values."
+          label="Operating"
+          title="Operating spending by strategic area"
+          description="Area size represents operating dollars. Select a strategic area for department amounts, or switch to the table for exact figures."
         >
           <div className="border-y-2 border-text-primary py-5">
             <ExplorerTreemap
@@ -97,9 +97,9 @@ export default async function ExplorerPage() {
 
         <ReportSection
           number="02"
-          label="Area index"
-          title="Nine strategies, one adopted budget"
-          description="The index adds service context, department counts, share of gross operating spending, and cents per adopted operating dollar."
+          label="Directory"
+          title="Strategic areas"
+          description="Areas are ranked by gross operating spending and include department counts and share of the adopted operating budget."
         >
           <StrategicAreaIndex
             areas={[...areas].sort(
@@ -116,7 +116,7 @@ export default async function ExplorerPage() {
             href="/compare"
             className="border-t-2 border-mdc-orange pt-4 font-heading text-lg font-bold hover:text-white/75"
           >
-            Compare adopted and proposed <span aria-hidden="true">→</span>
+            Compare department budgets <span aria-hidden="true">→</span>
           </Link>
           <Link
             href="/search"

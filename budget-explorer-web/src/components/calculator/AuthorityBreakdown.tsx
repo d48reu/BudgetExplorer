@@ -144,7 +144,7 @@ export function AuthorityBreakdown({ breakdown, totalTax }: AuthorityBreakdownPr
 
       {/* Educational note about millage rates */}
       <p className="text-text-muted text-xs italic">
-        Millage rate = tax per $1,000 of assessed value
+        One mill equals $1 of tax per $1,000 of assessed value.
       </p>
 
       {/* Visible authority detail table */}
@@ -156,13 +156,13 @@ export function AuthorityBreakdown({ breakdown, totalTax }: AuthorityBreakdownPr
                 Authority
               </th>
               <th className="py-2 px-3 text-right font-medium text-text-secondary border-b border-border">
-                Millage Rate
+                Millage rate
               </th>
               <th className="py-2 px-3 text-right font-medium text-text-secondary border-b border-border">
-                Dollar Amount
+                Estimated tax
               </th>
               <th className="py-2 px-3 text-right font-medium text-text-secondary border-b border-border">
-                Percentage
+                Share
               </th>
             </tr>
           </thead>

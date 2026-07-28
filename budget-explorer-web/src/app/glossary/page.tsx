@@ -4,9 +4,9 @@ import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Budget Glossary',
+  title: 'Budget Terms',
   description:
-    'Plain-English explanations of budget terms used on Miami-Dade Budget Explorer. Learn what ad valorem tax, millage rate, general fund, and other budget jargon really mean.',
+    'Definitions of Miami-Dade County budget and property-tax terms used on this site.',
 }
 
 export default function GlossaryPage() {
@@ -25,10 +25,10 @@ export default function GlossaryPage() {
 
       <header className="mt-6 mb-8">
         <h1 className="text-3xl md:text-4xl font-heading font-bold text-text-primary">
-          Budget Glossary
+          Budget terms
         </h1>
         <p className="mt-2 text-text-secondary text-lg">
-          Plain-English explanations of budget terms used on this site.
+          Definitions for budget and property-tax terms used on this site.
         </p>
       </header>
 

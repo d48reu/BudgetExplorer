@@ -154,7 +154,7 @@ export function DonutChart({ data, width, height }: DonutChartProps) {
                 className="fill-text-secondary text-sm"
                 dominantBaseline="central"
               >
-                Total Revenue
+                Total revenue
               </text>
               <text
                 y={14}

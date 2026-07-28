@@ -35,7 +35,7 @@ export function DepartmentProposalSnapshot({
             {formatDollarsAbbreviated(change.proposedOperating)}
           </dd>
           <p className={`mt-2 text-sm font-bold tabular-nums ${changeColor}`}>
-            {operatingChange.value} from the restated adopted baseline
+            {operatingChange.value} from restated adopted
           </p>
         </div>
         <div className="border-t border-text-primary py-5 md:border-l md:border-t-0 md:px-6">
@@ -51,7 +51,7 @@ export function DepartmentProposalSnapshot({
           </dd>
           <p className="mt-2 text-sm text-text-secondary">
             {change.employeeChange == null
-              ? 'Comparable position count unavailable'
+              ? 'No comparable position count'
               : `${change.employeeChange > 0 ? '+' : ''}${change.employeeChange.toLocaleString('en-US')} positions`}
           </p>
         </div>
@@ -63,7 +63,7 @@ export function DepartmentProposalSnapshot({
             {formatDollarsAbbreviated(change.proposedCapital)}
           </dd>
           <p className="mt-2 text-sm text-text-secondary">
-            Proposal only; no restated capital baseline is published.
+            Proposal only; no restated adopted capital amount was published.
           </p>
         </div>
       </dl>
@@ -71,7 +71,7 @@ export function DepartmentProposalSnapshot({
         href={`/compare?department=${encodeURIComponent(change.slug)}`}
         className="mt-5 inline-block font-heading text-sm font-bold underline decoration-mdc-blue decoration-2 underline-offset-4 hover:text-mdc-blue"
       >
-        View in the full release comparison <span aria-hidden="true">→</span>
+        Open department comparison <span aria-hidden="true">→</span>
       </Link>
     </div>
   )

@@ -17,13 +17,13 @@ export function TaxSummaryHero({ totalTax, monthlyEquivalent }: TaxSummaryHeroPr
   return (
     <div className="text-center py-6">
       <p className="text-text-secondary text-sm mb-1">
-        Your estimated annual tax bill
+        Estimated annual property tax
       </p>
       <p className="font-heading font-bold text-3xl text-text-primary">
         {dollarFormat.format(Math.round(totalTax))}
       </p>
       <p className="text-text-secondary text-lg mt-1">
-        {dollarFormat.format(Math.round(monthlyEquivalent))}/month
+        {dollarFormat.format(Math.round(monthlyEquivalent))} per month
       </p>
     </div>
   )

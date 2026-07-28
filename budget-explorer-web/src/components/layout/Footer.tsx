@@ -11,7 +11,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 md:grid-cols-3">
         <div>
           <h3 className="mb-3 font-heading font-semibold text-text-primary">
-            Source Data
+            Official documents
           </h3>
           <ul className="space-y-2 text-sm text-text-secondary">
             <li>
@@ -36,14 +36,14 @@ export function Footer() {
             </li>
             <li>
               <Link href="/audit" className="underline hover:text-text-primary">
-                Number audit and source ledger
+                Figure audit and source ledger
               </Link>
             </li>
           </ul>
         </div>
         <div>
           <h3 className="mb-3 font-heading font-semibold text-text-primary">
-            Related Resources
+            County links
           </h3>
           <ul className="space-y-2 text-sm text-text-secondary">
             <li>
@@ -70,17 +70,16 @@ export function Footer() {
         </div>
         <div>
           <h3 className="mb-3 font-heading font-semibold text-text-primary">
-            About
+            About this site
           </h3>
           <p className="text-sm text-text-secondary">
-            Built by Abreu Data Works LLC. Data comes from Miami-Dade
-            County&apos;s adopted and proposed budget publications.
+            Built by Abreu Data Works LLC using Miami-Dade County&apos;s
+            adopted and proposed budget publications.
           </p>
         </div>
       </div>
       <div className="mt-8 border-t border-border pt-4 text-center text-xs text-text-muted">
-        Not an official Miami-Dade County website. Data is for informational
-        purposes only.
+        Independent website. Not affiliated with or endorsed by Miami-Dade County.
       </div>
     </footer>
   )

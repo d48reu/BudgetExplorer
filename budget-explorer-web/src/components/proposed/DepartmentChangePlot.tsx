@@ -85,7 +85,8 @@ export function DepartmentChangePlot({
         })}
       </ol>
       <figcaption className="mt-5 text-sm leading-6 text-text-secondary">
-        Largest absolute operating changes. The baseline is the FY 2025–26 adopted budget restated in the proposal’s department and priority structure.
+        Largest operating changes by absolute amount. Appendix A restates the
+        FY 2025–26 adopted budget using the proposal’s department and priority structure.
       </figcaption>
     </figure>
   )
