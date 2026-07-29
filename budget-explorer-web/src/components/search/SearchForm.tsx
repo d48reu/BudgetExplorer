@@ -10,11 +10,11 @@ export function SearchForm({ initialQuery }: SearchFormProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   return (
-    <form action="/search" method="get" className="mb-8">
+    <form action="/search" method="get" className="mb-10">
       <label htmlFor="search-input" className="sr-only">
         Search the budget
       </label>
-      <div className="relative">
+      <div className="relative border-y-2 border-text-primary bg-white/55">
         <input
           ref={inputRef}
           id="search-input"
@@ -22,12 +22,11 @@ export function SearchForm({ initialQuery }: SearchFormProps) {
           type="search"
           defaultValue={initialQuery}
           placeholder="Department, strategic area, or budget term"
-          autoFocus
-          className="w-full rounded-lg border border-border bg-white px-4 py-3 pr-12 text-base text-text-primary placeholder:text-text-muted focus:border-mdc-blue focus:outline-none focus:ring-2 focus:ring-mdc-blue/20"
+          className="w-full bg-transparent px-4 py-4 pr-16 text-base text-text-primary placeholder:text-text-muted focus:outline-none"
         />
         <button
           type="submit"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-text-muted hover:text-mdc-blue"
+          className="absolute inset-y-0 right-0 flex w-14 items-center justify-center border-l border-text-primary bg-text-primary text-white transition-colors hover:bg-mdc-blue"
           aria-label="Search"
         >
           <svg

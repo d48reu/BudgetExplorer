@@ -38,6 +38,7 @@ import {
   getAdoptedDepartmentSlugs,
   getAdoptedStrategicAreaSlugs,
   getDepartmentProposalChange,
+  getDepartmentYoY,
   getQuickStats,
   getProposedBudgetOverview,
   getMillageRates,
@@ -268,5 +269,57 @@ describe('adopted release isolation', () => {
       },
       orderBy: { display_order: 'asc' },
     })
+  })
+
+  it('labels history points and prefers adopted rows over actual rows for the same year', async () => {
+    db.departmentBudgetsFindMany.mockResolvedValue([
+      {
+        stage: 'actual',
+        total_budget: BigInt(100),
+        operating_budget: BigInt(90),
+        capital_budget: BigInt(10),
+        fiscal_years: { label: 'FY 2023-24' },
+      },
+      {
+        stage: 'actual',
+        total_budget: BigInt(150),
+        operating_budget: BigInt(140),
+        capital_budget: BigInt(10),
+        fiscal_years: { label: 'FY 2024-25' },
+      },
+      {
+        stage: 'adopted',
+        total_budget: BigInt(200),
+        operating_budget: BigInt(180),
+        capital_budget: BigInt(20),
+        fiscal_years: { label: 'FY 2024-25' },
+      },
+      {
+        stage: 'proposed',
+        total_budget: BigInt(300),
+        operating_budget: BigInt(270),
+        capital_budget: BigInt(30),
+        fiscal_years: { label: 'FY 2025-26' },
+      },
+    ])
+
+    await expect(getDepartmentYoY(42)).resolves.toEqual([
+      {
+        fiscalYear: 'FY 2023-24',
+        totalBudget: '100',
+        operatingBudget: '90',
+        capitalBudget: '10',
+        stage: 'actual',
+        isCurrent: false,
+      },
+      {
+        fiscalYear: 'FY 2024-25',
+        totalBudget: '200',
+        operatingBudget: '180',
+        capitalBudget: '20',
+        stage: 'adopted',
+        isCurrent: false,
+      },
+    ])
   })
 })

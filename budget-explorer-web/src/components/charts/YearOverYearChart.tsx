@@ -17,6 +17,12 @@ type YearOverYearChartProps = {
 const tableColumns: TableColumn<SerializedYoYData>[] = [
   { key: 'fiscalYear', label: 'Fiscal Year', align: 'left' },
   {
+    key: 'stage',
+    label: 'Figure type',
+    align: 'left',
+    format: (v) => v === 'actual' ? 'Actual spending' : 'Adopted budget',
+  },
+  {
     key: 'totalBudget',
     label: 'Total Budget',
     align: 'right',
@@ -51,7 +57,10 @@ type InnerChartProps = {
 }
 
 function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
-  const margin = { top: 30, right: 20, bottom: 40, left: 80 }
+  const isCompact = width < 560
+  const margin = isCompact
+    ? { top: 30, right: 8, bottom: 60, left: 55 }
+    : { top: 30, right: 20, bottom: 60, left: 80 }
   const innerWidth = width - margin.left - margin.right
   const innerHeight = height - margin.top - margin.bottom
 
@@ -62,12 +71,12 @@ function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
     const x = scaleBand()
       .domain(data.map((d) => d.fiscalYear))
       .range([0, innerWidth])
-      .padding(0.3)
+      .padding(isCompact ? 0.18 : 0.3)
 
     const y = scaleLinear().domain([0, max]).nice().range([innerHeight, 0])
 
     return { xScale: x, yScale: y, ticks: y.ticks(4) }
-  }, [data, innerWidth, innerHeight])
+  }, [data, innerWidth, innerHeight, isCompact])
 
   // Find current and prior year for percentage badge
   const currentEntry = data.find((d) => d.isCurrent)
@@ -84,7 +93,7 @@ function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
       width={width}
       height={height}
       role="img"
-      aria-label="Year-over-year budget comparison"
+      aria-label="Department budget history with every year labeled as actual spending or an adopted budget"
     >
       <g transform={`translate(${margin.left}, ${margin.top})`}>
         {/* Horizontal grid lines */}
@@ -120,6 +129,10 @@ function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
           const barX = xScale(d.fiscalYear) ?? 0
           const barY = yScale(amount)
           const barHeight = innerHeight - barY
+          const stageLabel = d.stage === 'actual' ? 'ACTUAL' : 'ADOPTED'
+          const fiscalYearLabel = isCompact
+            ? d.fiscalYear.replace(/^FY 20(\d{2})-(\d{2})$/, '$1–$2')
+            : d.fiscalYear
 
           return (
             <g key={d.fiscalYear}>
@@ -128,7 +141,8 @@ function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
                 y={barY}
                 width={xScale.bandwidth()}
                 height={barHeight}
-                fill={d.isCurrent ? areaColor : 'var(--color-border-strong)'}
+                fill={d.stage === 'actual' ? 'var(--color-text-primary)' : areaColor}
+                fillOpacity={d.isCurrent ? 1 : 0.78}
                 rx={2}
               />
 
@@ -137,7 +151,8 @@ function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
                 x={barX + xScale.bandwidth() / 2}
                 y={barY - 8}
                 textAnchor="middle"
-                className="fill-text-primary text-xs font-medium"
+                className="fill-text-primary font-medium"
+                fontSize={isCompact ? 9 : 12}
               >
                 {formatDollarsAbbreviated(d.totalBudget)}
               </text>
@@ -147,9 +162,21 @@ function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
                 x={barX + xScale.bandwidth() / 2}
                 y={innerHeight + 24}
                 textAnchor="middle"
-                className="fill-text-secondary text-xs"
+                className="fill-text-secondary"
+                fontSize={isCompact ? 10 : 12}
               >
-                {d.fiscalYear}
+                {fiscalYearLabel}
+              </text>
+              <text
+                x={barX + xScale.bandwidth() / 2}
+                y={innerHeight + 43}
+                textAnchor="middle"
+                fill={d.stage === 'actual' ? 'var(--color-text-primary)' : areaColor}
+                fontSize={isCompact ? 7.5 : 9}
+                fontWeight={700}
+                letterSpacing={isCompact ? '0.03em' : '0.08em'}
+              >
+                {stageLabel}
               </text>
             </g>
           )
@@ -192,16 +219,30 @@ function InnerChart({ data, areaColor, width, height }: InnerChartProps) {
 
 /**
  * Year-over-year budget comparison as vertical bar chart.
- * Shows up to 5 fiscal years with the current year highlighted
- * using the department's strategic area color and a percentage
- * change badge. Prior years are neutral gray. Wrapped in
- * DataTableToggle for accessibility.
+ * Shows up to 5 fiscal years with actual spending in dark neutral
+ * and adopted budgets in the department's strategic-area color.
+ * Every bar and table row carries its figure type. The current year
+ * also receives a percentage-change badge. Wrapped in DataTableToggle
+ * for accessibility.
  */
 export function YearOverYearChart({ data, areaColor }: YearOverYearChartProps) {
   if (data.length === 0) return null
 
   return (
     <div>
+      <div
+        className="mb-4 flex flex-wrap gap-x-6 gap-y-2 border-y border-text-primary py-3 text-xs font-bold uppercase tracking-[0.12em]"
+        aria-label="Figure types"
+      >
+        <span className="inline-flex items-center gap-2 text-text-primary">
+          <span className="h-3 w-3 bg-text-primary" aria-hidden="true" />
+          Actual spending
+        </span>
+        <span className="inline-flex items-center gap-2" style={{ color: areaColor }}>
+          <span className="h-3 w-3" style={{ backgroundColor: areaColor }} aria-hidden="true" />
+          Adopted budget
+        </span>
+      </div>
       <DataTableToggle
         chartLabel="Year-over-year budget chart"
         data={data}

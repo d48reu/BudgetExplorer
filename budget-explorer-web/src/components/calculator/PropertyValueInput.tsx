@@ -54,7 +54,7 @@ export function PropertyValueInput({ value, onChange }: PropertyValueInputProps)
     <div>
       <label
         htmlFor="property-value"
-        className="block text-sm font-medium text-text-primary mb-1"
+        className="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-text-secondary"
       >
         Assessed property value
       </label>
@@ -70,7 +70,7 @@ export function PropertyValueInput({ value, onChange }: PropertyValueInputProps)
           onChange={handleChange}
           onBlur={handleBlur}
           placeholder="Assessed value"
-          className="w-full pl-7 pr-3 py-2.5 border border-border rounded-md bg-surface text-text-primary text-lg focus:outline-none focus:ring-2 focus:ring-mdc-blue focus:border-mdc-blue"
+          className="w-full border border-text-primary bg-white py-3 pl-7 pr-3 text-lg text-text-primary focus:border-mdc-blue focus:outline-none"
         />
       </div>
 
@@ -85,10 +85,10 @@ export function PropertyValueInput({ value, onChange }: PropertyValueInputProps)
             type="button"
             onClick={() => handlePreset(preset.value)}
             className={clsx(
-              'py-1.5 px-2 text-sm rounded-md border transition-colors cursor-pointer',
+              'cursor-pointer border px-2 py-2 text-sm font-bold transition-colors',
               value === preset.value
-                ? 'border-mdc-blue bg-mdc-blue/10 text-mdc-blue font-medium'
-                : 'border-border text-text-secondary hover:border-border-strong hover:text-text-primary'
+                ? 'border-mdc-blue bg-mdc-blue text-white'
+                : 'border-text-primary text-text-secondary hover:bg-text-primary hover:text-white'
             )}
           >
             {preset.label}

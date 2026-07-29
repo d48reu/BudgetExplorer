@@ -836,7 +836,8 @@ export async function getRelatedDepartments(
 
 /**
  * Get year-over-year budget history for a department.
- * Returns up to 5 fiscal years of adopted budget data, sorted by date ascending.
+ * Returns up to 5 fiscal years of actual or adopted data, sorted by date ascending.
+ * Every point carries its source stage so the UI can label unlike figures clearly.
  */
 export async function getDepartmentYoY(deptId: number): Promise<SerializedYoYData[]> {
   const budgets = await prisma.department_budgets.findMany({
@@ -877,12 +878,14 @@ export async function getDepartmentYoY(deptId: number): Promise<SerializedYoYDat
   return yearLabels
     .slice(-5)
     .map((label) => {
-      const sums = adopted.get(label) ?? actual.get(label)!
+      const adoptedSums = adopted.get(label)
+      const sums = adoptedSums ?? actual.get(label)!
       return {
         fiscalYear: label,
         totalBudget: sums.total.toString(),
         operatingBudget: sums.operating.toString(),
         capitalBudget: sums.capital.toString(),
+        stage: adoptedSums ? ('adopted' as const) : ('actual' as const),
         isCurrent: label === CURRENT_FY_LABEL,
       }
     })

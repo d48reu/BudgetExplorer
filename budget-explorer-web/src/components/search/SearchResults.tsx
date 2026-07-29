@@ -13,20 +13,33 @@ export function SearchResults({ query, results }: SearchResultsProps) {
   // No query entered yet -- show initial state
   if (!query) {
     return (
-      <p className="text-center text-text-muted py-12">
-        Search by department, strategic area, or budget term.
-      </p>
+      <div className="border-t-2 border-text-primary py-7">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">
+          Start with
+        </p>
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
+          {POPULAR_SEARCH_SUGGESTIONS.map((suggestion) => (
+            <Link
+              key={suggestion}
+              href={`/search?q=${encodeURIComponent(suggestion)}`}
+              className="border-b border-text-primary pb-1 font-heading font-bold text-text-primary transition-colors hover:border-mdc-blue hover:text-mdc-blue"
+            >
+              {suggestion}
+            </Link>
+          ))}
+        </div>
+      </div>
     )
   }
 
   // Query entered but no results -- show empty state with suggestions
   if (results.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-text-secondary text-lg">
+      <div className="border-y-2 border-text-primary py-8">
+        <p className="font-heading text-2xl font-bold text-text-primary">
           No results for &ldquo;{query}&rdquo;
         </p>
-        <p className="text-text-muted mt-2">
+        <p className="mt-3 text-text-secondary">
           Try:{' '}
           {POPULAR_SEARCH_SUGGESTIONS.map((suggestion, i) => (
             <span key={suggestion}>
@@ -51,7 +64,7 @@ export function SearchResults({ query, results }: SearchResultsProps) {
 
   return (
     <div className="space-y-8">
-      <p className="text-text-muted text-sm">
+      <p className="text-sm font-bold uppercase tracking-[0.12em] text-text-secondary">
         {results.length} result{results.length !== 1 ? 's' : ''} for &ldquo;{query}&rdquo;
       </p>
 
@@ -85,12 +98,10 @@ export function SearchResults({ query, results }: SearchResultsProps) {
 function ResultSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-lg font-heading font-semibold text-text-primary mb-3 border-b border-border pb-2">
+      <h2 className="border-t-2 border-text-primary py-4 font-heading text-xl font-bold text-text-primary">
         {title}
       </h2>
-      <div className="space-y-3">
-        {children}
-      </div>
+      <div>{children}</div>
     </section>
   )
 }
@@ -99,14 +110,14 @@ function DepartmentCard({ result }: { result: SearchResult }) {
   return (
     <Link
       href={`/department/${result.slug}`}
-      className="block rounded-lg border border-border p-4 hover:border-mdc-blue hover:shadow-sm transition-colors"
+      className="block border-b border-text-primary px-1 py-5 transition-colors hover:bg-white/60"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h3 className="font-semibold text-text-primary truncate">{result.title}</h3>
           {result.area_name && (
             <span
-              className="inline-block mt-1 px-2 py-0.5 text-xs rounded-full border"
+              className="mt-2 inline-block border-l-2 pl-2 text-xs font-bold uppercase tracking-[0.08em]"
               style={{
                 borderColor: result.area_color ?? undefined,
                 color: result.area_color ?? undefined,
@@ -135,7 +146,7 @@ function StrategicAreaCard({ result }: { result: SearchResult }) {
   return (
     <Link
       href={`/explorer/${result.area_slug}`}
-      className="block rounded-lg border-l-4 border border-border p-4 hover:shadow-sm transition-colors"
+      className="block border-b border-l-4 border-text-primary px-4 py-5 transition-colors hover:bg-white/60"
       style={{ borderLeftColor: result.area_color ?? undefined }}
     >
       <div className="flex items-start justify-between gap-4">
@@ -146,7 +157,7 @@ function StrategicAreaCard({ result }: { result: SearchResult }) {
           )}
         </div>
         {result.cents_per_dollar != null && (
-          <span className="shrink-0 px-2 py-1 text-xs font-medium bg-surface-secondary rounded-full">
+          <span className="shrink-0 border border-text-primary px-2 py-1 text-xs font-bold">
             {result.cents_per_dollar}&cent; per dollar
           </span>
         )}
@@ -159,7 +170,7 @@ function GlossaryCard({ result }: { result: SearchResult }) {
   return (
     <Link
       href={`/glossary#${result.slug}`}
-      className="block rounded-lg border border-border p-4 hover:border-mdc-blue hover:shadow-sm transition-colors"
+      className="block border-b border-text-primary px-1 py-5 transition-colors hover:bg-white/60"
     >
       <h3 className="font-semibold text-text-primary">{result.title}</h3>
       <p className="mt-1 text-sm text-text-secondary">{result.snippet}</p>

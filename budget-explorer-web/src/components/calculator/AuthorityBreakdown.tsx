@@ -143,7 +143,7 @@ export function AuthorityBreakdown({ breakdown, totalTax }: AuthorityBreakdownPr
       </DataTableToggle>
 
       {/* Educational note about millage rates */}
-      <p className="text-text-muted text-xs italic">
+      <p className="border-l-2 border-mdc-blue pl-3 text-xs text-text-secondary">
         One mill equals $1 of tax per $1,000 of assessed value.
       </p>
 
@@ -152,16 +152,16 @@ export function AuthorityBreakdown({ breakdown, totalTax }: AuthorityBreakdownPr
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr>
-              <th className="py-2 px-3 text-left font-medium text-text-secondary border-b border-border">
+              <th className="border-b border-text-primary px-3 py-2 text-left text-xs font-bold uppercase tracking-[0.08em] text-text-secondary">
                 Authority
               </th>
-              <th className="py-2 px-3 text-right font-medium text-text-secondary border-b border-border">
+              <th className="border-b border-text-primary px-3 py-2 text-right text-xs font-bold uppercase tracking-[0.08em] text-text-secondary">
                 Millage rate
               </th>
-              <th className="py-2 px-3 text-right font-medium text-text-secondary border-b border-border">
+              <th className="border-b border-text-primary px-3 py-2 text-right text-xs font-bold uppercase tracking-[0.08em] text-text-secondary">
                 Estimated tax
               </th>
-              <th className="py-2 px-3 text-right font-medium text-text-secondary border-b border-border">
+              <th className="border-b border-text-primary px-3 py-2 text-right text-xs font-bold uppercase tracking-[0.08em] text-text-secondary">
                 Share
               </th>
             </tr>
@@ -170,12 +170,12 @@ export function AuthorityBreakdown({ breakdown, totalTax }: AuthorityBreakdownPr
             {coloredBreakdown.map((item) => (
               <tr
                 key={item.authority}
-                className="border-b border-border last:border-0 even:bg-surface-secondary"
+                className="border-b border-text-primary/20 last:border-0 even:bg-white/55"
               >
                 <td className="py-2 px-3 text-left">
                   <span className="inline-flex items-center gap-2">
                     <span
-                      className="inline-block w-3 h-3 rounded-sm shrink-0"
+                      className="inline-block h-3 w-3 shrink-0"
                       style={{ backgroundColor: item.color }}
                       aria-hidden="true"
                     />
@@ -194,7 +194,7 @@ export function AuthorityBreakdown({ breakdown, totalTax }: AuthorityBreakdownPr
               </tr>
             ))}
             {/* Total row */}
-            <tr className="border-t-2 border-border font-bold">
+            <tr className="border-t-2 border-text-primary font-bold">
               <td className="py-2 px-3 text-left">Total</td>
               <td className="py-2 px-3 text-right tabular-nums">
                 {breakdown.reduce((sum, b) => sum + b.millageRate, 0).toFixed(4)}

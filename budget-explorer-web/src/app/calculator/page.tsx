@@ -1,5 +1,8 @@
 import { getMillageRates, getStrategicAreas } from '@/lib/db/queries'
 import { TaxCalculator } from '@/components/calculator/TaxCalculator'
+import { UtilityMasthead } from '@/components/layout/UtilityMasthead'
+import { ReleaseSwitcher } from '@/components/releases/ReleaseSwitcher'
+import { ReportSection } from '@/components/releases/ReportSection'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -16,18 +19,33 @@ export default async function CalculatorPage() {
     getMillageRates(),
     getStrategicAreas(),
   ])
+  const totalMillage = rates.reduce((sum, rate) => sum + rate.millageRate, 0)
 
   return (
-    <div className="px-(--spacing-page) py-6">
-      <header className="mb-6 max-w-2xl">
-        <h1 className="text-2xl font-heading font-bold text-text-primary">
-          Estimate property taxes
-        </h1>
-        <p className="mt-2 text-text-secondary">
-          Enter a property’s assessed value to estimate taxes using FY 2025–26 millage rates.
-        </p>
-      </header>
-      <TaxCalculator rates={rates} areas={areas} />
+    <div className="bg-[#F5F2EA]">
+      <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+        <ReleaseSwitcher activeStage="adopted" />
+        <div className="mt-5">
+          <UtilityMasthead
+            eyebrow="Property tax tool"
+            title="Estimate property taxes"
+            description="Enter a property’s assessed value to estimate its annual taxes using the FY 2025–26 published millage rates."
+            metricLabel="Combined published rate"
+            metricValue={`${totalMillage.toFixed(4)} mills`}
+            metricNote="County and non-county authorities represented in this estimate."
+            accentColor="var(--color-mdc-orange)"
+          />
+        </div>
+
+        <ReportSection
+          number="01"
+          label="Estimate"
+          title="Property value and tax estimate"
+          description="This estimate uses assessed value, not market value. Choose whether the property receives a homestead exemption."
+        >
+          <TaxCalculator rates={rates} areas={areas} />
+        </ReportSection>
+      </div>
     </div>
   )
 }

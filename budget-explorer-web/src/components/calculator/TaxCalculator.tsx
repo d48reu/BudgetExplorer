@@ -66,18 +66,18 @@ export function TaxCalculator({ rates, areas }: TaxCalculatorProps) {
   const hasValue = assessedValue > 0
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[360px_1fr]">
+    <div className="grid gap-10 lg:grid-cols-[22rem_1fr] lg:gap-14">
       {/* Input panel -- sticky on desktop */}
       <div className="lg:sticky lg:top-6 lg:self-start">
-        <div className="rounded-lg border border-border bg-surface p-5 space-y-5">
+        <div className="space-y-6 border-t-4 border-text-primary bg-white/55 p-5">
           <PropertyValueInput value={assessedValue} onChange={setAssessedValue} />
 
-          <label className="flex items-start gap-3 cursor-pointer">
+          <label className="flex cursor-pointer items-start gap-3 border-t border-text-primary pt-5">
             <input
               type="checkbox"
               checked={homesteadExempt}
               onChange={(e) => setHomesteadExempt(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-border-strong accent-mdc-blue"
+              className="mt-0.5 h-4 w-4 border-text-primary accent-mdc-blue"
             />
             <div>
               <span className="text-sm font-medium text-text-primary">
@@ -102,38 +102,39 @@ export function TaxCalculator({ rates, areas }: TaxCalculatorProps) {
             />
 
             {/* Authority breakdown */}
-            <section className="mt-6">
-              <h2 className="text-xl font-semibold text-text-primary mb-4">
+            <section className="mt-10 border-t-2 border-text-primary pt-5">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">
+                By taxing authority
+              </p>
+              <h2 className="mb-5 mt-2 font-heading text-2xl font-bold text-text-primary">
                 Estimated tax by authority
               </h2>
               <AuthorityBreakdown breakdown={breakdown} totalTax={totalTax} />
             </section>
 
             {/* County drill-down */}
-            <section className="mt-6">
+            <section className="mt-10 border-t-2 border-text-primary pt-5">
               <CountyDrillDown
                 allocations={countyAllocation}
                 countyTotal={countyTotal}
               />
             </section>
 
-            <p className="text-text-muted text-xs mt-8">
+            <p className="mt-8 border-t border-text-primary pt-4 text-xs leading-5 text-text-secondary">
               Estimate based on FY 2025–26 millage rates. The final bill may
               include municipal and special-district taxes not shown here.
             </p>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 rounded-full bg-surface-secondary flex items-center justify-center mb-4">
-              <span className="text-2xl text-text-muted" aria-hidden="true">
-                $
-              </span>
-            </div>
-            <p className="text-text-secondary text-lg">
+          <div className="border-y-2 border-text-primary py-10">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">
+              Waiting for a value
+            </p>
+            <p className="mt-3 font-heading text-2xl font-bold text-text-primary">
               Enter the property&apos;s assessed value.
             </p>
-            <p className="text-text-muted text-sm mt-1">
-              Choose an amount below or type your own.
+            <p className="mt-2 text-sm text-text-secondary">
+              Choose a common value or type an exact amount.
             </p>
           </div>
         )}

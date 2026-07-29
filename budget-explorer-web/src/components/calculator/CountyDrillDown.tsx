@@ -32,11 +32,14 @@ export function CountyDrillDown({ allocations, countyTotal }: CountyDrillDownPro
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-text-primary">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">
+        County allocation
+      </p>
+      <h3 className="font-heading text-2xl font-bold text-text-primary">
         County portion by strategic area
       </h3>
 
-      <p className="text-lg font-semibold text-text-secondary">
+      <p className="text-base text-text-secondary">
         {dollarFormatter.format(countyTotal)} of this estimate is levied by Miami-Dade County.
       </p>
 
@@ -50,9 +53,9 @@ export function CountyDrillDown({ allocations, countyTotal }: CountyDrillDownPro
             <span className="w-36 sm:w-48 text-sm text-text-primary truncate shrink-0">
               {area.name}
             </span>
-            <div className="flex-1 h-4 bg-surface-secondary rounded-full overflow-hidden">
+            <div className="h-4 flex-1 overflow-hidden border border-text-primary/15 bg-white">
               <div
-                className="h-full rounded-full transition-all duration-300"
+                className="h-full transition-all duration-300"
                 style={{
                   width: `${Math.max(area.percentage, 1)}%`,
                   backgroundColor: area.color ?? FALLBACK_COLOR,

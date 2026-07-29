@@ -86,6 +86,7 @@ export type SerializedYoYData = {
   totalBudget: string             // cents as string
   operatingBudget: string         // cents as string
   capitalBudget: string           // cents as string
+  stage: 'actual' | 'adopted'
   isCurrent: boolean
 }
 

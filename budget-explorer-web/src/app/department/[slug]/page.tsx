@@ -185,7 +185,7 @@ export default async function DepartmentPage({ params }: PageProps) {
             number="04"
             label="History"
             title="Total budget by fiscal year"
-            description="Up to five fiscal years of actual or adopted department totals. Proposed figures are not included."
+            description="Each year is labeled as actual spending or an adopted budget. Proposed figures are not included."
           >
             <YearOverYearChart
               data={yoyData}
