@@ -1,7 +1,6 @@
 -- ============================================================
 -- Migration 001: Initial Schema
 -- Miami-Dade County Budget Explorer
--- Abreu Data Works LLC
 --
 -- Creates all tables, seed data, indexes, and views.
 -- All monetary columns use BIGINT (cents) to avoid float issues.

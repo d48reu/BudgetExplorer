@@ -1,7 +1,6 @@
 -- ============================================================
 -- Stage-Probe Fixture: proposed-row leak detector
 -- Miami-Dade County Budget Explorer
--- Abreu Data Works LLC
 --
 -- Inserts proposed-stage rows into every staged table, with
 -- unmissable sentinel values ($999,999,999,999 /

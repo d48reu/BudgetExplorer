@@ -1,7 +1,6 @@
 -- ============================================================
 -- Migration 007: Budget Stage Contract
 -- Miami-Dade County Budget Explorer
--- Abreu Data Works LLC
 --
 -- Contract half of the expand/contract cycle started by 006.
 -- Drops the two objects that reference is_actual, swaps the

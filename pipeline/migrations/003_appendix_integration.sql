@@ -1,7 +1,6 @@
 -- ============================================================
 -- Migration 003: Appendix C + J Integration
 -- Miami-Dade County Budget Explorer
--- Abreu Data Works LLC
 --
 -- Adds strategic_area_id to department_budgets to support
 -- departments split across multiple strategic areas.

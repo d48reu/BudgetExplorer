@@ -1,6 +1,5 @@
 -- ============================================================
 -- Miami-Dade County Budget Explorer - Database Schema
--- Abreu Data Works LLC
 --
 -- This file is intentionally NOT a schema definition anymore.
 --

@@ -90,4 +90,4 @@ and pending migration list have been audited.
 
 ## License
 
-All rights reserved. Abreu Data Works LLC.
+All rights reserved.

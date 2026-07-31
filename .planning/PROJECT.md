@@ -77,7 +77,6 @@ Residents can instantly see how their specific tax dollars fund county services 
 
 Shipped v1.1 Full Feature Set (2026-03-01) with ~34,500 LOC TypeScript/CSS (web app) + ~4,800 LOC Python (pipeline). Total: ~39,300 LOC across 2 milestones.
 
-- **Company**: Abreu Data Works LLC
 - **Domain**: budgetexplorer.miamidade.tools (placeholder)
 - **Tagline**: "See where your money goes."
 - **Data source**: Miami-Dade County FY 2025-26 Adopted Budget (Budget in Brief)

@@ -658,7 +658,7 @@ export function Footer() {
             About
           </h3>
           <p className="text-sm text-text-secondary">
-            Built by Abreu Data Works LLC. Budget data sourced from the
+            Budget data sourced from the
             Miami-Dade County FY 2025-26 Adopted Budget.
           </p>
         </div>

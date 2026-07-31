@@ -1,7 +1,6 @@
 -- ============================================================
 -- Migration 004: Full-Text Search Index
 -- Miami-Dade County Budget Explorer
--- Abreu Data Works LLC
 --
 -- Creates glossary_terms table, seeds glossary data,
 -- and builds search_index materialized view with GIN index

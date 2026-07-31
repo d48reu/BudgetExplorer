@@ -1,7 +1,6 @@
 -- ============================================================
 -- Migration 005: Search Index Budget Fix
 -- Miami-Dade County Budget Explorer
--- Abreu Data Works LLC
 --
 -- Migration 004 joined department_budgets with
 -- "db.strategic_area_id IS NULL", but every seeded row carries a
