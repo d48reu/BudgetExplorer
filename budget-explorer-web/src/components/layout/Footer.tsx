@@ -8,7 +8,7 @@ const PROPOSED_BUDGET_PDF_URL =
 export function Footer() {
   return (
     <footer className="border-t border-border bg-surface-secondary px-4 py-8 md:py-12">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 md:grid-cols-3">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 md:grid-cols-2">
         <div>
           <h3 className="mb-3 font-heading font-semibold text-text-primary">
             Official documents
@@ -67,15 +67,6 @@ export function Footer() {
               </a>
             </li>
           </ul>
-        </div>
-        <div>
-          <h3 className="mb-3 font-heading font-semibold text-text-primary">
-            About this site
-          </h3>
-          <p className="text-sm text-text-secondary">
-            Built by Abreu Data Works LLC using Miami-Dade County&apos;s
-            adopted and proposed budget publications.
-          </p>
         </div>
       </div>
       <div className="mt-8 border-t border-border pt-4 text-center text-xs text-text-muted">
