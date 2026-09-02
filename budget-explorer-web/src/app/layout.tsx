@@ -2,6 +2,7 @@ import { Inter } from 'next/font/google'
 import { Navbar } from '@/components/layout/Navbar'
 import { MobileTabBar } from '@/components/layout/MobileTabBar'
 import { Footer } from '@/components/layout/Footer'
+import { Analytics } from '@vercel/analytics/next'
 import { CANONICAL_DOMAIN } from '@/lib/constants'
 import './globals.css'
 
@@ -44,7 +45,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <MobileTabBar />
-        {/* TODO: Add Umami analytics before public launch - self-hosted on Vercel, free tier */}
+        <Analytics />
       </body>
     </html>
   )
