@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 const ADOPTED_BUDGET_PDF_URL =
   'https://www.miamidade.gov/resources/budget/adopted/fy2025-26/budget-in-brief.pdf'
@@ -6,6 +9,9 @@ const PROPOSED_BUDGET_PDF_URL =
   'https://www.miamidade.gov/resources/budget/fy-26-27/proposed/budget-in-brief.pdf'
 
 export function Footer() {
+  const pathname = usePathname()
+  if (pathname.startsWith('/staff')) return null
+
   return (
     <footer className="border-t border-border bg-surface-secondary px-4 py-8 md:py-12">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 md:grid-cols-2">

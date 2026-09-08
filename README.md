@@ -111,10 +111,26 @@ Publication protocol:
 Do not run migrations against a shared or production database until the target
 and pending migration list have been audited.
 
+### Internal staff workspace
+
+`/staff` is a protected office workspace, separate from the public report. Its
+first issue brief covers early-morning Metrobus service and combines a sourced
+claim ledger, assignments, follow-up tasks, office posture, and an activity log.
+Claims marked reported, pending, or conflicting stay internal; the workspace has
+no automatic path for publishing them to the public site.
+
+V1 uses a shared office access code with signed, HTTP-only 12-hour sessions.
+Staff enter their name and role so edits are attributable in the activity log.
+Generate a scrypt hash for the access code and keep both staff variables in
+Vercel or ignored local environment files. A later release should replace the
+shared code with individual office accounts and single sign-on.
+
 ## Environment Variables
 
 - `DATABASE_URL` — Neon PostgreSQL connection string
 - `ANTHROPIC_API_KEY` — Claude API for AI-generated descriptions
+- `STAFF_ACCESS_CODE_HASH` — scrypt hash for the internal staff workspace access code
+- `STAFF_SESSION_SECRET` — 32+ character secret used to sign staff-session cookies
 
 ## License
 

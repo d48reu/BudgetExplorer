@@ -7,6 +7,7 @@ import { NAV_ITEMS } from '@/lib/nav-config'
 
 export function Navbar() {
   const pathname = usePathname()
+  if (pathname.startsWith('/staff')) return null
 
   return (
     <header className="fixed top-0 left-0 right-0 z-nav hidden md:block border-b border-border bg-surface">

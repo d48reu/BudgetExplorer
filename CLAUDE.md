@@ -71,9 +71,11 @@ python -m pipeline.load.seed_descriptions  # Seed reviewed descriptions JSON int
 - **Formatting:** `formatDollarsAbbreviated()` and friends take **cents** — never pre-multiply or pre-divide at call sites.
 - **Appendix extractors are state machines** keyed on ALL-CAPS headers; unrecognized headers must warn and close the current block, never inherit the previous department (silent capital misattribution was the worst audit bug).
 
-## Database Schema (14 models)
+## Database Schema (18 models)
 
 Core: `fiscal_years`, `strategic_areas`, `departments`, `department_budgets`, `department_expenditures`, `expenditure_categories`, `budget_descriptions`, `revenue_sources`, `revenue_by_source`, `millage_rates`, `capital_programs`, `glossary_terms`, `department_aliases`, `disbursements`
+
+Internal: `staff_issue_briefs`, `staff_claims`, `staff_tasks`, `staff_activity`. These tables never feed the public search index or budget totals.
 
 ## Routes
 
@@ -84,6 +86,7 @@ Core: `fiscal_years`, `strategic_areas`, `departments`, `department_budgets`, `d
 - `/calculator` — Interactive tax calculator
 - `/glossary` — Budget glossary
 - `/search` — Full-text search
+- `/staff` — Protected internal issue brief, claim review, assignments, and activity log
 
 ## Planning Docs
 

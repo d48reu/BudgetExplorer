@@ -7,6 +7,7 @@ import { NAV_ITEMS } from '@/lib/nav-config'
 
 export function MobileTabBar() {
   const pathname = usePathname()
+  if (pathname.startsWith('/staff')) return null
 
   return (
     <nav

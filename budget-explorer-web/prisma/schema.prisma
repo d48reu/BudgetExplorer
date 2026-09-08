@@ -254,6 +254,75 @@ model glossary_terms {
   definition String
 }
 
+model staff_issue_briefs {
+  id                    Int              @id @default(autoincrement())
+  slug                  String           @unique @db.VarChar(160)
+  title                 String           @db.VarChar(250)
+  summary               String
+  decision_needed       String
+  office_posture        String
+  status                String           @db.VarChar(30)
+  priority              String           @db.VarChar(20)
+  decision_date         DateTime?        @db.Date
+  public_release_status String           @default("internal-only") @db.VarChar(30)
+  created_at            DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?        @default(now()) @db.Timestamptz(6)
+  staff_activity        staff_activity[]
+  staff_claims          staff_claims[]
+  staff_tasks           staff_tasks[]
+
+  @@index([status], map: "idx_staff_issue_briefs_status")
+  @@index([decision_date], map: "idx_staff_issue_briefs_decision_date")
+}
+
+model staff_claims {
+  id                  Int                @id @default(autoincrement())
+  brief_id            Int
+  display_value       String?            @db.VarChar(80)
+  claim_text          String
+  source_name         String             @db.VarChar(200)
+  source_url          String?
+  source_locator      String?            @db.VarChar(160)
+  verification_status String             @db.VarChar(30)
+  scope_note          String?
+  staff_note          String?
+  assigned_to         String?            @db.VarChar(80)
+  display_order       Int                @default(0)
+  created_at          DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?          @default(now()) @db.Timestamptz(6)
+  staff_issue_briefs  staff_issue_briefs @relation(fields: [brief_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([brief_id, display_order], map: "idx_staff_claims_brief_order")
+  @@index([verification_status], map: "idx_staff_claims_status")
+}
+
+model staff_tasks {
+  id                 Int                @id @default(autoincrement())
+  brief_id           Int
+  task_text          String
+  owner_role         String             @db.VarChar(80)
+  due_date           DateTime?          @db.Date
+  status             String             @default("open") @db.VarChar(20)
+  created_at         DateTime?          @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?          @db.Timestamptz(6)
+  staff_issue_briefs staff_issue_briefs @relation(fields: [brief_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([brief_id, status, due_date], map: "idx_staff_tasks_brief_status_due")
+}
+
+model staff_activity {
+  id                 Int                @id @default(autoincrement())
+  brief_id           Int
+  action             String             @db.VarChar(80)
+  actor_name         String             @db.VarChar(100)
+  actor_role         String             @db.VarChar(80)
+  details            String?
+  created_at         DateTime?          @default(now()) @db.Timestamptz(6)
+  staff_issue_briefs staff_issue_briefs @relation(fields: [brief_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([brief_id, created_at], map: "idx_staff_activity_brief_created")
+}
+
 enum budget_stage {
   proposed
   adopted

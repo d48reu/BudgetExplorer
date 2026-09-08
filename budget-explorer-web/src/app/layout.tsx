@@ -2,7 +2,7 @@ import { Inter } from 'next/font/google'
 import { Navbar } from '@/components/layout/Navbar'
 import { MobileTabBar } from '@/components/layout/MobileTabBar'
 import { Footer } from '@/components/layout/Footer'
-import { Analytics } from '@vercel/analytics/next'
+import { AnalyticsGate } from '@/components/layout/AnalyticsGate'
 import { CANONICAL_DOMAIN } from '@/lib/constants'
 import './globals.css'
 
@@ -45,7 +45,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <MobileTabBar />
-        <Analytics />
+        <AnalyticsGate />
       </body>
     </html>
   )
