@@ -77,6 +77,8 @@ type AnswerIntent =
   | 'release'
   | 'department-or-unknown'
 
+type ReleaseMetric = 'total' | 'operating' | 'capital' | 'positions'
+
 const sourceIndex = sourceIndexJson as LedgerRow[]
 const amendments = amendmentsJson as unknown as AmendmentData
 
@@ -106,6 +108,20 @@ function normalize(value: string) {
     .replace(/[’']/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
+}
+
+export function requestedReleaseMetrics(question: string): ReleaseMetric[] {
+  const value = normalize(question)
+  const requested = new Set<ReleaseMetric>()
+
+  if (/\b(total|overall|all funds|total funding|budget total)\b/.test(value)) requested.add('total')
+  if (/\b(operating|operating expenses|operating spending)\b/.test(value)) requested.add('operating')
+  if (/\b(capital|capital spending)\b/.test(value)) requested.add('capital')
+  if (/\b(position|positions|employee|employees|staff|staffing|headcount)\b/.test(value)) requested.add('positions')
+
+  if (requested.size === 0) requested.add('total')
+  return (['total', 'operating', 'capital', 'positions'] as ReleaseMetric[])
+    .filter((metric) => requested.has(metric))
 }
 
 function tokens(value: string) {
@@ -235,13 +251,98 @@ async function answerRelease(question: string): Promise<BudgetAnswer> {
   if (!overview?.adopted || !proposedCitation || !adoptedCitation || !proposedAudit || !adoptedAudit) return unsupported(question)
 
   const normalized = normalize(question)
-  const metric = /\b(position|positions|employee|employees|staff|staffing)\b/.test(normalized)
-    ? 'positions'
-    : /\bcapital\b/.test(normalized)
-      ? 'capital'
-      : /\boperating\b/.test(normalized)
-        ? 'operating'
-        : 'total'
+  const requestedMetrics = requestedReleaseMetrics(normalized)
+
+  if (requestedMetrics.length > 1) {
+    const facts: AnswerFact[] = []
+    const claims: BudgetAnswer['claims'] = []
+    const calculations: BudgetAnswer['calculations'] = []
+
+    for (const requestedMetric of requestedMetrics) {
+      if (requestedMetric === 'positions') {
+        const proposed = overview.proposed.employees
+        const adopted = overview.adopted.employees
+        if (proposed == null || adopted == null) return unsupported(question)
+        if (proposed !== proposedAudit.employees || adopted !== adoptedAudit.employees) {
+          return evidenceGap('The live workforce total does not match the approved audit record.', 'No answer was released.', 'Refresh and review the number audit before relying on this result.')
+        }
+
+        const change = proposed - adopted
+        const percentage = (change / adopted) * 100
+        const direction = change < 0 ? 'decrease' : change > 0 ? 'increase' : 'no change'
+        claims.push({
+          text: `Positions: ${proposed.toLocaleString('en-US')} proposed versus ${adopted.toLocaleString('en-US')} adopted, a ${direction} of ${Math.abs(change).toLocaleString('en-US')} (${change > 0 ? '+' : change < 0 ? '−' : ''}${Math.abs(percentage).toFixed(1)}%).`,
+          citationIds: ['1', '2'],
+        })
+        facts.push({
+          label: 'Positions',
+          value: proposed.toLocaleString('en-US'),
+          detail: `${overview.adopted.fiscalYear} adopted: ${adopted.toLocaleString('en-US')} · ${signedNumber(change)} (${change > 0 ? '+' : change < 0 ? '−' : ''}${Math.abs(percentage).toFixed(1)}%)`,
+          citationIds: ['1', '2'],
+        })
+        calculations.push({
+          label: 'Position change',
+          expression: `${proposed.toLocaleString('en-US')} − ${adopted.toLocaleString('en-US')} = ${signedNumber(change)}`,
+          citationIds: ['1', '2'],
+        })
+        continue
+      }
+
+      const config = requestedMetric === 'operating'
+        ? { key: 'netOperating' as const, auditKey: 'netOperatingCents' as const, label: 'Net operating budget' }
+        : requestedMetric === 'capital'
+          ? { key: 'capital' as const, auditKey: 'capitalCents' as const, label: 'Capital budget' }
+          : { key: 'total' as const, auditKey: 'totalBudgetCents' as const, label: 'Total budget' }
+      const proposed = BigInt(overview.proposed[config.key])
+      const adopted = BigInt(overview.adopted[config.key])
+      if (proposed !== BigInt(proposedAudit[config.auditKey]) || adopted !== BigInt(adoptedAudit[config.auditKey])) {
+        return evidenceGap('A live release total does not match the approved audit record.', 'No answer was released.', 'Refresh and review the number audit before relying on this result.')
+      }
+
+      const change = proposed - adopted
+      const percentage = percentChange(adopted, proposed)
+      const direction = change < BigInt(0) ? 'decrease' : change > BigInt(0) ? 'increase' : 'no change'
+      const percentLabel = percentage == null
+        ? ''
+        : ` (${percentage > 0 ? '+' : percentage < 0 ? '−' : ''}${Math.abs(percentage).toFixed(1)}%)`
+      claims.push({
+        text: `${config.label}: ${formatDollarsFull(proposed.toString())} proposed versus ${formatDollarsFull(adopted.toString())} adopted, a ${direction} of ${formatDollarsFull((change < BigInt(0) ? -change : change).toString())}${percentLabel}.`,
+        citationIds: ['1', '2'],
+      })
+      facts.push({
+        label: config.label,
+        value: formatDollarsFull(proposed.toString()),
+        detail: `${overview.adopted.fiscalYear} adopted: ${formatDollarsFull(adopted.toString())} · ${signedDollars(change, true)}${percentLabel}`,
+        citationIds: ['1', '2'],
+      })
+      calculations.push({
+        label: `${config.label} change`,
+        expression: `${formatDollarsFull(proposed.toString())} − ${formatDollarsFull(adopted.toString())} = ${signedDollars(change, true)}`,
+        citationIds: ['1', '2'],
+      })
+    }
+
+    return {
+      status: 'answered',
+      eyebrow: 'Countywide comparison',
+      title: `${overview.proposed.fiscalYear} proposed compared with ${overview.adopted.fiscalYear} adopted`,
+      claims,
+      facts,
+      calculations,
+      citations: [proposedCitation, adoptedCitation],
+      caveats: [
+        'These are the Countywide totals published in each release, not the restated department baselines used elsewhere in the proposal.',
+        ...(requestedMetrics.includes('positions')
+          ? ['The proposal uses a restated prior-year workforce baseline of 31,998 for department comparisons. The adopted Budget in Brief reports 31,996 positions; this Countywide comparison uses that published adopted figure.']
+          : []),
+        'First-hearing changes are kept separate until the County publishes a fully restated all-funds total.',
+      ],
+      relatedHref: '/compare',
+      relatedLabel: 'Open the public comparison',
+    }
+  }
+
+  const metric = requestedMetrics[0]
 
   if (metric === 'positions') {
     const proposed = overview.proposed.employees

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import sourceIndex from '@/data/answer-source-index.json'
 import audit from '@/data/budget-audit.json'
-import { classifyBudgetQuestion } from '@/lib/budget-answer'
+import { classifyBudgetQuestion, requestedReleaseMetrics } from '@/lib/budget-answer'
 
 describe('budget question classification', () => {
   it.each([
@@ -13,6 +13,12 @@ describe('budget question classification', () => {
     ['Why did the Law Library budget change?', 'department-or-unknown'],
   ])('routes “%s” to %s', (question, intent) => {
     expect(classifyBudgetQuestion(question)).toBe(intent)
+  })
+
+  it('keeps every measure named in a Countywide comparison question', () => {
+    expect(requestedReleaseMetrics(
+      'How does the proposed County budget compare with the adopted budget for operating expenses, capital spending, total funding, and positions?'
+    )).toEqual(['total', 'operating', 'capital', 'positions'])
   })
 })
 
