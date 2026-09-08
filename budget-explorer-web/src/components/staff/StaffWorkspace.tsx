@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import Link from 'next/link'
 import type { StaffSession } from '@/lib/staff-types'
 import { CLAIM_STATUSES, getStaffWorkspace } from '@/lib/staff-workspace'
 import {
@@ -95,6 +96,7 @@ export function StaffWorkspace({
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <Link href="/staff" className="mb-4 inline-block text-sm font-black text-blue-800 underline underline-offset-4">← Research desk</Link>
         <section className="border border-slate-950 bg-white">
           <div className="grid lg:grid-cols-[1fr_17rem]">
             <div className="p-5 sm:p-7">

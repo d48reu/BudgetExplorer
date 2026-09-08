@@ -10,7 +10,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "check": "pnpm lint && pnpm test && pnpm typecheck",
+    "check": "pnpm check:answer-sources && pnpm lint && pnpm test && pnpm typecheck",
+    "build:answer-sources": "node scripts/build-answer-source-index.mjs",
+    "check:answer-sources": "node scripts/build-answer-source-index.mjs --check",
     "snapshot": "node scripts/snapshot.mjs"
   },
   "dependencies": {

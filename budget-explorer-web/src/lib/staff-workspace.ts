@@ -11,9 +11,9 @@ export const CLAIM_STATUSES = [
 
 export type ClaimStatus = (typeof CLAIM_STATUSES)[number]
 
-export async function getStaffWorkspace() {
+export async function getStaffWorkspace(slug = STAFF_BRIEF_SLUG) {
   return prisma.staff_issue_briefs.findUnique({
-    where: { slug: STAFF_BRIEF_SLUG },
+    where: { slug },
     include: {
       staff_claims: {
         orderBy: [{ display_order: 'asc' }, { id: 'asc' }],
@@ -25,6 +25,16 @@ export async function getStaffWorkspace() {
         orderBy: { created_at: 'desc' },
         take: 12,
       },
+    },
+  })
+}
+
+export async function getStaffIssueSummaries() {
+  return prisma.staff_issue_briefs.findMany({
+    orderBy: [{ status: 'asc' }, { priority: 'asc' }, { decision_date: 'asc' }],
+    include: {
+      staff_claims: { select: { verification_status: true } },
+      staff_tasks: { select: { status: true } },
     },
   })
 }

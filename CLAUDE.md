@@ -86,7 +86,8 @@ Internal: `staff_issue_briefs`, `staff_claims`, `staff_tasks`, `staff_activity`.
 - `/calculator` — Interactive tax calculator
 - `/glossary` — Budget glossary
 - `/search` — Full-text search
-- `/staff` — Protected internal issue brief, claim review, assignments, and activity log
+- `/staff` — Protected, source-gated budget question desk
+- `/staff/issues/[slug]` — Internal issue briefs, claim review, assignments, and activity log
 
 ## Planning Docs
 

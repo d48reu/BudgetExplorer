@@ -113,17 +113,28 @@ and pending migration list have been audited.
 
 ### Internal staff workspace
 
-`/staff` is a protected office workspace, separate from the public report. Its
-first issue brief covers early-morning Metrobus service and combines a sourced
-claim ledger, assignments, follow-up tasks, office posture, and an activity log.
-Claims marked reported, pending, or conflicting stay internal; the workspace has
-no automatic path for publishing them to the public site.
+`/staff` is a protected budget research desk, separate from the public report.
+Staff can ask plain-English questions about release totals, department budgets
+and trends, staffing, revenue, rankings, and hearing amendments. Answers use
+database calculations, show their math, and link every factual result to the
+approved audit ledger. A live value that differs from its audit record is
+withheld instead of displayed.
+
+The early-morning Metrobus material is one saved issue brief under
+`/staff/issues/early-morning-metrobus-service`, with a sourced claim ledger,
+assignments, follow-up tasks, office posture, and activity log. Claims marked
+reported, pending, or conflicting stay internal; there is no automatic path for
+publishing them to the public site.
 
 V1 uses a shared office access code with signed, HTTP-only 12-hour sessions.
 Staff enter their name and role so edits are attributable in the activity log.
 Generate a scrypt hash for the access code and keep both staff variables in
 Vercel or ignored local environment files. A later release should replace the
 shared code with individual office accounts and single sign-on.
+
+When the number audit is regenerated, rebuild the staff citation index with
+`pnpm build:answer-sources` from `budget-explorer-web/` and commit the resulting
+JSON alongside the new audit ledger.
 
 ## Environment Variables
 
