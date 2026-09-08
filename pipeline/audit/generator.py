@@ -31,6 +31,8 @@ from pipeline.config import (
     APPENDIX_J_PATH,
     APPENDIX_J_URL,
     DATABASE_URL,
+    FIRST_HEARING_MEMO_PATH,
+    FIRST_HEARING_MEMO_URL,
     PDF_PATH,
     PDF_URL,
     PROPOSED_BIB_PATH,
@@ -147,6 +149,12 @@ def _source_manifest() -> list[dict]:
             "FY 2026-27 proposed Volume 1",
             PROJECT_ROOT / PROPOSED_VOLUME_1_PATH,
             PROPOSED_VOLUME_1_URL,
+        ),
+        (
+            "first-hearing-memo",
+            "Information for First Budget Hearing — FY 2026-27 Proposed Budget",
+            PROJECT_ROOT / FIRST_HEARING_MEMO_PATH,
+            FIRST_HEARING_MEMO_URL,
         ),
     )
     manifest = []

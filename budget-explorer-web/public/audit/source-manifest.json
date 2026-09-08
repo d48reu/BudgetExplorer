@@ -43,5 +43,14 @@
     "sha256": "e34859e4ea4528dd114d8bb572c92821087102b507eedd7779b1fc35ffcaf515",
     "bytes": 18015275,
     "pages": 282
+  },
+  {
+    "id": "first-hearing-memo",
+    "label": "Information for First Budget Hearing — FY 2026-27 Proposed Budget",
+    "file": "data/fy-2026-27-first-hearing-memo.pdf",
+    "sourceUrl": "https://www.miamidade.gov/govaction/legistarfiles/Matters/Y2026/261530.pdf",
+    "sha256": "9c34eb96d5be47a9200b9e0f79e9a7566342760d56814f12beba02305507655a",
+    "bytes": 10604703,
+    "pages": 40
   }
 ]

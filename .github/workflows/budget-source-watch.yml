@@ -1,0 +1,63 @@
+name: Budget source watch
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 13 * * 1,3,5"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-official-sources:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - id: watch
+        continue-on-error: true
+        run: >-
+          python -m pipeline.source_watch
+          --json-report budget-source-watch.json
+          --markdown-report budget-source-watch.md
+      - name: Add report to workflow summary
+        if: always()
+        run: cat budget-source-watch.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Open an issue for human review
+        if: steps.watch.outcome == 'failure'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const title = 'Official budget source changed — review required';
+            const body = fs.readFileSync('budget-source-watch.md', 'utf8');
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = issues.find((issue) => issue.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+            }
+      - name: Fail until the source change is reviewed
+        if: steps.watch.outcome == 'failure'
+        run: exit 1

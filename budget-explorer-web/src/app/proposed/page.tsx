@@ -3,6 +3,10 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { BudgetComparisonTable } from '@/components/proposed/BudgetComparisonTable'
 import { DepartmentChangePlot } from '@/components/proposed/DepartmentChangePlot'
+import {
+  AmendmentStatusNotice,
+  FirstHearingAmendments,
+} from '@/components/proposed/FirstHearingAmendments'
 import { PriorityBudgetTable } from '@/components/proposed/PriorityBudgetTable'
 import { BudgetAllocationRibbon } from '@/components/releases/BudgetAllocationRibbon'
 import { BudgetWaterfall } from '@/components/releases/BudgetWaterfall'
@@ -136,10 +140,21 @@ export default async function ProposedBudgetPage() {
           />
         </div>
 
+        <AmendmentStatusNotice />
+
         <ReleaseFacts facts={facts} />
 
         <ReportSection
           number="01"
+          label="First hearing"
+          title="Changes since the July proposal"
+          description="These items come from the Mayor’s September 2 changes memorandum and actions taken by the Commission on September 3. They remain tentative until the final hearing."
+        >
+          <FirstHearingAmendments />
+        </ReportSection>
+
+        <ReportSection
+          number="02"
           label="Totals"
           title="Operating and capital totals"
           description="The County calculates the proposed total the same way as the adopted total: gross operating spending minus internal transfers, plus the capital program."
@@ -148,7 +163,7 @@ export default async function ProposedBudgetPage() {
         </ReportSection>
 
         <ReportSection
-          number="02"
+          number="03"
           label="Operating"
           title="Operating spending by proposed priority"
           description="The proposal groups services into seven priorities instead of the adopted budget’s nine strategic areas. The County did not publish a direct mapping between the two sets of categories."
@@ -157,7 +172,7 @@ export default async function ProposedBudgetPage() {
         </ReportSection>
 
         <ReportSection
-          number="03"
+          number="04"
           label="Change"
           title="Adopted and proposed totals"
           description={`Compares the proposal with the ${adopted?.fiscalYear ?? 'current'} adopted budget. Blue marks an increase; orange marks a decrease.`}
@@ -166,7 +181,7 @@ export default async function ProposedBudgetPage() {
         </ReportSection>
 
         <ReportSection
-          number="04"
+          number="05"
           label="Departments"
           title="Largest department operating changes"
           description="Appendix A restates the adopted operating budget using the proposal’s department and priority structure, allowing a consistent department comparison."
@@ -183,7 +198,7 @@ export default async function ProposedBudgetPage() {
         </ReportSection>
 
         <ReportSection
-          number="05"
+          number="06"
           label="Priorities"
           title="Budget by proposed priority"
           description="Operating amounts are before internal transfers. Capital amounts cover the proposed multi-year program."
@@ -195,7 +210,7 @@ export default async function ProposedBudgetPage() {
         </ReportSection>
 
         <ReportSection
-          number="06"
+          number="07"
           label="Documents"
           title="County proposal documents"
           description="These are the County PDFs used for this site. Figures were checked against the published appendix totals."

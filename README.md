@@ -80,6 +80,34 @@ capital is presented without a change claim because the source does not publish
 a restated adopted capital baseline. Keep production deployment and database
 migration as separate, explicitly reviewed steps.
 
+### First-hearing amendments and source monitoring
+
+The July 15 proposal remains an immutable release snapshot. First-hearing changes
+are stored in `budget-explorer-web/src/data/fy-2026-27-first-hearing-amendments.json`
+and displayed as a separate ledger. Every item names an official source and a PDF
+page or hearing-recording time. The site does not infer a revised all-funds total
+from a partial set of amendments.
+
+The scheduled `Budget source watch` workflow runs every Monday, Wednesday, and
+Friday. It verifies the SHA-256 hash and byte count of every cited County PDF and
+checks official County pages for a second-hearing memorandum or adopted budget.
+If anything changes, the workflow fails and opens or updates one GitHub issue for
+human review. It never copies new figures into the site automatically.
+
+Run the same read-only check locally with:
+
+```powershell
+.venv/Scripts/python -m pipeline.source_watch
+```
+
+Publication protocol:
+
+1. Use only official County documents or official hearing records.
+2. Record page numbers or recording times and preserve source-file fingerprints.
+3. Reconcile transfers separately from net-new spending and positions.
+4. Show unresolved conflicts in the source instead of choosing a value silently.
+5. Require the audit tests, web checks, and a human source review before deploy.
+
 Do not run migrations against a shared or production database until the target
 and pending migration list have been audited.
 

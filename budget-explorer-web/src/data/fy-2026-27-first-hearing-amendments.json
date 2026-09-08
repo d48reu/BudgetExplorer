@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "fiscalYear": "FY 2026-27",
+  "baseReleaseDate": "2026-07-15",
+  "memorandumDate": "2026-09-02",
+  "hearingDate": "2026-09-03",
+  "lastVerifiedDate": "2026-09-08",
+  "finalHearingDate": "2026-09-17",
+  "status": "tentative-first-hearing",
+  "statusLabel": "Tentative through the first budget hearing",
+  "displayPolicy": {
+    "baseRelease": "Keep the July 15 proposal as a fixed historical snapshot.",
+    "amendments": "Show later actions in a separate amendment ledger.",
+    "releaseTotals": "Do not calculate an amended Countywide total until the County publishes a restated total or every adjustment can be reconciled across funds."
+  },
+  "sourceDocuments": [
+    {
+      "id": "first-hearing-memo",
+      "label": "Information for First Budget Hearing — FY 2026-27 Proposed Budget",
+      "kind": "pdf",
+      "file": "data/fy-2026-27-first-hearing-memo.pdf",
+      "sourceUrl": "https://www.miamidade.gov/govaction/legistarfiles/Matters/Y2026/261530.pdf",
+      "sha256": "9c34eb96d5be47a9200b9e0f79e9a7566342760d56814f12beba02305507655a",
+      "bytes": 10604703,
+      "pages": 40
+    },
+    {
+      "id": "first-hearing-recording",
+      "label": "September 3, 2026 first budget hearing",
+      "kind": "recording",
+      "sourceUrl": "https://miamidade.granicus.com/player/clip/9010?publish_id=f8b6e65a-a854-11f1-a183-005056a89546&redirect=true"
+    },
+    {
+      "id": "budget-process-page",
+      "label": "FY 2026-27 budget process",
+      "kind": "webpage",
+      "sourceUrl": "https://www.miamidade.gov/global/management/budget/2026-27/fy-2027-budget-process.page"
+    }
+  ],
+  "publishedControlTotals": {
+    "countywideGeneralFundCents": 287360500000,
+    "sourceId": "first-hearing-memo",
+    "sourcePages": [24],
+    "note": "The amended schedule leaves the Countywide General Fund total unchanged. This is not the all-funds County budget total."
+  },
+  "memoChanges": [
+    {
+      "id": "clerk-erp-transfer",
+      "title": "Clerk of the Court and Comptroller",
+      "amountCents": 3000200000,
+      "amountDirection": "increase",
+      "positionChange": 91,
+      "classification": "Transfer",
+      "status": "Included at first hearing",
+      "summary": "ERP responsibilities and staff move to the Clerk. The increase is fully offset by reductions in five County departments.",
+      "sourceId": "first-hearing-memo",
+      "sourcePages": [2, 3, 9, 19],
+      "offsets": [
+        {
+          "department": "Internal Compliance",
+          "amountCents": 2466600000,
+          "positions": 75
+        },
+        {
+          "department": "Aviation",
+          "amountCents": 115300000,
+          "positions": 4
+        },
+        {
+          "department": "Water and Sewer",
+          "amountCents": 364200000,
+          "positions": 9
+        },
+        {
+          "department": "Strategic Procurement",
+          "amountCents": 16900000,
+          "positions": 1
+        },
+        {
+          "department": "People and Internal Operations",
+          "amountCents": 37200000,
+          "positions": 2
+        }
+      ],
+      "netCountywideChangeCents": 0,
+      "netCountywidePositionChange": 0
+    },
+    {
+      "id": "clerk-erp-capital",
+      "title": "ERP Optimization capital program",
+      "amountCents": 7678000000,
+      "amountDirection": "transfer",
+      "positionChange": null,
+      "classification": "Transfer",
+      "status": "Included at first hearing",
+      "summary": "The existing capital program moves from Internal Compliance to the Clerk; this is not new capital spending.",
+      "sourceId": "first-hearing-memo",
+      "sourcePages": [2, 3, 18],
+      "netCountywideChangeCents": 0,
+      "netCountywidePositionChange": 0
+    },
+    {
+      "id": "omb-budget-systems",
+      "title": "Office of Management and Budget",
+      "amountCents": 343900000,
+      "amountDirection": "increase",
+      "positionChange": 5,
+      "classification": "Transfer",
+      "status": "Included at first hearing",
+      "summary": "Budget-systems maintenance and support move from Internal Compliance to OMB.",
+      "sourceId": "first-hearing-memo",
+      "sourcePages": [4, 17, 22],
+      "netCountywideChangeCents": 0,
+      "netCountywidePositionChange": 0
+    },
+    {
+      "id": "procurement-contract-compliance",
+      "title": "Strategic Procurement → Internal Compliance",
+      "amountCents": 178100000,
+      "amountDirection": "transfer",
+      "positionChange": 11,
+      "classification": "Transfer",
+      "status": "Included at first hearing",
+      "summary": "The Contract Compliance and Monitoring section moves to Internal Compliance.",
+      "sourceId": "first-hearing-memo",
+      "sourcePages": [5, 10, 13, 20, 21],
+      "netCountywideChangeCents": 0,
+      "netCountywidePositionChange": 0
+    },
+    {
+      "id": "animal-services-spca",
+      "title": "Animal Services",
+      "amountCents": 15000000,
+      "amountDirection": "increase",
+      "positionChange": null,
+      "classification": "Reallocation",
+      "status": "Included at first hearing",
+      "summary": "South Florida SPCA funding moves from the Countywide nondepartmental CBO line into Animal Services. The department allocation becomes $350,000; the Countywide total does not change.",
+      "sourceId": "first-hearing-memo",
+      "sourcePages": [4, 23, 24],
+      "netCountywideChangeCents": 0,
+      "netCountywidePositionChange": 0
+    },
+    {
+      "id": "community-services-liheap",
+      "title": "Community Services",
+      "amountCents": 36900000,
+      "amountDirection": "decrease",
+      "positionChange": -6,
+      "classification": "Funding reduction",
+      "status": "Included at first hearing",
+      "summary": "LIHEAP funding is reduced and six filled positions move to Housing and Community Development, where they are federally funded.",
+      "sourceId": "first-hearing-memo",
+      "sourcePages": [4, 16, 25],
+      "netCountywideChangeCents": null,
+      "netCountywidePositionChange": 0
+    },
+    {
+      "id": "housing-eviction-legal-services",
+      "title": "Housing and Community Development",
+      "amountCents": 100000000,
+      "amountDirection": "increase",
+      "positionChange": 6,
+      "classification": "Reallocation",
+      "status": "Included at first hearing",
+      "summary": "Legal Services of Greater Miami receives an additional $1 million for eviction-diversion work, using the General Fund portion of the Affordable Housing Trust Fund. Six positions transfer from Community Services.",
+      "sourceId": "first-hearing-memo",
+      "sourcePages": [4],
+      "netCountywideChangeCents": 0,
+      "netCountywidePositionChange": 0
+    },
+    {
+      "id": "property-appraiser-position",
+      "title": "Property Appraiser",
+      "amountCents": null,
+      "amountDirection": "none",
+      "positionChange": -1,
+      "classification": "Position change",
+      "status": "Included at first hearing",
+      "summary": "The State-approved authorized position count changes from 432 to 431.",
+      "sourceId": "first-hearing-memo",
+      "sourcePages": [3, 15],
+      "netCountywideChangeCents": 0,
+      "netCountywidePositionChange": -1
+    }
+  ],
+  "hearingActions": [
+    {
+      "id": "ptp-baylink-reallocation",
+      "title": "PTP capital reallocation",
+      "amountCents": 23300000,
+      "classification": "Reallocation",
+      "status": "Approved at first hearing",
+      "summary": "Funds designated for the Baylink branch transit corridor move to SMART Plan capital improvements.",
+      "sourceId": "first-hearing-recording",
+      "sourceTime": "08:01:00"
+    },
+    {
+      "id": "water-sewer-rate",
+      "title": "Water and Sewer rate",
+      "rateChangePercent": 6,
+      "vote": "7–6",
+      "classification": "Proposal retained",
+      "status": "Approved at first hearing",
+      "summary": "The 6 percent rate increase already included in the July proposal remains in the tentative budget.",
+      "sourceId": "first-hearing-recording",
+      "sourceTime": "09:04:22–09:11:18"
+    }
+  ],
+  "pendingItems": [
+    {
+      "id": "tax-collector-school-millage",
+      "title": "Tax Collector school-millage commissions",
+      "status": "Expected in second changes memo",
+      "summary": "The Tax Collector agreed to waive commissions on voted school millages. The resulting revenue and expenditure changes were not included in the first memorandum.",
+      "sourceId": "first-hearing-memo",
+      "sourcePages": [3]
+    },
+    {
+      "id": "sheriff-funding-plan",
+      "title": "Sheriff funding plan",
+      "status": "Due before final hearing",
+      "summary": "The Board directed the administration to identify legally available funds and prepare a plan addressing the Sheriff’s request.",
+      "sourceId": "first-hearing-recording",
+      "sourceTime": "08:34:08–08:50:50"
+    },
+    {
+      "id": "transit-studies",
+      "title": "MetroConnect and Metromover",
+      "status": "Analysis requested",
+      "summary": "The Board requested further analysis. No fare or service figure from those discussions is treated as an approved budget change here.",
+      "sourceId": "first-hearing-recording",
+      "sourceTime": "07:59:49–08:07:41"
+    },
+    {
+      "id": "solid-waste-follow-up",
+      "title": "Solid-waste follow-up",
+      "amountCents": 6000000,
+      "status": "Discussed, not adopted",
+      "summary": "A possible $60,000 allocation was left for the administration and sponsor to examine before the next changes memorandum.",
+      "sourceId": "first-hearing-recording",
+      "sourceTime": "08:07:43–08:09:34"
+    }
+  ],
+  "publicationMonitor": {
+    "discoveryPages": [
+      "https://www.miamidade.gov/global/management/budget/2026-27/fy-2027-budget-process.page",
+      "https://www.miamidade.gov/global/management/budget/2026-27/proposed/home.page",
+      "https://www.miamidade.gov/global/news-item.page?Mduid_news=news1784127710112912"
+    ],
+    "directCandidates": [
+      "https://www.miamidade.gov/resources/budget/adopted/fy2026-27/budget-in-brief.pdf",
+      "https://www.miamidade.gov/resources/budget/fy-26-27/adopted/budget-in-brief.pdf"
+    ],
+    "linkTextSignals": [
+      "second changes memorandum",
+      "response to first budget hearing",
+      "fy 2026-27 adopted budget"
+    ],
+    "hrefSignals": [
+      "/resources/budget/adopted/fy2026-27/",
+      "/resources/budget/fy-26-27/adopted/"
+    ]
+  },
+  "sourceCaveats": [
+    {
+      "id": "community-services-grant-classification",
+      "title": "The County memo conflicts on the LIHEAP funding source",
+      "amountCents": 36900000,
+      "summary": "Page 4 describes a state-grant reduction, while the schedule on page 25 reduces Federal Grants. The $369,000 reduction is shown, but this site does not assign it to a funding category pending clarification.",
+      "sourceId": "first-hearing-memo",
+      "sourcePages": [4, 25]
+    }
+  ]
+}

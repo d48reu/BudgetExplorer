@@ -53,6 +53,13 @@ PROPOSED_BIB_PATH = os.getenv(
 PROPOSED_VOLUME_1_PATH = os.getenv(
     "PROPOSED_VOLUME_1_PATH", "data/fy-2026-27-proposed-volume-1.pdf"
 )
+FIRST_HEARING_MEMO_PATH = os.getenv(
+    "FIRST_HEARING_MEMO_PATH", "data/fy-2026-27-first-hearing-memo.pdf"
+)
+FIRST_HEARING_MEMO_URL = os.getenv(
+    "FIRST_HEARING_MEMO_URL",
+    "https://www.miamidade.gov/govaction/legistarfiles/Matters/Y2026/261530.pdf",
+)
 
 # Debug mode (enables saving debug images during extraction)
 DEBUG = os.getenv("PIPELINE_DEBUG", "false").lower() in ("true", "1", "yes")

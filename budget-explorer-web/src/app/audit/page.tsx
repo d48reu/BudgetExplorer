@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import audit from '@/data/budget-audit.json'
+import amendments from '@/data/fy-2026-27-first-hearing-amendments.json'
 import { formatDollarsAbbreviated } from '@/lib/format'
 
 export const metadata: Metadata = {
@@ -17,6 +18,9 @@ function formattedDate(value: string) {
 
 export default function AuditPage() {
   const gatePassed = audit.gate.status === 'PASS'
+  const amendmentMemo = amendments.sourceDocuments.find(
+    (source) => source.id === 'first-hearing-memo'
+  )
 
   return (
     <div className="bg-[#F5F2EA]">
@@ -63,6 +67,36 @@ export default function AuditPage() {
               Monetary difference: {audit.gate.exactMonetaryVarianceCents}{' '}
               cents. Allowed difference: {audit.gate.toleranceCents} cents.
             </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-text-primary bg-white">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:px-6 md:grid-cols-[0.7fr_1.3fr] lg:px-8">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-mdc-orange">
+              Current publication status
+            </p>
+            <h2 className="mt-3 font-heading text-3xl font-black tracking-[-0.03em]">
+              Proposal plus a separate amendment ledger
+            </h2>
+          </div>
+          <div className="grid gap-px border border-text-primary bg-text-primary sm:grid-cols-3">
+            <div className="bg-[#F5F2EA] p-5">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-text-muted">Base release</p>
+              <p className="mt-2 font-heading text-xl font-black">July 15 snapshot</p>
+              <p className="mt-2 text-sm leading-6 text-text-secondary">The audited proposal is preserved as published.</p>
+            </div>
+            <div className="bg-[#F5F2EA] p-5">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-text-muted">Amendments</p>
+              <p className="mt-2 font-heading text-xl font-black">{amendments.memoChanges.length + amendments.hearingActions.length} tracked actions</p>
+              <p className="mt-2 text-sm leading-6 text-text-secondary">Each amount has a memo page or recording time.</p>
+            </div>
+            <div className="bg-[#F5F2EA] p-5">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-text-muted">Adjusted total</p>
+              <p className="mt-2 font-heading text-xl font-black">Not inferred</p>
+              <p className="mt-2 text-sm leading-6 text-text-secondary">A new Countywide total waits for a fully reconciled official source.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -223,6 +257,26 @@ export default function AuditPage() {
                   </span>
                 </div>
               ))}
+              {amendmentMemo && 'sha256' in amendmentMemo && (
+                <div className="grid gap-2 border-b border-white/20 py-4 sm:grid-cols-[1fr_auto]">
+                  <div>
+                    <a
+                      href={amendmentMemo.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-heading font-bold underline decoration-white/35 underline-offset-4 hover:decoration-white"
+                    >
+                      {amendmentMemo.label} ↗
+                    </a>
+                    <p className="mt-1 break-all font-mono text-[11px] text-white/50">
+                      SHA-256 {amendmentMemo.sha256}
+                    </p>
+                  </div>
+                  <span className="text-sm tabular-nums text-white/65">
+                    {amendmentMemo.pages} pages
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -235,6 +289,12 @@ export default function AuditPage() {
               Notes
             </p>
             <div className="mt-4 space-y-5">
+              {amendments.sourceCaveats.map((note) => (
+                <article key={note.id} className="border-t-2 border-mdc-orange pt-4">
+                  <h2 className="font-heading text-lg font-black">{note.title}</h2>
+                  <p className="mt-2 text-sm leading-6 text-text-secondary">{note.summary}</p>
+                </article>
+              ))}
               {audit.knownNotes.map((note) => (
                 <article key={note.title} className="border-t-2 border-text-primary pt-4">
                   <h2 className="font-heading text-lg font-black">{note.title}</h2>
