@@ -2,7 +2,6 @@
 
 import { useActionState } from 'react'
 import { signInAction, type SignInState } from '@/app/staff/actions'
-import { STAFF_ROLES } from '@/lib/staff-types'
 
 const initialState: SignInState = { error: null }
 
@@ -22,23 +21,6 @@ export function StaffSignInForm() {
           required
           className="mt-2 w-full border border-slate-400 bg-white px-3 py-3 text-base shadow-sm"
         />
-      </div>
-      <div>
-        <label htmlFor="staff-role" className="block text-sm font-bold text-slate-800">
-          Office role
-        </label>
-        <select
-          id="staff-role"
-          name="role"
-          required
-          defaultValue=""
-          className="mt-2 w-full border border-slate-400 bg-white px-3 py-3 text-base shadow-sm"
-        >
-          <option value="" disabled>Select a role</option>
-          {STAFF_ROLES.map((role) => (
-            <option key={role} value={role}>{role}</option>
-          ))}
-        </select>
       </div>
       <div>
         <label htmlFor="staff-code" className="block text-sm font-bold text-slate-800">

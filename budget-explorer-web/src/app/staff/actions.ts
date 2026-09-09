@@ -14,11 +14,7 @@ import {
   setStaffSession,
   verifyStaffAccessCode,
 } from '@/lib/staff-auth'
-import {
-  STAFF_ROLES,
-  type StaffRole,
-  type StaffSession,
-} from '@/lib/staff-types'
+import { DEFAULT_STAFF_ROLE, type StaffSession } from '@/lib/staff-types'
 
 export type SignInState = { error: string | null }
 
@@ -31,10 +27,6 @@ function integerField(formData: FormData, key: string) {
   const value = Number.parseInt(textField(formData, key, 20), 10)
   if (!Number.isSafeInteger(value) || value <= 0) throw new Error(`Invalid ${key}.`)
   return value
-}
-
-function staffRole(value: string): StaffRole | null {
-  return STAFF_ROLES.includes(value as StaffRole) ? (value as StaffRole) : null
 }
 
 function claimStatus(value: string): ClaimStatus | null {
@@ -73,11 +65,10 @@ export async function signInAction(
   formData: FormData
 ): Promise<SignInState> {
   const name = textField(formData, 'name', 100)
-  const role = staffRole(textField(formData, 'role', 80))
   const accessCode = textField(formData, 'accessCode', 200)
 
-  if (name.length < 2 || !role || !accessCode) {
-    return { error: 'Enter your name, role, and office access code.' }
+  if (name.length < 2 || !accessCode) {
+    return { error: 'Enter your name and office access code.' }
   }
 
   if (!verifyStaffAccessCode(accessCode)) {
@@ -85,7 +76,7 @@ export async function signInAction(
     return { error: 'That access code was not accepted.' }
   }
 
-  await setStaffSession(name, role)
+  await setStaffSession(name, DEFAULT_STAFF_ROLE)
   redirect('/staff')
 }
 

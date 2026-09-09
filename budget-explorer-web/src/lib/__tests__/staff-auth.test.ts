@@ -5,6 +5,7 @@ import {
   verifyStaffAccessCode,
   verifyStaffSessionToken,
 } from '@/lib/staff-auth'
+import { DEFAULT_STAFF_ROLE, STAFF_ROLES } from '@/lib/staff-types'
 
 function accessCodeHash(code: string) {
   const salt = randomBytes(16)
@@ -13,6 +14,11 @@ function accessCodeHash(code: string) {
 }
 
 describe('staff authentication', () => {
+  it('uses a general staff label for the simplified sign-in', () => {
+    expect(DEFAULT_STAFF_ROLE).toBe('Staff')
+    expect(STAFF_ROLES).toContain(DEFAULT_STAFF_ROLE)
+  })
+
   it('accepts only the access code represented by the stored scrypt hash', () => {
     const encoded = accessCodeHash('correct horse battery staple')
 

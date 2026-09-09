@@ -84,7 +84,6 @@ export function StaffWorkspace({
           <div className="flex items-center gap-4">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-bold">{session.name}</p>
-              <p className="text-xs text-slate-400">{session.role}</p>
             </div>
             <form action={signOutAction}>
               <button className="border border-slate-500 px-3 py-2 text-sm font-bold hover:border-white hover:bg-white hover:text-slate-950">
