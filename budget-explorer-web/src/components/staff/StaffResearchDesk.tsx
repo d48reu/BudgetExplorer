@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState, useState } from 'react'
+import { useState, useTransition } from 'react'
 import { askBudgetAction, type AskBudgetState } from '@/app/staff/research-actions'
 import { signOutAction } from '@/app/staff/actions'
 import type { StaffSession } from '@/lib/staff-types'
@@ -44,8 +44,20 @@ export function StaffResearchDesk({
   auditStatus: { checks: number; generatedAt: string }
 }) {
   const [question, setQuestion] = useState('')
-  const [state, action, pending] = useActionState(askBudgetAction, initialState)
+  const [state, setState] = useState(initialState)
+  const [pending, startTransition] = useTransition()
   const answer = state.answer
+
+  function submitQuestion(formData: FormData) {
+    startTransition(async () => {
+      setState(await askBudgetAction(state, formData))
+    })
+  }
+
+  function resetQuestion() {
+    setQuestion('')
+    setState(initialState)
+  }
 
   return (
     <div className="-mb-16 min-h-screen bg-[#E9EDF0] text-slate-950 md:-mt-16">
@@ -75,7 +87,7 @@ export function StaffResearchDesk({
             <div className="p-5 sm:p-7">
               <h1 className="font-heading text-3xl font-black tracking-[-0.035em] sm:text-5xl">Ask the budget.</h1>
               <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">Get an answer from audited County figures and approved source records. If the evidence is incomplete, the answer will say so.</p>
-              <form action={action} className="mt-6">
+              <form action={submitQuestion} className="mt-6">
                 <label htmlFor="budget-question" className="sr-only">Budget question</label>
                 <textarea
                   id="budget-question"
@@ -112,7 +124,12 @@ export function StaffResearchDesk({
 
           {answer && (
             <article className="border border-slate-950 bg-white" aria-live="polite">
-              <p className="border-b border-slate-400 bg-slate-100 px-5 py-3 text-sm text-slate-600 sm:px-6"><strong className="text-slate-900">Question:</strong> {state.question}</p>
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-400 bg-slate-100 px-5 py-3 sm:px-6">
+                <p className="min-w-0 flex-1 text-sm leading-6 text-slate-600"><strong className="text-slate-900">Question:</strong> {state.question}</p>
+                <button type="button" onClick={resetQuestion} className="shrink-0 border border-slate-500 bg-white px-3 py-2 text-sm font-black text-slate-900 hover:border-blue-800 hover:bg-blue-50">
+                  Ask another question
+                </button>
+              </div>
               <div className={answer.status === 'answered' ? 'border-b border-slate-950 bg-emerald-950 p-5 text-white sm:p-6' : 'border-b border-slate-950 bg-amber-100 p-5 sm:p-6'}>
                 <p className={answer.status === 'answered' ? 'text-sm font-black uppercase tracking-[0.12em] text-emerald-300' : 'text-sm font-black uppercase tracking-[0.12em] text-amber-900'}>{answer.eyebrow}</p>
                 <h2 className="mt-2 font-heading text-2xl font-black tracking-[-0.02em] sm:text-3xl">{answer.title}</h2>
